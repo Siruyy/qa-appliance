@@ -1,4 +1,4 @@
-import { useEffect, useRef, useCallback } from "react";
+import { useEffect, useRef, useCallback, useState } from "react";
 import { toast } from "sonner";
 import { invoke } from "@tauri-apps/api/core";
 import { useSettingsStore } from "@/stores/settingsStore";
@@ -7,6 +7,7 @@ import { useNavigate } from "react-router-dom";
 
 import { Sidebar } from "./Sidebar";
 import { TopBar } from "./TopBar";
+import { KeyboardShortcutsModal } from "@/components/KeyboardShortcutsModal";
 
 interface AppShellProps {
   children: React.ReactNode;
@@ -17,6 +18,7 @@ export function AppShell({ children }: AppShellProps) {
   const loadSettings = useSettingsStore((s) => s.loadSettings);
   const theme = useUIStore((s) => s.theme);
   const navigate = useNavigate();
+  const [shortcutsOpen, setShortcutsOpen] = useState(false);
 
   // Apply dark class to <html> element
   useEffect(() => {
@@ -55,6 +57,8 @@ export function AppShell({ children }: AppShellProps) {
   // Keyboard shortcuts
   const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement;
+      const isInput = target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable;
       const ctrl = e.ctrlKey || e.metaKey;
       if (ctrl && e.key === "n") {
         e.preventDefault();
@@ -62,6 +66,9 @@ export function AppShell({ children }: AppShellProps) {
       } else if (ctrl && e.key === ",") {
         e.preventDefault();
         navigate("/settings");
+      } else if (e.key === "?" && !isInput) {
+        e.preventDefault();
+        setShortcutsOpen((o) => !o);
       }
     },
     [navigate]
@@ -81,6 +88,7 @@ export function AppShell({ children }: AppShellProps) {
           <div className="mx-auto max-w-[1400px]">{children}</div>
         </main>
       </div>
+      <KeyboardShortcutsModal open={shortcutsOpen} onOpenChange={setShortcutsOpen} />
     </div>
   );
 }
