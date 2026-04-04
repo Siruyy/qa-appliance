@@ -63,10 +63,8 @@ export interface ExportCategory {
 
 export interface ExportCustomer {
   id: number;
-  first_name: string;
-  last_name: string;
+  name: string;
   phone: string | null;
-  email: string | null;
   address: string | null;
   notes: string | null;
   is_active: boolean;
