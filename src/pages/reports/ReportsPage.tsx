@@ -57,6 +57,8 @@ export function ReportsPage() {
     getProfitLossReport,
   } = useReports();
 
+  const { format: formatCurrency } = useCurrency();
+
   const handleExport = useCallback(
     async (format: "excel" | "pdf" | "csv") => {
       try {
@@ -171,7 +173,6 @@ export function ReportsPage() {
     [activeTab, dateFrom, dateTo, statusFilter, selectedCustomerId]
   );
 
-  const { format: formatCurrency } = useCurrency();
   return (
     <div className="space-y-6">
       {/* Header */}

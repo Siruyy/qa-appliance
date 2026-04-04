@@ -50,6 +50,7 @@ import type { ImportPreview } from "@/types/import-export";
 
 function ExportSection() {
   const { exportLoading, setExportLoading } = useImportExportStore();
+  const { format: formatCurrency } = useCurrency();
 
   const handleExport = useCallback(
     async (type: string) => {
@@ -246,7 +247,6 @@ function ExportSection() {
     { type: "all", label: "Export All Data", icon: "📊" },
   ];
 
-  const { format: formatCurrency } = useCurrency();
   return (
     <div className="space-y-4">
       <div>

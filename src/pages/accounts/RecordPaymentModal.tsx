@@ -43,6 +43,7 @@ export function RecordPaymentModal({
   onSuccess,
 }: RecordPaymentModalProps) {
   const { recordPayment } = usePayments();
+  const { format: formatCurrency } = useCurrency();
   const [submitting, setSubmitting] = useState(false);
   const [selectedScheduleEntry, setSelectedScheduleEntry] = useState<PaymentScheduleEntry | null>(
     null
@@ -114,7 +115,6 @@ export function RecordPaymentModal({
     (e) => e.status === "overdue" || e.status === "partial"
   );
 
-  const { format: formatCurrency } = useCurrency();
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-lg">

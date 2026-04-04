@@ -23,6 +23,7 @@ export interface SaleItem {
   quantity: number;
   unit_price: number;
   subtotal: number;
+  cost_price_snapshot?: number;
   created_at: string;
   product_name?: string;
   variant_label?: string;
