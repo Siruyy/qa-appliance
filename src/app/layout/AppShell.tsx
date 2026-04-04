@@ -1,7 +1,8 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useCallback } from "react";
 import { toast } from "sonner";
 import { invoke } from "@tauri-apps/api/core";
 import { useSettingsStore } from "@/stores/settingsStore";
+import { useNavigate } from "react-router-dom";
 
 import { Sidebar } from "./Sidebar";
 import { TopBar } from "./TopBar";
@@ -13,6 +14,7 @@ interface AppShellProps {
 export function AppShell({ children }: AppShellProps) {
   const penaltyChecked = useRef(false);
   const loadSettings = useSettingsStore((s) => s.loadSettings);
+  const navigate = useNavigate();
 
   useEffect(() => {
     loadSettings();
@@ -32,6 +34,26 @@ export function AppShell({ children }: AppShellProps) {
         console.error("Penalty check failed:", err);
       });
   }, []);
+
+  // Keyboard shortcuts
+  const handleKeyDown = useCallback(
+    (e: KeyboardEvent) => {
+      const ctrl = e.ctrlKey || e.metaKey;
+      if (ctrl && e.key === "n") {
+        e.preventDefault();
+        navigate("/sales/new");
+      } else if (ctrl && e.key === ",") {
+        e.preventDefault();
+        navigate("/settings");
+      }
+    },
+    [navigate]
+  );
+
+  useEffect(() => {
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [handleKeyDown]);
 
   return (
     <div className="flex h-screen overflow-hidden">
