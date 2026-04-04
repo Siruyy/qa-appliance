@@ -15,7 +15,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { KpiCard } from "./KpiCard";
+import { KpiCard } from "@/components/KpiCard";
 import { useReports } from "@/hooks/useReports";
 import { useReportStore } from "@/stores/reportStore";
 import { formatDate } from "@/lib/formatters";

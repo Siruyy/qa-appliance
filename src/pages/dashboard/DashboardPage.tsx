@@ -27,32 +27,7 @@ import { useCurrency } from "@/hooks/useCurrency";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import type { DashboardData } from "@/types/report";
-
-function KpiCard({
-  title,
-  value,
-  sub,
-  alert,
-}: {
-  title: string;
-  value: string;
-  sub?: string;
-  alert?: boolean;
-}) {
-  return (
-    <Card className={alert ? "border-destructive" : ""}>
-      <CardHeader className="pb-2">
-        <CardTitle className="text-sm font-medium text-muted-foreground">
-          {title}
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        <p className="text-2xl font-bold">{value}</p>
-        {sub && <p className="text-xs text-muted-foreground mt-1">{sub}</p>}
-      </CardContent>
-    </Card>
-  );
-}
+import { KpiCard } from "@/components/KpiCard";
 
 export function DashboardPage() {
   const { fetchDashboard } = useDashboard();

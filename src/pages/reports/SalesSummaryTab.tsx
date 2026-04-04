@@ -17,7 +17,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { KpiCard } from "./KpiCard";
+import { KpiCard } from "@/components/KpiCard";
 import { useReports } from "@/hooks/useReports";
 import { useReportStore } from "@/stores/reportStore";
 import { formatDate } from "@/lib/formatters";
