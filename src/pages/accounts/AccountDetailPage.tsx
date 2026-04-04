@@ -38,6 +38,7 @@ export function AccountDetailPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { getAccountById, markAccountDefaulted, updateAccountNotes, recalculateBalance } = useAccounts();
+  const { format: formatCurrency } = useCurrency();
 
   const [account, setAccount] = useState<AccountDetail | null>(null);
   const [loading, setLoading] = useState(true);
@@ -124,7 +125,6 @@ export function AccountDetailPage() {
     );
   }
 
-  const { format: formatCurrency } = useCurrency();
   return (
     <div className="space-y-6">
       {/* Header */}
