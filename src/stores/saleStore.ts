@@ -86,6 +86,8 @@ export const useSaleStore = create<SaleState>((set, get) => ({
         )
           return false;
       }
+      if (filters.dateFrom && s.created_at < filters.dateFrom) return false;
+      if (filters.dateTo && s.created_at > filters.dateTo + "T23:59:59") return false;
       return true;
     });
   },
