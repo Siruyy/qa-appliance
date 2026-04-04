@@ -48,6 +48,9 @@ pub fn run() {
             commands::accounts::update_account_notes,
             commands::accounts::run_penalty_check,
             commands::accounts::recalculate_balance,
+            commands::payments::get_payments,
+            commands::payments::get_payments_for_account,
+            commands::payments::record_payment,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
