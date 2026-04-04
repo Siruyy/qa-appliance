@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "react";
 import { toast } from "sonner";
 import { invoke } from "@tauri-apps/api/core";
+import { useSettingsStore } from "@/stores/settingsStore";
 
 import { Sidebar } from "./Sidebar";
 import { TopBar } from "./TopBar";
@@ -11,6 +12,11 @@ interface AppShellProps {
 
 export function AppShell({ children }: AppShellProps) {
   const penaltyChecked = useRef(false);
+  const loadSettings = useSettingsStore((s) => s.loadSettings);
+
+  useEffect(() => {
+    loadSettings();
+  }, [loadSettings]);
 
   useEffect(() => {
     if (penaltyChecked.current) return;
