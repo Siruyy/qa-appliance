@@ -30,7 +30,7 @@ export const variantSchema = z.object({
   cost_price: z.number({ error: "Cost price is required" }).min(0, "Must be ≥ 0"),
   selling_price: z.number({ error: "Selling price is required" }).min(0, "Must be ≥ 0"),
   stock_qty: z.number({ error: "Stock quantity is required" }).int().min(0, "Must be ≥ 0"),
-  low_stock_threshold: z.number().int().min(0, "Must be ≥ 0").default(2),
+  low_stock_threshold: z.number().int().min(0, "Must be ≥ 0"),
 });
 
 export type VariantFormData = z.infer<typeof variantSchema>;
