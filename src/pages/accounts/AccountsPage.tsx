@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { PageHeader } from "@/components/PageHeader";
 import {
   Search,
   AlertTriangle,
@@ -37,6 +38,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { TableSkeleton } from "@/components/TableSkeleton";
 const statusVariant: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
   open: "default",
   paid: "secondary",
@@ -79,12 +81,10 @@ export function AccountsPage() {
   const { format: formatCurrency } = useCurrency();
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight">Accounts / Receivables</h1>
-        <p className="text-muted-foreground">
-          Track all open installment and utang accounts.
-        </p>
-      </div>
+      <PageHeader
+        title="Accounts / Receivables"
+        description="Track all open installment and utang accounts."
+      />
 
       {overdue > 0 && (
         <div
@@ -148,11 +148,7 @@ export function AccountsPage() {
           </TableHeader>
           <TableBody>
             {loading ? (
-              <TableRow>
-                <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
-                  Loading accounts...
-                </TableCell>
-              </TableRow>
+              <TableSkeleton cols={7} rows={5} />
             ) : accounts.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">

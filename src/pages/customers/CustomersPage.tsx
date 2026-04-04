@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { PageHeader } from "@/components/PageHeader";
 import {
   Search,
   Plus,
@@ -84,18 +85,15 @@ export function CustomersPage() {
   const { format: formatCurrency } = useCurrency();
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold">Customers</h1>
-          <p className="text-sm text-muted-foreground">
-            Customer profiles, contact info, and linked accounts.
-          </p>
-        </div>
-        <Button onClick={() => setModal({ type: "form" })}>
-          <Plus className="mr-1 h-4 w-4" /> Add Customer
-        </Button>
-      </div>
+      <PageHeader
+        title="Customers"
+        description="Customer profiles, contact info, and linked accounts."
+        actions={
+          <Button onClick={() => setModal({ type: "form" })}>
+            <Plus className="mr-1 h-4 w-4" /> Add Customer
+          </Button>
+        }
+      />
 
       {/* Filters */}
       <div className="flex gap-3">

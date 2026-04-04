@@ -30,6 +30,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
 import { useImportExportStore } from "@/stores/importExportStore";
+import { PageHeader } from "@/components/PageHeader";
 import {
   exportProducts,
   exportCustomers,
@@ -705,12 +706,10 @@ function ImportHistory() {
 export function ImportExportPage() {
   return (
     <div className="space-y-8 p-1">
-      <div>
-        <h2 className="text-2xl font-bold tracking-tight">Import / Export</h2>
-        <p className="text-muted-foreground">
-          Bulk data import and export tools for backup and data migration.
-        </p>
-      </div>
+      <PageHeader
+        title="Import / Export"
+        description="Bulk data import and export tools for backup and data migration."
+      />
 
       <ExportSection />
       <Separator />

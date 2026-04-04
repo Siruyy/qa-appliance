@@ -1,4 +1,7 @@
 import { useState } from "react";
+import { PageHeader } from "@/components/PageHeader";
+import { EmptyState } from "@/components/EmptyState";
+import { TableSkeleton } from "@/components/TableSkeleton";
 import {
   Search,
   Plus,
@@ -110,15 +113,16 @@ export function InventoryPage() {
   return (
     <div className="space-y-4">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <p className="text-muted-foreground">
-          Manage products, variants, stock levels, and categories.
-        </p>
-        <Button onClick={() => setModal({ type: "product" })}>
-          <Plus className="mr-2 h-4 w-4" />
-          Add Product
-        </Button>
-      </div>
+      <PageHeader
+        title="Inventory"
+        description="Manage products, variants, stock levels, and categories."
+        actions={
+          <Button onClick={() => setModal({ type: "product" })}>
+            <Plus className="mr-2 h-4 w-4" />
+            Add Product
+          </Button>
+        }
+      />
 
       {/* Filters */}
       <div className="flex flex-wrap items-center gap-3">
@@ -166,14 +170,28 @@ export function InventoryPage() {
 
       {/* Table */}
       {loading ? (
-        <div className="flex items-center justify-center py-12 text-muted-foreground">
-          Loading products…
+        <div className="rounded-md border">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="w-10" />
+                <TableHead>Product</TableHead>
+                <TableHead>Category</TableHead>
+                <TableHead className="text-right">Variants</TableHead>
+                <TableHead className="text-right">Total Stock</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead className="w-10" />
+              </TableRow>
+            </TableHeader>
+            <TableSkeleton cols={7} rows={5} />
+          </Table>
         </div>
       ) : products.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
-          <Package className="h-12 w-12 mb-2 opacity-30" />
-          <p>No products found</p>
-        </div>
+        <EmptyState
+          icon={Package}
+          title="No products found"
+          description="Add your first product to get started with inventory management."
+        />
       ) : (
         <div className="rounded-md border">
           <Table>

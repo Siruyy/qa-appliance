@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { PageHeader } from "@/components/PageHeader";
 import { Plus, Search, X, ReceiptText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -26,6 +27,8 @@ import { useCurrency } from "@/hooks/useCurrency";
 import { useSaleStore } from "@/stores/saleStore";
 import { useSales } from "@/hooks/useSales";
 import { SaleDetailModal } from "./SaleDetailModal";
+import { EmptyState } from "@/components/EmptyState";
+import { TableSkeleton } from "@/components/TableSkeleton";
 
 export function SalesHistoryPage() {
   const navigate = useNavigate();
@@ -45,18 +48,16 @@ export function SalesHistoryPage() {
   const { format: formatCurrency } = useCurrency();
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">Sales History</h1>
-          <p className="text-muted-foreground">
-            View and manage past sales transactions
-          </p>
-        </div>
-        <Button onClick={() => navigate("/sales/new")} className="gap-2">
-          <Plus className="h-4 w-4" />
-          New Sale
-        </Button>
-      </div>
+      <PageHeader
+        title="Sales History"
+        description="View and manage past sales transactions."
+        actions={
+          <Button onClick={() => navigate("/sales/new")} className="gap-2">
+            <Plus className="h-4 w-4" />
+            New Sale
+          </Button>
+        }
+      />
 
       {/* Filters */}
       <div className="flex flex-wrap items-end gap-3">
@@ -124,12 +125,27 @@ export function SalesHistoryPage() {
 
       {/* Table */}
       {loading ? (
-        <div className="text-center py-12 text-muted-foreground">Loading...</div>
-      ) : sales.length === 0 ? (
-        <div className="text-center py-12">
-          <ReceiptText className="mx-auto h-12 w-12 text-muted-foreground/50" />
-          <p className="mt-2 text-muted-foreground">No sales found</p>
+        <div className="rounded-md border">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="w-[80px]">#</TableHead>
+                <TableHead>Date</TableHead>
+                <TableHead>Customer</TableHead>
+                <TableHead>Type</TableHead>
+                <TableHead className="text-right">Total</TableHead>
+                <TableHead>Status</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableSkeleton cols={6} rows={5} />
+          </Table>
         </div>
+      ) : sales.length === 0 ? (
+        <EmptyState
+          icon={ReceiptText}
+          title="No sales found"
+          description="Sales will appear here once recorded."
+        />
       ) : (
         <div className="rounded-md border">
           <Table>

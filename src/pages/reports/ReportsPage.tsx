@@ -21,6 +21,7 @@ import { InventoryTab } from "./InventoryTab";
 import { CollectionsTab } from "./CollectionsTab";
 import { CustomerHistoryTab } from "./CustomerHistoryTab";
 import { ProfitLossTab } from "./ProfitLossTab";
+import { PageHeader } from "@/components/PageHeader";
 
 const TAB_CONFIG: { value: ReportTab; label: string }[] = [
   { value: "sales", label: "Sales Summary" },
@@ -174,23 +175,23 @@ export function ReportsPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold">Reports</h1>
-          <p className="text-sm text-muted-foreground">Generate and export business reports</p>
-        </div>
-        <div className="flex gap-2">
-          <Button variant="outline" size="sm" onClick={() => handleExport("excel")}>
-            Excel
-          </Button>
-          <Button variant="outline" size="sm" onClick={() => handleExport("pdf")}>
-            PDF
-          </Button>
-          <Button variant="outline" size="sm" onClick={() => handleExport("csv")}>
-            CSV
-          </Button>
-        </div>
-      </div>
+      <PageHeader
+        title="Reports"
+        description="Generate and export business reports."
+        actions={
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" onClick={() => handleExport("excel")}>
+              Excel
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => handleExport("pdf")}>
+              PDF
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => handleExport("csv")}>
+              CSV
+            </Button>
+          </div>
+        }
+      />
 
       {/* Filters bar */}
       <div className="flex flex-wrap items-center gap-3">
