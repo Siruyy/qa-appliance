@@ -13,6 +13,8 @@ import { useCurrency } from "@/hooks/useCurrency";
 import type { SaleDetail } from "@/types/sale";
 import { useSales } from "@/hooks/useSales";
 import { Loader2 } from "lucide-react";
+import { SaleReceipt } from "@/components/SaleReceipt";
+import { useSettingsStore } from "@/stores/settingsStore";
 
 interface SaleDetailModalProps {
   open: boolean;
@@ -26,6 +28,7 @@ export function SaleDetailModal({ open, onOpenChange, saleId, onVoided }: SaleDe
   const [detail, setDetail] = useState<SaleDetail | null>(null);
   const [loading, setLoading] = useState(false);
   const [voiding, setVoiding] = useState(false);
+  const storeName = useSettingsStore((s) => s.settings.store_name);
 
   const load = useCallback(async () => {
     if (!saleId) return;
@@ -207,9 +210,10 @@ export function SaleDetailModal({ open, onOpenChange, saleId, onVoided }: SaleDe
             )}
 
             {/* Actions */}
-            {sale.status === "completed" && (
-              <>
-                <Separator />
+            <Separator />
+            <div className="flex items-center gap-2 flex-wrap">
+              <SaleReceipt detail={detail} storeName={storeName} />
+              {sale.status === "completed" && (
                 <Button
                   variant="destructive"
                   size="sm"
@@ -218,8 +222,8 @@ export function SaleDetailModal({ open, onOpenChange, saleId, onVoided }: SaleDe
                 >
                   {voiding ? "Voiding..." : "Void Sale"}
                 </Button>
-              </>
-            )}
+              )}
+            </div>
           </div>
         ) : (
           <p className="text-muted-foreground text-sm">Sale not found.</p>
