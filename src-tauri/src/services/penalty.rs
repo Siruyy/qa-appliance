@@ -1,6 +1,7 @@
 use rusqlite::Connection;
 
 use crate::models::account::PenaltyApplied;
+use crate::utils::date::{today_iso, days_since};
 
 /// Check all open accounts for overdue schedule entries and apply penalties where needed.
 ///
@@ -9,7 +10,7 @@ use crate::models::account::PenaltyApplied;
 /// 2. For all open accounts: apply penalty if conditions met and not already applied today
 /// 3. Penalty = balance_remaining × (penalty_rate / 100)
 pub fn check_and_apply_penalties(conn: &Connection) -> Result<Vec<PenaltyApplied>, String> {
-    let today = chrono_today();
+    let today = today_iso();
     let mut penalties_applied: Vec<PenaltyApplied> = Vec::new();
 
     // Step 1: Mark overdue schedule entries
@@ -124,54 +125,4 @@ pub fn check_and_apply_penalties(conn: &Connection) -> Result<Vec<PenaltyApplied
     }
 
     Ok(penalties_applied)
-}
-
-fn chrono_today() -> String {
-    // Use SQLite-compatible date format
-    let now = std::time::SystemTime::now()
-        .duration_since(std::time::UNIX_EPOCH)
-        .unwrap()
-        .as_secs();
-    // Simple date formatting without chrono dependency
-    let days = now / 86400;
-    let (year, month, day) = days_to_ymd(days as i64 + 719468);
-    format!("{:04}-{:02}-{:02}", year, month, day)
-}
-
-fn days_to_ymd(days: i64) -> (i64, u32, u32) {
-    // Civil days to Y-M-D (algorithm from Howard Hinnant)
-    let era = if days >= 0 { days } else { days - 146096 } / 146097;
-    let doe = (days - era * 146097) as u32;
-    let yoe = (doe - doe / 1460 + doe / 36524 - doe / 146096) / 365;
-    let y = yoe as i64 + era * 400;
-    let doy = doe - (365 * yoe + yoe / 4 - yoe / 100);
-    let mp = (5 * doy + 2) / 153;
-    let d = doy - (153 * mp + 2) / 5 + 1;
-    let m = if mp < 10 { mp + 3 } else { mp - 9 };
-    let y = if m <= 2 { y + 1 } else { y };
-    (y, m, d)
-}
-
-fn days_since(from: &str, to: &str) -> i64 {
-    let parse_date = |s: &str| -> Option<i64> {
-        let parts: Vec<&str> = s.split('-').collect();
-        if parts.len() < 3 {
-            return None;
-        }
-        let y: i64 = parts[0].parse().ok()?;
-        let m: u32 = parts[1].parse().ok()?;
-        let d: u32 = parts[2].parse().ok()?;
-        // Convert to days since epoch using inverse of days_to_ymd
-        let (y, m) = if m <= 2 { (y - 1, m + 9) } else { (y, m - 3) };
-        let era = if y >= 0 { y } else { y - 399 } / 400;
-        let yoe = (y - era * 400) as u32;
-        let doy = (153 * m + 2) / 5 + d - 1;
-        let doe = yoe * 365 + yoe / 4 - yoe / 100 + doy;
-        Some(era * 146097 + doe as i64 - 719468)
-    };
-
-    match (parse_date(from), parse_date(to)) {
-        (Some(f), Some(t)) => t - f,
-        _ => 0,
-    }
 }

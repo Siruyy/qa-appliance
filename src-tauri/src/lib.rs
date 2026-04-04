@@ -2,6 +2,7 @@ mod commands;
 mod db;
 mod models;
 mod services;
+mod utils;
 
 use db::connection::{self, DbState};
 use std::sync::Mutex;
