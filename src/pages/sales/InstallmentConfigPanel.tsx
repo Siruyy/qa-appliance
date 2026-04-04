@@ -1,3 +1,4 @@
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -12,6 +13,9 @@ interface InstallmentConfigPanelProps {
   onChange: (config: CreateInstallmentPayload) => void;
   onPreviewSchedule: () => void;
 }
+
+const PRESET_TERMS = [6, 12, 18, 24] as const;
+const PRESET_DOWN_PCT = [0, 10, 20, 30] as const;
 
 export function InstallmentConfigPanel({
   saleTotal,
@@ -34,6 +38,23 @@ export function InstallmentConfigPanel({
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-1.5">
           <Label>Down Payment</Label>
+          <div className="flex gap-1 mb-1.5 flex-wrap">
+            {PRESET_DOWN_PCT.map((pct) => {
+              const val = Math.round((saleTotal * pct) / 100);
+              return (
+                <Button
+                  key={pct}
+                  type="button"
+                  size="sm"
+                  variant={config.down_payment === val ? "default" : "outline"}
+                  className="h-7 px-2 text-xs"
+                  onClick={() => onChange({ ...config, down_payment: val })}
+                >
+                  {pct}%
+                </Button>
+              );
+            })}
+          </div>
           <Input
             type="number"
             min={0}
@@ -91,18 +112,32 @@ export function InstallmentConfigPanel({
 
       {config.has_schedule && (
         <div className="grid grid-cols-2 gap-4">
-          <div className="space-y-1.5">
-            <Label>Term (months)</Label>
-            <Input
-              type="number"
-              min={1}
-              max={60}
-              value={config.term_months ?? ""}
-              onChange={(e) =>
-                onChange({ ...config, term_months: parseInt(e.target.value) || null })
-              }
-            />
+        <div className="space-y-1.5">
+          <Label>Term (months)</Label>
+          <div className="flex gap-1 mb-1.5 flex-wrap">
+            {PRESET_TERMS.map((t) => (
+              <Button
+                key={t}
+                type="button"
+                size="sm"
+                variant={config.term_months === t ? "default" : "outline"}
+                className="h-7 px-2 text-xs"
+                onClick={() => onChange({ ...config, term_months: t })}
+              >
+                {t}mo
+              </Button>
+            ))}
           </div>
+          <Input
+            type="number"
+            min={1}
+            max={60}
+            value={config.term_months ?? ""}
+            onChange={(e) =>
+              onChange({ ...config, term_months: parseInt(e.target.value) || null })
+            }
+          />
+        </div>
           <div className="space-y-1.5">
             <Label>Start Date</Label>
             <Input
