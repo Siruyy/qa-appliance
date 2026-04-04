@@ -40,6 +40,14 @@ pub fn run() {
             commands::sales::get_sale_by_id,
             commands::sales::create_sale,
             commands::sales::void_sale,
+            commands::accounts::get_accounts,
+            commands::accounts::get_account_by_id,
+            commands::accounts::get_overdue_accounts,
+            commands::accounts::mark_account_paid,
+            commands::accounts::mark_account_defaulted,
+            commands::accounts::update_account_notes,
+            commands::accounts::run_penalty_check,
+            commands::accounts::recalculate_balance,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
