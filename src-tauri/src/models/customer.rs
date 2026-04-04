@@ -17,6 +17,7 @@ pub struct Customer {
 }
 
 /// Lighter struct when we don't need computed fields
+#[allow(dead_code)]
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct CustomerBasic {
     pub id: i64,

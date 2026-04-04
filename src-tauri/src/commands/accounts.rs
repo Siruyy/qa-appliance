@@ -339,7 +339,7 @@ pub fn recalculate_balance(db: State<DbState>, account_id: i64) -> Result<f64, S
     let conn = db.0.lock().map_err(|e| e.to_string())?;
 
     // Get account principal and down_payment
-    let (principal, down_payment): (f64, f64) = conn
+    let (principal, _down_payment): (f64, f64) = conn
         .query_row(
             "SELECT principal, down_payment FROM installment_accounts WHERE id = ?1",
             rusqlite::params![account_id],

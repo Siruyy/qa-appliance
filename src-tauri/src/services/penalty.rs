@@ -35,7 +35,7 @@ pub fn check_and_apply_penalties(conn: &Connection) -> Result<Vec<PenaltyApplied
             "SELECT ia.id, ia.balance_remaining, ia.penalty_rate, ia.has_schedule,
                     ia.last_penalty_date, c.name AS customer_name,
                     COALESCE(
-                        GROUP_CONCAT(DISTINCT p.name || COALESCE(' ' || v.attributes, ''), ', '),
+                        GROUP_CONCAT(DISTINCT p.name || COALESCE(' ' || v.attributes, '')),
                         'Unknown Product'
                     ) AS product_summary
              FROM installment_accounts ia

@@ -22,9 +22,12 @@ pub fn run(conn: &Connection) -> Result<()> {
         migrate_v1(conn)?;
     }
 
-    // Future migrations: if version < 2 { migrate_v2(conn)?; }
     if version < 2 {
         migrate_v2(conn)?;
+    }
+
+    if version < 3 {
+        migrate_v3(conn)?;
     }
 
     Ok(())
@@ -224,5 +227,19 @@ fn migrate_v2(conn: &Connection) -> Result<()> {
     )?;
 
     println!("[db] Applied migration v2 — import_logs table");
+    Ok(())
+}
+
+/// V3 — Snapshot cost_price on sale_items to preserve historical P&L accuracy
+fn migrate_v3(conn: &Connection) -> Result<()> {
+    conn.execute_batch(
+        "
+        ALTER TABLE sale_items ADD COLUMN cost_price_snapshot REAL NOT NULL DEFAULT 0;
+
+        INSERT INTO schema_migrations (version) VALUES (3);
+        "
+    )?;
+
+    println!("[db] Applied migration v3 — cost_price_snapshot on sale_items");
     Ok(())
 }

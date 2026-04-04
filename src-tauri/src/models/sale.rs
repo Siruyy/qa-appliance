@@ -23,6 +23,7 @@ pub struct SaleItem {
     pub quantity: i64,
     pub unit_price: f64,
     pub subtotal: f64,
+    pub cost_price_snapshot: f64,
     pub created_at: String,
     pub product_name: Option<String>,
     pub variant_label: Option<String>,

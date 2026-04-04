@@ -484,7 +484,7 @@ pub fn get_profit_loss_report(
     let mut stmt = db.prepare(
         "SELECT COALESCE(cat.name, 'Uncategorized') as category,
                 SUM(si.subtotal) as revenue,
-                SUM(si.quantity * pv.cost_price) as cogs
+                SUM(si.quantity * si.cost_price_snapshot) as cogs
          FROM sales s
          JOIN sale_items si ON si.sale_id = s.id
          JOIN product_variants pv ON pv.id = si.variant_id

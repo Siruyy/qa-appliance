@@ -3,7 +3,6 @@ use crate::models::report::{
     DailyCollection, DailySales, DashboardData, RecentSale, UpcomingDue,
 };
 use rusqlite::params;
-use std::collections::HashMap;
 use tauri::State;
 
 /// Get current date as "YYYY-MM-DD" without chrono (UTC).

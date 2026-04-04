@@ -123,7 +123,7 @@ pub fn get_sale_by_id(db: State<DbState>, id: i64) -> Result<SaleDetail, String>
     let mut items_stmt = conn
         .prepare(
             "SELECT si.id, si.sale_id, si.variant_id, si.quantity, si.unit_price, si.subtotal,
-                    si.created_at, p.name as product_name, pv.label as variant_label
+                    si.cost_price_snapshot, si.created_at, p.name as product_name, pv.label as variant_label
              FROM sale_items si
              LEFT JOIN product_variants pv ON si.variant_id = pv.id
              LEFT JOIN products p ON pv.product_id = p.id
@@ -140,9 +140,10 @@ pub fn get_sale_by_id(db: State<DbState>, id: i64) -> Result<SaleDetail, String>
                 quantity: row.get(3)?,
                 unit_price: row.get(4)?,
                 subtotal: row.get(5)?,
-                created_at: row.get(6)?,
-                product_name: row.get(7)?,
-                variant_label: row.get(8)?,
+                cost_price_snapshot: row.get(6)?,
+                created_at: row.get(7)?,
+                product_name: row.get(8)?,
+                variant_label: row.get(9)?,
             })
         })
         .map_err(|e| e.to_string())?
@@ -225,10 +226,18 @@ pub fn create_sale(db: State<DbState>, payload: CreateSalePayload) -> Result<i64
         // 2. Insert sale items and deduct stock
         for item in &payload.items {
             let item_subtotal = item.unit_price * item.quantity as f64;
+
+            // Snapshot the current cost_price so P&L is historically accurate
+            let cost_price_snapshot: f64 = conn.query_row(
+                "SELECT cost_price FROM product_variants WHERE id = ?1",
+                rusqlite::params![item.variant_id],
+                |row| row.get(0),
+            ).unwrap_or(0.0);
+
             conn.execute(
-                "INSERT INTO sale_items (sale_id, variant_id, quantity, unit_price, subtotal)
-                 VALUES (?1, ?2, ?3, ?4, ?5)",
-                rusqlite::params![sale_id, item.variant_id, item.quantity, item.unit_price, item_subtotal],
+                "INSERT INTO sale_items (sale_id, variant_id, quantity, unit_price, subtotal, cost_price_snapshot)
+                 VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
+                rusqlite::params![sale_id, item.variant_id, item.quantity, item.unit_price, item_subtotal, cost_price_snapshot],
             )
             .map_err(|e| e.to_string())?;
 
