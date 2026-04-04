@@ -2,6 +2,7 @@ import { useEffect, useRef, useCallback } from "react";
 import { toast } from "sonner";
 import { invoke } from "@tauri-apps/api/core";
 import { useSettingsStore } from "@/stores/settingsStore";
+import { useUIStore } from "@/stores/uiStore";
 import { useNavigate } from "react-router-dom";
 
 import { Sidebar } from "./Sidebar";
@@ -14,7 +15,23 @@ interface AppShellProps {
 export function AppShell({ children }: AppShellProps) {
   const penaltyChecked = useRef(false);
   const loadSettings = useSettingsStore((s) => s.loadSettings);
+  const theme = useUIStore((s) => s.theme);
   const navigate = useNavigate();
+
+  // Apply dark class to <html> element
+  useEffect(() => {
+    const root = document.documentElement;
+    const mq = window.matchMedia("(prefers-color-scheme: dark)");
+    const apply = () => {
+      const isDark = theme === "dark" || (theme === "system" && mq.matches);
+      root.classList.toggle("dark", isDark);
+    };
+    apply();
+    if (theme === "system") {
+      mq.addEventListener("change", apply);
+      return () => mq.removeEventListener("change", apply);
+    }
+  }, [theme]);
 
   useEffect(() => {
     loadSettings();

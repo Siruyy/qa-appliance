@@ -112,6 +112,54 @@
     --color-info-bg: var(--info-bg);
 }
 
+.dark {
+    --background: #0F172A;
+    --foreground: #F1F5F9;
+    --card: #1E293B;
+    --card-foreground: #F1F5F9;
+    --popover: #1E293B;
+    --popover-foreground: #F1F5F9;
+    --primary: #3B82F6;
+    --primary-foreground: #FFFFFF;
+    --secondary: #334155;
+    --secondary-foreground: #CBD5E1;
+    --muted: #1E293B;
+    --muted-foreground: #94A3B8;
+    --accent: #1E3A5F;
+    --accent-foreground: #93C5FD;
+    --destructive: #EF4444;
+    --border: #334155;
+    --input: #334155;
+    --ring: #3B82F6;
+    --chart-1: #3B82F6;
+    --chart-2: #22C55E;
+    --chart-3: #F59E0B;
+    --chart-4: #EF4444;
+    --chart-5: #38BDF8;
+
+    /* Sidebar — even darker in dark mode */
+    --sidebar: #020617;
+    --sidebar-foreground: #94A3B8;
+    --sidebar-primary: #3B82F6;
+    --sidebar-primary-foreground: #FFFFFF;
+    --sidebar-accent: #0F172A;
+    --sidebar-accent-foreground: #CBD5E1;
+    --sidebar-border: #1E293B;
+    --sidebar-ring: #3B82F6;
+
+    /* App-specific semantic colors (dark variants) */
+    --success: #22C55E;
+    --success-foreground: #FFFFFF;
+    --success-bg: #052E16;
+    --warning: #F59E0B;
+    --warning-foreground: #FFFFFF;
+    --warning-bg: #1C1002;
+    --danger: #EF4444;
+    --danger-bg: #1C0A0A;
+    --info: #38BDF8;
+    --info-bg: #082F49;
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;
