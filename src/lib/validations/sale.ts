@@ -20,7 +20,7 @@ export const createSaleSchema = z
     customer_id: z.number().int().positive().nullable(),
     payment_type: z.enum(["cash", "installment"]),
     discount: z.number().min(0),
-    notes: z.string().nullable(),
+    notes: z.string().max(500, "Max 500 characters").nullable(),
     items: z.array(saleItemSchema).min(1, { error: "Add at least one item" }),
     installment: installmentSchema.optional(),
   })
