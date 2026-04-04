@@ -23,6 +23,9 @@ pub fn run(conn: &Connection) -> Result<()> {
     }
 
     // Future migrations: if version < 2 { migrate_v2(conn)?; }
+    if version < 2 {
+        migrate_v2(conn)?;
+    }
 
     Ok(())
 }
@@ -198,5 +201,28 @@ fn migrate_v1(conn: &Connection) -> Result<()> {
     )?;
 
     println!("[db] Applied migration v1 — initial schema");
+    Ok(())
+}
+
+/// V2 — Import logs table for Phase 6 (Import / Export)
+fn migrate_v2(conn: &Connection) -> Result<()> {
+    conn.execute_batch(
+        "
+        CREATE TABLE IF NOT EXISTS import_logs (
+            id             INTEGER PRIMARY KEY AUTOINCREMENT,
+            import_type    TEXT NOT NULL,
+            filename       TEXT NOT NULL,
+            rows_added     INTEGER NOT NULL DEFAULT 0,
+            rows_skipped   INTEGER NOT NULL DEFAULT 0,
+            rows_errored   INTEGER NOT NULL DEFAULT 0,
+            error_details  TEXT,
+            imported_at    TEXT NOT NULL DEFAULT (datetime('now'))
+        );
+
+        INSERT INTO schema_migrations (version) VALUES (2);
+        "
+    )?;
+
+    println!("[db] Applied migration v2 — import_logs table");
     Ok(())
 }
