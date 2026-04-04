@@ -14,6 +14,21 @@ pub fn run() {
         .manage(DbState(Mutex::new(conn)))
         .invoke_handler(tauri::generate_handler![
             commands::db::ping,
+            commands::products::get_categories,
+            commands::products::create_category,
+            commands::products::update_category,
+            commands::products::delete_category,
+            commands::products::get_products,
+            commands::products::get_product_by_id,
+            commands::products::create_product,
+            commands::products::update_product,
+            commands::products::archive_product,
+            commands::products::restore_product,
+            commands::products::get_variants_for_product,
+            commands::products::create_variant,
+            commands::products::update_variant,
+            commands::products::archive_variant,
+            commands::products::adjust_stock,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
