@@ -35,6 +35,10 @@ pub fn run() {
             commands::customers::update_customer,
             commands::customers::archive_customer,
             commands::customers::restore_customer,
+            commands::sales::get_sales,
+            commands::sales::get_sale_by_id,
+            commands::sales::create_sale,
+            commands::sales::void_sale,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
