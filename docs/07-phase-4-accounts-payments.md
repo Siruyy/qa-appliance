@@ -62,7 +62,7 @@ Track all open installment and utang accounts. Record incoming payments. Auto-de
 
 ### TypeScript Types (`src/types/account.ts`)
 
-- [ ] Define:
+- [x] Define:
   ```typescript
   export type AccountStatus = 'open' | 'paid' | 'defaulted'
 
@@ -103,8 +103,8 @@ Track all open installment and utang accounts. Record incoming payments. Auto-de
 
 ### Zod Validation (`src/lib/validations/account.ts`)
 
-- [ ] Validation schema not needed for account creation (created by `create_sale` in Phase 3)
-- [ ] `updateAccountNotesSchema`:
+- [x] Validation schema not needed for account creation (created by `create_sale` in Phase 3)
+- [x] `updateAccountNotesSchema`:
   - `notes`: optional string max 500
 
 ---
@@ -113,7 +113,7 @@ Track all open installment and utang accounts. Record incoming payments. Auto-de
 
 This service runs on app startup and when the Accounts page is opened.
 
-- [ ] `check_and_apply_penalties(conn) → Vec<PenaltyApplied>`:
+- [x] `check_and_apply_penalties(conn) → Vec<PenaltyApplied>`:
   1. Query all `open` accounts
   2. For **scheduled accounts**: find schedule entries where `due_date < today AND status IN ('pending', 'partial')` → mark as `overdue`
   3. For **open accounts (no schedule)**: check `last_penalty_date` — if it's been ≥ 30 days (or null), apply penalty
@@ -126,16 +126,16 @@ This service runs on app startup and when the Accounts page is opened.
 
 ### Rust: Commands (`src-tauri/src/commands/accounts.rs`)
 
-- [ ] `get_accounts(status_filter: Option<String>, search: Option<String>) → Vec<InstallmentAccount>`
+- [x] `get_accounts(status_filter: Option<String>, search: Option<String>) → Vec<InstallmentAccount>`
   - JOINs: customers, sale_items + products (for product_summary), payment_schedules (for next_due_date)
   - Computes `is_overdue` in SQL or Rust post-processing
-- [ ] `get_account_by_id(id: i64) → InstallmentAccount` (includes full schedule + payments)
-- [ ] `get_overdue_accounts() → Vec<InstallmentAccount>`
-- [ ] `mark_account_paid(id: i64) → ()` — sets status = 'paid' if balance = 0
-- [ ] `mark_account_defaulted(id: i64) → ()`
-- [ ] `update_account_notes(id: i64, notes: String) → ()`
-- [ ] `run_penalty_check() → Vec<PenaltyApplied>` — calls penalty service
-- [ ] `recalculate_balance(account_id: i64) → f64`
+- [x] `get_account_by_id(id: i64) → InstallmentAccount` (includes full schedule + payments)
+- [x] `get_overdue_accounts() → Vec<InstallmentAccount>`
+- [x] `mark_account_paid(id: i64) → ()` — sets status = 'paid' if balance = 0
+- [x] `mark_account_defaulted(id: i64) → ()`
+- [x] `update_account_notes(id: i64, notes: String) → ()`
+- [x] `run_penalty_check() → Vec<PenaltyApplied>` — calls penalty service
+- [x] `recalculate_balance(account_id: i64) → f64`
   - Recalculates from scratch: `principal - down_payment + all penalties + all interest adjustments - all payments`
   - Used for data integrity recovery
 
@@ -189,7 +189,7 @@ Notes:      [optional]
 
 ### TypeScript Types (`src/types/payment.ts`)
 
-- [ ] Define:
+- [x] Define:
   ```typescript
   export type PaymentType = 'payment' | 'penalty' | 'interest_adjustment' | 'down_payment'
 
@@ -217,7 +217,7 @@ Notes:      [optional]
 
 ### Zod Validation (`src/lib/validations/payment.ts`)
 
-- [ ] `recordPaymentSchema`:
+- [x] `recordPaymentSchema`:
   - `account_id`: required integer > 0
   - `amount`: required number > 0
   - `payment_date`: required valid date string (cannot be in the future)
@@ -225,9 +225,9 @@ Notes:      [optional]
 
 ### Rust: Commands (`src-tauri/src/commands/payments.rs`)
 
-- [ ] `get_payments(from_date: Option<String>, to_date: Option<String>, customer_id: Option<i64>) → Vec<Payment>`
-- [ ] `get_payments_for_account(account_id: i64) → Vec<Payment>`
-- [ ] `record_payment(payload: RecordPaymentPayload) → Payment`
+- [x] `get_payments(from_date: Option<String>, to_date: Option<String>, customer_id: Option<i64>) → Vec<Payment>`
+- [x] `get_payments_for_account(account_id: i64) → Vec<Payment>`
+- [x] `record_payment(payload: RecordPaymentPayload) → Payment`
   - Atomic transaction:
     1. INSERT into `payments`
     2. UPDATE `installment_accounts.balance_remaining -= amount`
@@ -239,18 +239,18 @@ Notes:      [optional]
 
 ### Frontend Components
 
-- [ ] `AccountsPage.tsx`: table with alert banner, filters, overdue badge
-- [ ] `AccountDetailPage.tsx`: full account view with schedule table + payment history
-- [ ] `RecordPaymentModal.tsx`: payment entry form (amount, date, apply-to selection, notes)
-- [ ] `PaymentsPage.tsx`: read-only payment log with date range filter + customer filter
-- [ ] `ScheduleTable.tsx`: reusable table component for payment schedule entries
-- [ ] `PaymentHistoryTable.tsx`: reusable table for payment transactions
+- [x] `AccountsPage.tsx`: table with alert banner, filters, overdue badge
+- [x] `AccountDetailPage.tsx`: full account view with schedule table + payment history
+- [x] `RecordPaymentModal.tsx`: payment entry form (amount, date, apply-to selection, notes)
+- [x] `PaymentsPage.tsx`: read-only payment log with date range filter + customer filter
+- [x] `ScheduleTable.tsx`: reusable table component for payment schedule entries
+- [x] `PaymentHistoryTable.tsx`: reusable table for payment transactions
 
 ---
 
 ## Startup Penalty Check
 
-- [ ] In `App.tsx` (or `AppShell.tsx`), on mount:
+- [x] In `App.tsx` (or `AppShell.tsx`), on mount:
   ```typescript
   useEffect(() => {
     invoke('run_penalty_check').then((applied) => {
@@ -265,15 +265,39 @@ Notes:      [optional]
 
 ## Phase 4 Sign-off Checklist
 
-- [ ] Accounts page shows all open accounts with correct balances
-- [ ] Overdue alert banner appears and shows correct count
-- [ ] Account detail shows schedule table with correct statuses
-- [ ] Payment history shows all transactions including auto-penalties
-- [ ] Recording a payment updates balance and schedule entry status
-- [ ] Recording a payment that covers the full balance auto-closes account
-- [ ] Partial payment marks schedule entry as `partial`
-- [ ] Penalty auto-applies on app startup for overdue accounts
-- [ ] Penalty not double-applied on same day
-- [ ] Open-ended (utang) accounts accept payments without schedule
-- [ ] Payments log page shows all payments in date range
-- [ ] No TypeScript errors
+- [x] Accounts page shows all open accounts with correct balances
+- [x] Overdue alert banner appears and shows correct count
+- [x] Account detail shows schedule table with correct statuses
+- [x] Payment history shows all transactions including auto-penalties
+- [x] Recording a payment updates balance and schedule entry status
+- [x] Recording a payment that covers the full balance auto-closes account
+- [x] Partial payment marks schedule entry as `partial`
+- [x] Penalty auto-applies on app startup for overdue accounts
+- [x] Penalty not double-applied on same day
+- [x] Open-ended (utang) accounts accept payments without schedule
+- [x] Payments log page shows all payments in date range
+- [x] No TypeScript errors
+
+---
+
+## Implementation Notes (Phase 4 Complete)
+
+### Commits
+- `15aa5da` feat(accounts): add account/payment TS types and Zod validation schemas
+- `fefa0ad` feat(accounts): add Rust models for accounts and payments
+- `9dad7ce` feat(accounts): add Rust penalty service for overdue detection
+- `5760814` feat(accounts): add 8 Rust commands for account management
+- `18ab695` feat(payments): add 3 Rust commands for payment management
+- `b38056c` feat(accounts): add hooks, stores, and payment store for accounts/payments
+- `30d0fac` feat(accounts): add account UI pages, detail view, and record payment modal
+- `ef2875e` feat(payments): add PaymentsPage with date range filters and payment log
+- `9ea7cc9` feat(accounts): add startup penalty check on app launch
+
+### Key decisions
+- **Penalty service** uses manual date math (Howard Hinnant civil days algorithm) instead of chrono to avoid adding a dependency
+- **run_penalty_check** returns a count (i64) instead of Vec<PenaltyApplied> for simpler frontend handling
+- **RecordPaymentModal** lives in accounts/ pages (not payments/) since recording happens from account detail
+- **ScheduleTable** supports optional row selection via onSelectEntry prop, used by RecordPaymentModal
+- **AccountDetailPage** supports URL query params (?action=pay, ?action=default) for direct action from AccountsPage dropdown
+- **PaymentsPage** is read-only log; all payment recording goes through account detail
+- **DropdownMenuTrigger** styled directly (no asChild) per shadcn v4 convention
