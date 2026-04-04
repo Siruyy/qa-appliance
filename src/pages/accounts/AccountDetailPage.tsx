@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
-import { ArrowLeft, CreditCard, XCircle, NotebookPen } from "lucide-react";
+import { ArrowLeft, CreditCard, XCircle, NotebookPen, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 
 import { useAccounts } from "@/hooks/useAccounts";
@@ -37,7 +37,7 @@ export function AccountDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { getAccountById, markAccountDefaulted, updateAccountNotes } = useAccounts();
+  const { getAccountById, markAccountDefaulted, updateAccountNotes, recalculateBalance } = useAccounts();
 
   const [account, setAccount] = useState<AccountDetail | null>(null);
   const [loading, setLoading] = useState(true);
@@ -45,6 +45,7 @@ export function AccountDetailPage() {
   const [showDefaultConfirm, setShowDefaultConfirm] = useState(false);
   const [editingNotes, setEditingNotes] = useState(false);
   const [notes, setNotes] = useState("");
+  const [recalculating, setRecalculating] = useState(false);
 
   const loadAccount = async () => {
     if (!id) return;
@@ -73,6 +74,20 @@ export function AccountDetailPage() {
       setShowDefaultConfirm(true);
     }
   }, [searchParams, account]);
+
+  const handleRecalculate = async () => {
+    if (!account) return;
+    setRecalculating(true);
+    try {
+      const newBalance = await recalculateBalance(account.id);
+      toast.success(`Balance recalculated: ${newBalance.toFixed(2)}`);
+      await loadAccount();
+    } catch (err) {
+      toast.error(`Recalculate failed: ${String(err)}`);
+    } finally {
+      setRecalculating(false);
+    }
+  };
 
   const handleDefault = async () => {
     if (!account) return;
@@ -139,6 +154,16 @@ export function AccountDetailPage() {
               </Button>
             </>
           )}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleRecalculate}
+            disabled={recalculating}
+            title="Recalculate balance from payment history"
+          >
+            <RefreshCw className={`mr-2 h-4 w-4 ${recalculating ? "animate-spin" : ""}`} />
+            {recalculating ? "Recalculating..." : "Recalculate Balance"}
+          </Button>
         </div>
       </div>
 
