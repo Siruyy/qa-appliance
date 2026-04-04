@@ -5,12 +5,13 @@ export interface Payment {
   id: number;
   account_id: number;
   schedule_id: number | null;
+  customer_name: string;
+  product_summary: string;
   amount: number;
   payment_date: string;
   type: PaymentRecordType;
   notes: string | null;
   created_at: string;
-  customer_name?: string;
 }
 
 export interface PaymentSchedule {
@@ -26,9 +27,8 @@ export interface PaymentSchedule {
 
 export interface RecordPaymentPayload {
   account_id: number;
-  schedule_id?: number;
+  schedule_id: number | null;
   amount: number;
-  payment_date?: string;
-  type?: PaymentRecordType;
-  notes?: string;
+  payment_date: string;
+  notes: string | null;
 }

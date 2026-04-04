@@ -1,9 +1,21 @@
 export type AccountStatus = "open" | "paid" | "defaulted";
+export type AccountType = "installment" | "utang";
+
+export interface PaymentScheduleEntry {
+  id: number;
+  account_id: number;
+  due_date: string;
+  amount_due: number;
+  amount_paid: number;
+  status: "pending" | "paid" | "overdue" | "partial";
+}
 
 export interface InstallmentAccount {
   id: number;
   sale_id: number;
   customer_id: number;
+  customer_name: string;
+  product_summary: string;
   principal: number;
   down_payment: number;
   interest_rate: number;
@@ -15,10 +27,31 @@ export interface InstallmentAccount {
   start_date: string | null;
   status: AccountStatus;
   last_penalty_date: string | null;
+  next_due_date: string | null;
+  is_overdue: boolean;
   notes: string | null;
   created_at: string;
   updated_at: string;
-  customer_name?: string;
+}
+
+export interface AccountDetail extends InstallmentAccount {
+  schedule: PaymentScheduleEntry[];
+  payments: AccountPayment[];
+}
+
+export interface AccountPayment {
+  id: number;
+  amount: number;
+  payment_date: string;
+  type: string;
+  notes: string | null;
+}
+
+export interface PenaltyApplied {
+  account_id: number;
+  customer_name: string;
+  product_summary: string;
+  penalty_amount: number;
 }
 
 export interface CreateAccountPayload {
