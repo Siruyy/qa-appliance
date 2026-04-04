@@ -62,3 +62,20 @@ export interface CartItem {
   subtotal: number;
   stock_qty: number;
 }
+
+export interface SaleDetail {
+  sale: Sale;
+  items: SaleItem[];
+  account: InstallmentAccountSummary | null;
+}
+
+export interface InstallmentAccountSummary {
+  id: number;
+  principal: number;
+  down_payment: number;
+  interest_rate: number;
+  balance_remaining: number;
+  term_months: number | null;
+  monthly_amount: number | null;
+  status: string;
+}
