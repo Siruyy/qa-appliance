@@ -22,7 +22,6 @@ import {
   CartesianGrid,
 } from "recharts";
 import { useDashboard } from "@/hooks/useDashboard";
-import { useSettingsStore } from "@/stores/settingsStore";
 import { formatDate } from "@/lib/formatters";
 import { useCurrency } from "@/hooks/useCurrency";
 import { toast } from "sonner";
@@ -57,7 +56,6 @@ function KpiCard({
 
 export function DashboardPage() {
   const { fetchDashboard } = useDashboard();
-  const loadSettings = useSettingsStore((s) => s.loadSettings);
   const navigate = useNavigate();
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -66,7 +64,6 @@ export function DashboardPage() {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      await loadSettings();
       const d = await fetchDashboard();
       setData(d);
     } catch (err) {
@@ -74,7 +71,7 @@ export function DashboardPage() {
     } finally {
       setLoading(false);
     }
-  }, [fetchDashboard, loadSettings]);
+  }, [fetchDashboard]);
 
   useEffect(() => {
     load();

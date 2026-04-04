@@ -15,8 +15,8 @@ export function SettingsPage() {
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    loadSettings();
-  }, [loadSettings]);
+    if (Object.keys(settings).length === 0) loadSettings();
+  }, [loadSettings, settings]);
 
   useEffect(() => {
     setForm(settings);
