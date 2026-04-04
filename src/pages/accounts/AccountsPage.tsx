@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { PageHeader } from "@/components/PageHeader";
 import {
@@ -58,10 +58,11 @@ export function AccountsPage() {
     setTypeFilter,
     filteredAccounts,
     overdueCount,
+    accounts: rawAccounts,
   } = useAccountStore();
 
-  const accounts = filteredAccounts();
-  const overdue = overdueCount();
+  const accounts = useMemo(() => filteredAccounts(), [rawAccounts, search, statusFilter, typeFilter]);
+  const overdue = useMemo(() => overdueCount(), [rawAccounts]);
 
   useEffect(() => {
     fetchAccounts();

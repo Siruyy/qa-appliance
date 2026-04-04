@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { PageHeader } from "@/components/PageHeader";
 import {
@@ -52,8 +52,8 @@ type ModalState =
 export function CustomersPage() {
   const navigate = useNavigate();
   const { fetchCustomers, archiveCustomer, restoreCustomer } = useCustomers();
-  const { filters, setFilter, filteredCustomers, loading } = useCustomerStore();
-  const customers = filteredCustomers();
+  const { filters, setFilter, filteredCustomers, loading, customers: rawCustomers } = useCustomerStore();
+  const customers = useMemo(() => filteredCustomers(), [rawCustomers, filters]);
 
   const [modal, setModal] = useState<ModalState>({ type: "none" });
 

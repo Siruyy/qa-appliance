@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { PageHeader } from "@/components/PageHeader";
 import { EmptyState } from "@/components/EmptyState";
 import { TableSkeleton } from "@/components/TableSkeleton";
@@ -63,8 +63,8 @@ export function InventoryPage() {
   const { archiveProduct, restoreProduct, archiveVariant, adjustStock } = useProducts();
   useCategories();
 
-  const { categories, loading, filters, setFilter, filteredProducts } = useProductStore();
-  const products = filteredProducts();
+  const { categories, loading, filters, setFilter, filteredProducts, products: rawProducts } = useProductStore();
+  const products = useMemo(() => filteredProducts(), [rawProducts, filters]);
 
   const [expandedIds, setExpandedIds] = useState<Set<number>>(new Set());
   const [modal, setModal] = useState<ModalState>({ type: "none" });

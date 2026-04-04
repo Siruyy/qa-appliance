@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { PageHeader } from "@/components/PageHeader";
 import { Plus, Search, X, ReceiptText } from "lucide-react";
@@ -33,12 +33,12 @@ import { TableSkeleton } from "@/components/TableSkeleton";
 export function SalesHistoryPage() {
   const navigate = useNavigate();
   const { fetchSales } = useSales();
-  const { filters, setFilter, resetFilters, filteredSales, loading } = useSaleStore();
+  const { filters, setFilter, resetFilters, filteredSales, loading, sales: rawSales } = useSaleStore();
 
   const [selectedSaleId, setSelectedSaleId] = useState<number | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
 
-  const sales = filteredSales();
+  const sales = useMemo(() => filteredSales(), [rawSales, filters]);
 
   const openDetail = (id: number) => {
     setSelectedSaleId(id);
