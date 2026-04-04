@@ -3,4 +3,5 @@ pub mod customers;
 pub mod db;
 pub mod payments;
 pub mod products;
+pub mod reports;
 pub mod sales;
