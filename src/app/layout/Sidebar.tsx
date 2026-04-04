@@ -62,17 +62,17 @@ export function Sidebar() {
     <aside className="flex h-full w-60 shrink-0 flex-col bg-[var(--sidebar)] text-[var(--sidebar-foreground)]">
       {/* Brand */}
       <div className="flex h-14 items-center gap-2 px-4">
-        <div className="flex h-8 w-8 items-center justify-center rounded-md bg-[var(--sidebar-primary)] text-white font-bold text-sm">
+        <div className="flex h-8 w-8 items-center justify-center rounded-md bg-[var(--sidebar-primary)] text-[var(--sidebar-primary-foreground)] font-bold text-sm">
           QA
         </div>
-        <span className="text-base font-semibold text-white">
+        <span className="text-base font-semibold text-[var(--sidebar-accent-foreground)]">
           Quality Appliance
         </span>
       </div>
 
       {/* Main Navigation */}
       <nav className="flex-1 space-y-1 overflow-y-auto px-3 pt-4">
-        <p className="mb-2 px-3 text-xs font-semibold uppercase tracking-wider text-slate-400">
+        <p className="mb-2 px-3 text-xs font-semibold uppercase tracking-wider text-[var(--sidebar-foreground)]/60">
           Main
         </p>
         {mainNav.map((item) => (
@@ -81,7 +81,7 @@ export function Sidebar() {
 
         <div className="my-4" />
 
-        <p className="mb-2 px-3 text-xs font-semibold uppercase tracking-wider text-slate-400">
+        <p className="mb-2 px-3 text-xs font-semibold uppercase tracking-wider text-[var(--sidebar-foreground)]/60">
           System
         </p>
         {systemNav.map((item) => (

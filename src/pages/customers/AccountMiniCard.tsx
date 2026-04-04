@@ -32,7 +32,7 @@ export function AccountMiniCard({ account, onClick }: Props) {
               : "Open credit (no schedule)"}
           </p>
         </div>
-        <Badge className={statusColors[account.status] ?? "bg-gray-100 text-gray-700"}>
+        <Badge className={statusColors[account.status] ?? "bg-muted text-muted-foreground"}>
           {account.status.toUpperCase()}
         </Badge>
       </div>
