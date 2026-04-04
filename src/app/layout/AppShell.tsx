@@ -1,3 +1,7 @@
+import { useEffect, useRef } from "react";
+import { toast } from "sonner";
+import { invoke } from "@tauri-apps/api/core";
+
 import { Sidebar } from "./Sidebar";
 import { TopBar } from "./TopBar";
 
@@ -6,6 +10,23 @@ interface AppShellProps {
 }
 
 export function AppShell({ children }: AppShellProps) {
+  const penaltyChecked = useRef(false);
+
+  useEffect(() => {
+    if (penaltyChecked.current) return;
+    penaltyChecked.current = true;
+
+    invoke<number>("run_penalty_check")
+      .then((count) => {
+        if (count > 0) {
+          toast.warning(`${count} penalty/penalties applied to overdue accounts`);
+        }
+      })
+      .catch((err) => {
+        console.error("Penalty check failed:", err);
+      });
+  }, []);
+
   return (
     <div className="flex h-screen overflow-hidden">
       <Sidebar />
