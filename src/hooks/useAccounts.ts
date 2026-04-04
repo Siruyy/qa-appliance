@@ -1,4 +1,4 @@
-import { invoke } from "@tauri-apps/api/core";
+import { invoke } from "@/lib/invoke";
 import { useAccountStore } from "@/stores/accountStore";
 import type { AccountDetail, InstallmentAccount, PenaltyApplied } from "@/types/account";
 import type { PaginatedResult } from "@/types/shared";

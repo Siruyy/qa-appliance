@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import type { AppSettings } from "@/types/settings";
-import { invoke } from "@tauri-apps/api/core";
+import { invoke } from "@/lib/invoke";
 
 const defaultSettings: AppSettings = {
   default_interest_rate: "5",

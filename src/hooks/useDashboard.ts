@@ -1,4 +1,4 @@
-import { invoke } from "@tauri-apps/api/core";
+import { invoke } from "@/lib/invoke";
 import type { DashboardData } from "@/types/report";
 import { useSettingsStore } from "@/stores/settingsStore";
 

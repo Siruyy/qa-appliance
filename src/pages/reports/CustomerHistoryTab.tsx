@@ -22,7 +22,7 @@ import { formatDate } from "@/lib/formatters";
 import { useCurrency } from "@/hooks/useCurrency";
 import type { CustomerHistoryReport } from "@/types/report";
 import { toast } from "sonner";
-import { invoke } from "@tauri-apps/api/core";
+import { invoke } from "@/lib/invoke";
 
 interface CustomerOption {
   id: number;

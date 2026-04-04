@@ -1,4 +1,4 @@
-import { invoke } from "@tauri-apps/api/core";
+import { invoke } from "@/lib/invoke";
 import { usePaymentStore } from "@/stores/paymentStore";
 import type { Payment, RecordPaymentPayload } from "@/types/payment";
 import type { PaginatedResult } from "@/types/shared";
