@@ -39,6 +39,13 @@ export interface CreateProductPayload {
   description?: string;
 }
 
+export interface UpdateProductPayload {
+  id: number;
+  name?: string;
+  category_id?: number;
+  description?: string;
+}
+
 export interface CreateVariantPayload {
   product_id: number;
   sku?: string;
@@ -46,5 +53,15 @@ export interface CreateVariantPayload {
   cost_price: number;
   selling_price: number;
   stock_qty: number;
+  low_stock_threshold?: number;
+}
+
+export interface UpdateVariantPayload {
+  id: number;
+  sku?: string;
+  attributes?: Record<string, string>;
+  cost_price?: number;
+  selling_price?: number;
+  stock_qty?: number;
   low_stock_threshold?: number;
 }
