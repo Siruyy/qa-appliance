@@ -10,7 +10,9 @@ A standalone desktop management system for a physical appliance store (Philippin
 
 ## Git Workflow
 
-**Branch:** work on `main` directly for solo development.
+**Branches:**
+- `develop` — active development branch. **All work happens here.**
+- `main` — stable/release branch. Only merge from `develop` when a phase or milestone is complete.
 
 After completing any meaningful unit of work (a feature, a bug fix, a new Tauri command, a new page), commit before moving on. Don't batch unrelated changes into a single commit.
 
