@@ -1,6 +1,7 @@
 import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { PageHeader } from "@/components/PageHeader";
+import { Pagination } from "@/components/Pagination";
 import { Plus, Search, X, ReceiptText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -33,7 +34,18 @@ import { TableSkeleton } from "@/components/TableSkeleton";
 export function SalesHistoryPage() {
   const navigate = useNavigate();
   const { fetchSales } = useSales();
-  const { filters, setFilter, resetFilters, filteredSales, loading, sales: rawSales } = useSaleStore();
+  const {
+    filters,
+    setFilter,
+    resetFilters,
+    filteredSales,
+    loading,
+    sales: rawSales,
+    page,
+    pageSize,
+    totalCount,
+    setPage,
+  } = useSaleStore();
 
   const [selectedSaleId, setSelectedSaleId] = useState<number | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
@@ -196,6 +208,12 @@ export function SalesHistoryPage() {
         onOpenChange={setDetailOpen}
         saleId={selectedSaleId}
         onVoided={fetchSales}
+      />
+      <Pagination
+        page={page}
+        pageSize={pageSize}
+        total={totalCount}
+        onPageChange={setPage}
       />
     </div>
   );

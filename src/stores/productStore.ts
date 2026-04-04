@@ -12,11 +12,15 @@ interface ProductState {
   categories: Category[];
   loading: boolean;
   filters: ProductFilters;
+  page: number;
+  pageSize: number;
   setProducts: (products: Product[]) => void;
   setCategories: (categories: Category[]) => void;
   setLoading: (loading: boolean) => void;
   setFilter: <K extends keyof ProductFilters>(key: K, value: ProductFilters[K]) => void;
   resetFilters: () => void;
+  setPage: (page: number) => void;
+  setPageSize: (pageSize: number) => void;
   filteredProducts: () => Product[];
 }
 
@@ -31,12 +35,16 @@ export const useProductStore = create<ProductState>((set, get) => ({
   categories: [],
   loading: false,
   filters: { ...defaultFilters },
+  page: 1,
+  pageSize: 50,
   setProducts: (products) => set({ products }),
   setCategories: (categories) => set({ categories }),
   setLoading: (loading) => set({ loading }),
   setFilter: (key, value) =>
-    set((state) => ({ filters: { ...state.filters, [key]: value } })),
-  resetFilters: () => set({ filters: { ...defaultFilters } }),
+    set((state) => ({ filters: { ...state.filters, [key]: value }, page: 1 })),
+  resetFilters: () => set({ filters: { ...defaultFilters }, page: 1 }),
+  setPage: (page) => set({ page }),
+  setPageSize: (pageSize) => set({ pageSize, page: 1 }),
   filteredProducts: () => {
     const { products, filters } = get();
     return products.filter((p) => {

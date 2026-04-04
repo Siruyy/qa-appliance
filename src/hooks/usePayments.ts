@@ -1,6 +1,7 @@
 import { invoke } from "@tauri-apps/api/core";
 import { usePaymentStore } from "@/stores/paymentStore";
 import type { Payment, RecordPaymentPayload } from "@/types/payment";
+import type { PaginatedResult } from "@/types/shared";
 
 export function usePayments() {
   const store = usePaymentStore();
@@ -13,14 +14,17 @@ export function usePayments() {
   ) => {
     store.setLoading(true);
     try {
-      const payments = await invoke<Payment[]>("get_payments", {
+      const result = await invoke<PaginatedResult<Payment>>("get_payments", {
         fromDate: fromDate || null,
         toDate: toDate || null,
         customerId: customerId ?? null,
         search: search || null,
+        limit: store.pageSize,
+        offset: (store.page - 1) * store.pageSize,
       });
-      store.setPayments(payments);
-      return payments;
+      store.setPayments(result.items);
+      store.setTotalCount(result.total);
+      return result.items;
     } finally {
       store.setLoading(false);
     }

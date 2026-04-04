@@ -3,6 +3,7 @@ use tauri::State;
 
 use crate::db::connection::DbState;
 use crate::models::customer::*;
+use crate::models::PaginatedResult;
 
 // ────────────────────────────────────────────
 // Get Customers (list with computed fields)
@@ -13,10 +14,45 @@ pub fn get_customers(
     db: State<'_, DbState>,
     include_archived: bool,
     search: Option<String>,
-) -> Result<Vec<Customer>, String> {
+    limit: Option<u32>,
+    offset: Option<u32>,
+) -> Result<PaginatedResult<Customer>, String> {
     let conn = db.0.lock().map_err(|e| e.to_string())?;
 
-    let mut sql = String::from(
+    // Build WHERE conditions
+    let mut where_parts: Vec<String> = vec!["1=1".to_string()];
+    let search_val = search.as_deref().map(|s| s.trim().to_string()).filter(|s| !s.is_empty());
+
+    if !include_archived {
+        where_parts.push("c.is_active = 1".to_string());
+    }
+    if search_val.is_some() {
+        where_parts.push("(c.name LIKE ?1 OR c.phone LIKE ?1)".to_string());
+    }
+    let where_clause = where_parts.join(" AND ");
+
+    // COUNT query
+    let count_sql = format!(
+        "SELECT COUNT(*) FROM customers c WHERE {}",
+        where_clause
+    );
+    let total: u64 = if let Some(ref q) = search_val {
+        let like_val = format!("%{}%", q);
+        conn.query_row(&count_sql, rusqlite::params![like_val], |row| row.get(0))
+            .unwrap_or(0)
+    } else {
+        conn.query_row(&count_sql, [], |row| row.get(0))
+            .unwrap_or(0)
+    };
+
+    // Build pagination clause
+    let pagination = match limit {
+        Some(l) => format!("LIMIT {} OFFSET {}", l, offset.unwrap_or(0)),
+        None => String::new(),
+    };
+
+    // Data query
+    let sql = format!(
         "SELECT c.id, c.name, c.phone, c.address, c.notes, c.is_active,
                 COALESCE(acc.open_count, 0) AS open_accounts_count,
                 COALESCE(acc.total_bal, 0.0) AS total_balance,
@@ -30,24 +66,15 @@ pub fn get_customers(
            WHERE status = 'open'
            GROUP BY customer_id
          ) acc ON acc.customer_id = c.id
-         WHERE 1=1",
+         WHERE {}
+         ORDER BY c.name {}",
+        where_clause, pagination
     );
 
     let mut param_values: Vec<Box<dyn rusqlite::types::ToSql>> = Vec::new();
-
-    if !include_archived {
-        sql.push_str(" AND c.is_active = 1");
+    if let Some(ref q) = search_val {
+        param_values.push(Box::new(format!("%{}%", q)));
     }
-
-    if let Some(ref q) = search {
-        let trimmed = q.trim();
-        if !trimmed.is_empty() {
-            sql.push_str(" AND (c.name LIKE ?1 OR c.phone LIKE ?1)");
-            param_values.push(Box::new(format!("%{}%", trimmed)));
-        }
-    }
-
-    sql.push_str(" ORDER BY c.name");
 
     let mut stmt = conn.prepare(&sql).map_err(|e| e.to_string())?;
     let params_ref: Vec<&dyn rusqlite::types::ToSql> =
@@ -70,11 +97,11 @@ pub fn get_customers(
         })
         .map_err(|e| e.to_string())?;
 
-    let mut customers = Vec::new();
-    for row in rows {
-        customers.push(row.map_err(|e| e.to_string())?);
-    }
-    Ok(customers)
+    let customers: Vec<Customer> = rows
+        .filter_map(|r| r.ok())
+        .collect();
+
+    Ok(PaginatedResult { items: customers, total })
 }
 
 // ────────────────────────────────────────────

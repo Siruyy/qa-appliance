@@ -10,11 +10,17 @@ interface AccountState {
   search: string;
   statusFilter: StatusFilter;
   typeFilter: TypeFilter;
+  page: number;
+  pageSize: number;
+  totalCount: number;
   setAccounts: (accounts: InstallmentAccount[]) => void;
   setLoading: (loading: boolean) => void;
   setSearch: (search: string) => void;
   setStatusFilter: (filter: StatusFilter) => void;
   setTypeFilter: (filter: TypeFilter) => void;
+  setPage: (page: number) => void;
+  setPageSize: (pageSize: number) => void;
+  setTotalCount: (totalCount: number) => void;
   filteredAccounts: () => InstallmentAccount[];
   overdueCount: () => number;
 }
@@ -25,11 +31,17 @@ export const useAccountStore = create<AccountState>((set, get) => ({
   search: "",
   statusFilter: "all",
   typeFilter: "all",
+  page: 1,
+  pageSize: 50,
+  totalCount: 0,
   setAccounts: (accounts) => set({ accounts }),
   setLoading: (loading) => set({ loading }),
-  setSearch: (search) => set({ search }),
-  setStatusFilter: (statusFilter) => set({ statusFilter }),
-  setTypeFilter: (typeFilter) => set({ typeFilter }),
+  setSearch: (search) => set({ search, page: 1 }),
+  setStatusFilter: (statusFilter) => set({ statusFilter, page: 1 }),
+  setTypeFilter: (typeFilter) => set({ typeFilter, page: 1 }),
+  setPage: (page) => set({ page }),
+  setPageSize: (pageSize) => set({ pageSize, page: 1 }),
+  setTotalCount: (totalCount) => set({ totalCount }),
   filteredAccounts: () => {
     const { accounts, search, statusFilter, typeFilter } = get();
     return accounts.filter((a) => {

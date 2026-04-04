@@ -2,6 +2,7 @@ use tauri::State;
 
 use crate::db::connection::DbState;
 use crate::models::payment::{Payment, RecordPaymentPayload};
+use crate::models::PaginatedResult;
 
 #[tauri::command]
 pub fn get_payments(
@@ -10,35 +11,29 @@ pub fn get_payments(
     to_date: Option<String>,
     customer_id: Option<i64>,
     search: Option<String>,
-) -> Result<Vec<Payment>, String> {
+    limit: Option<u32>,
+    offset: Option<u32>,
+) -> Result<PaginatedResult<Payment>, String> {
     let conn = db.0.lock().map_err(|e| e.to_string())?;
 
     let mut conditions: Vec<String> = Vec::new();
-    let mut params: Vec<Box<dyn rusqlite::types::ToSql>> = Vec::new();
 
     if let Some(ref from) = from_date {
         if !from.is_empty() {
-            conditions.push("pay.payment_date >= ?".to_string());
-            params.push(Box::new(from.clone()));
+            conditions.push(format!("pay.payment_date >= ?{}", conditions.len() + 1));
         }
     }
-
     if let Some(ref to) = to_date {
         if !to.is_empty() {
-            conditions.push("pay.payment_date <= ?".to_string());
-            params.push(Box::new(format!("{}T23:59:59", to)));
+            conditions.push(format!("pay.payment_date <= ?{}", conditions.len() + 1));
         }
     }
-
-    if let Some(cid) = customer_id {
-        conditions.push("ia.customer_id = ?".to_string());
-        params.push(Box::new(cid));
+    if customer_id.is_some() {
+        conditions.push(format!("ia.customer_id = ?{}", conditions.len() + 1));
     }
-
     if let Some(ref s) = search {
         if !s.is_empty() {
-            conditions.push("c.name LIKE ?".to_string());
-            params.push(Box::new(format!("%{}%", s)));
+            conditions.push(format!("c.name LIKE ?{}", conditions.len() + 1));
         }
     }
 
@@ -46,6 +41,44 @@ pub fn get_payments(
         String::new()
     } else {
         format!("WHERE {}", conditions.join(" AND "))
+    };
+
+    // Build params in insertion order for reuse
+    let make_params = || -> Vec<Box<dyn rusqlite::types::ToSql>> {
+        let mut p: Vec<Box<dyn rusqlite::types::ToSql>> = Vec::new();
+        if let Some(ref from) = from_date {
+            if !from.is_empty() { p.push(Box::new(from.clone())); }
+        }
+        if let Some(ref to) = to_date {
+            if !to.is_empty() { p.push(Box::new(format!("{}T23:59:59", to))); }
+        }
+        if let Some(cid) = customer_id {
+            p.push(Box::new(cid));
+        }
+        if let Some(ref s) = search {
+            if !s.is_empty() { p.push(Box::new(format!("%{}%", s))); }
+        }
+        p
+    };
+
+    // COUNT query
+    let count_sql = format!(
+        "SELECT COUNT(DISTINCT pay.id)
+         FROM payments pay
+         JOIN installment_accounts ia ON ia.id = pay.account_id
+         JOIN customers c ON c.id = ia.customer_id
+         {}",
+        where_clause
+    );
+    let count_p = make_params();
+    let count_refs: Vec<&dyn rusqlite::types::ToSql> = count_p.iter().map(|p| p.as_ref()).collect();
+    let total: u64 = conn
+        .query_row(&count_sql, count_refs.as_slice(), |row| row.get(0))
+        .unwrap_or(0);
+
+    let pagination = match limit {
+        Some(l) => format!("LIMIT {} OFFSET {}", l, offset.unwrap_or(0)),
+        None => String::new(),
     };
 
     let sql = format!(
@@ -64,12 +97,13 @@ pub fn get_payments(
          LEFT JOIN products p ON p.id = v.product_id
          {}
          GROUP BY pay.id
-         ORDER BY pay.payment_date DESC, pay.id DESC",
-        where_clause
+         ORDER BY pay.payment_date DESC, pay.id DESC {}",
+        where_clause, pagination
     );
 
+    let data_p = make_params();
     let mut stmt = conn.prepare(&sql).map_err(|e| e.to_string())?;
-    let param_refs: Vec<&dyn rusqlite::types::ToSql> = params.iter().map(|p| p.as_ref()).collect();
+    let param_refs: Vec<&dyn rusqlite::types::ToSql> = data_p.iter().map(|p| p.as_ref()).collect();
 
     let rows = stmt
         .query_map(param_refs.as_slice(), |row| {
@@ -89,7 +123,7 @@ pub fn get_payments(
         .map_err(|e| e.to_string())?;
 
     let payments: Vec<Payment> = rows.filter_map(|r| r.ok()).collect();
-    Ok(payments)
+    Ok(PaginatedResult { items: payments, total })
 }
 
 #[tauri::command]

@@ -7,25 +7,38 @@ import type {
   CreateCustomerPayload,
   UpdateCustomerPayload,
 } from "@/types/customer";
+import type { PaginatedResult } from "@/types/shared";
 
 export function useCustomers() {
-  const { setCustomers, setLoading } = useCustomerStore();
+  const { setCustomers, setLoading, setTotalCount, filters, page, pageSize } =
+    useCustomerStore();
 
-  const fetchCustomers = useCallback(
-    async (includeArchived = false, search?: string) => {
-      setLoading(true);
-      try {
-        const data = await invoke<Customer[]>("get_customers", {
-          includeArchived,
-          search: search || null,
-        });
-        setCustomers(data);
-      } finally {
-        setLoading(false);
-      }
-    },
-    [setCustomers, setLoading]
-  );
+  const fetchCustomers = useCallback(async () => {
+    setLoading(true);
+    try {
+      const { items, total } = await invoke<PaginatedResult<Customer>>(
+        "get_customers",
+        {
+          includeArchived: filters.status !== "active",
+          search: filters.search || null,
+          limit: pageSize,
+          offset: (page - 1) * pageSize,
+        }
+      );
+      setCustomers(items);
+      setTotalCount(total);
+    } finally {
+      setLoading(false);
+    }
+  }, [
+    filters.search,
+    filters.status,
+    page,
+    pageSize,
+    setCustomers,
+    setLoading,
+    setTotalCount,
+  ]);
 
   useEffect(() => {
     fetchCustomers();

@@ -2,6 +2,7 @@ use tauri::State;
 
 use crate::db::connection::DbState;
 use crate::models::sale::*;
+use crate::models::PaginatedResult;
 
 /// List sales with optional search and date range filtering
 #[tauri::command]
@@ -12,37 +13,38 @@ pub fn get_sales(
     date_from: Option<String>,
     date_to: Option<String>,
     include_voided: Option<bool>,
-) -> Result<Vec<Sale>, String> {
+    limit: Option<u32>,
+    offset: Option<u32>,
+) -> Result<PaginatedResult<Sale>, String> {
     let conn = db.0.lock().map_err(|e| e.to_string())?;
 
     let mut conditions = Vec::new();
-    let mut params: Vec<Box<dyn rusqlite::types::ToSql>> = Vec::new();
 
     if include_voided != Some(true) {
         conditions.push("s.status = 'completed'".to_string());
     }
 
+    // Collect filter values as strings for reuse in both COUNT and data queries
+    let mut filter_vals: Vec<String> = Vec::new();
+
     if let Some(ref q) = search {
         conditions.push("(c.name LIKE ?1 OR CAST(s.id AS TEXT) LIKE ?1)".to_string());
-        params.push(Box::new(format!("%{}%", q)));
+        filter_vals.push(format!("%{}%", q));
     }
-
     if let Some(ref pt) = payment_type {
-        let idx = params.len() + 1;
+        let idx = filter_vals.len() + 1;
         conditions.push(format!("s.payment_type = ?{}", idx));
-        params.push(Box::new(pt.clone()));
+        filter_vals.push(pt.clone());
     }
-
     if let Some(ref from) = date_from {
-        let idx = params.len() + 1;
+        let idx = filter_vals.len() + 1;
         conditions.push(format!("s.sale_date >= ?{}", idx));
-        params.push(Box::new(from.clone()));
+        filter_vals.push(from.clone());
     }
-
     if let Some(ref to) = date_to {
-        let idx = params.len() + 1;
+        let idx = filter_vals.len() + 1;
         conditions.push(format!("s.sale_date <= ?{}", idx));
-        params.push(Box::new(to.clone()));
+        filter_vals.push(to.clone());
     }
 
     let where_clause = if conditions.is_empty() {
@@ -51,17 +53,43 @@ pub fn get_sales(
         format!("WHERE {}", conditions.join(" AND "))
     };
 
+    // COUNT query
+    let count_sql = format!(
+        "SELECT COUNT(*) FROM sales s LEFT JOIN customers c ON s.customer_id = c.id {}",
+        where_clause
+    );
+    let count_params: Vec<Box<dyn rusqlite::types::ToSql>> = filter_vals
+        .iter()
+        .map(|v| Box::new(v.clone()) as Box<dyn rusqlite::types::ToSql>)
+        .collect();
+    let count_refs: Vec<&dyn rusqlite::types::ToSql> =
+        count_params.iter().map(|p| p.as_ref()).collect();
+    let total: u64 = conn
+        .query_row(&count_sql, count_refs.as_slice(), |row| row.get(0))
+        .unwrap_or(0);
+
+    // Pagination clause
+    let pagination = match limit {
+        Some(l) => format!("LIMIT {} OFFSET {}", l, offset.unwrap_or(0)),
+        None => String::new(),
+    };
+
     let sql = format!(
         "SELECT s.id, s.customer_id, s.sale_date, s.subtotal, s.discount, s.total,
                 s.payment_type, s.status, s.notes, s.created_at,
                 c.name as customer_name
          FROM sales s
          LEFT JOIN customers c ON s.customer_id = c.id
-         {} ORDER BY s.sale_date DESC, s.id DESC",
-        where_clause
+         {} ORDER BY s.sale_date DESC, s.id DESC {}",
+        where_clause, pagination
     );
 
-    let param_refs: Vec<&dyn rusqlite::types::ToSql> = params.iter().map(|p| p.as_ref()).collect();
+    let data_params: Vec<Box<dyn rusqlite::types::ToSql>> = filter_vals
+        .iter()
+        .map(|v| Box::new(v.clone()) as Box<dyn rusqlite::types::ToSql>)
+        .collect();
+    let param_refs: Vec<&dyn rusqlite::types::ToSql> =
+        data_params.iter().map(|p| p.as_ref()).collect();
     let mut stmt = conn.prepare(&sql).map_err(|e| e.to_string())?;
 
     let rows = stmt
@@ -83,7 +111,7 @@ pub fn get_sales(
         .map_err(|e| e.to_string())?;
 
     let sales: Vec<Sale> = rows.filter_map(|r| r.ok()).collect();
-    Ok(sales)
+    Ok(PaginatedResult { items: sales, total })
 }
 
 /// Get full sale details with items and optional installment account

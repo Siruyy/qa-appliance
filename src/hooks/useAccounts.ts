@@ -1,6 +1,7 @@
 import { invoke } from "@tauri-apps/api/core";
 import { useAccountStore } from "@/stores/accountStore";
 import type { AccountDetail, InstallmentAccount, PenaltyApplied } from "@/types/account";
+import type { PaginatedResult } from "@/types/shared";
 
 export function useAccounts() {
   const store = useAccountStore();
@@ -12,13 +13,19 @@ export function useAccounts() {
   ) => {
     store.setLoading(true);
     try {
-      const accounts = await invoke<InstallmentAccount[]>("get_accounts", {
-        statusFilter: statusFilter === "all" ? null : statusFilter,
-        accountType: accountType === "all" ? null : accountType,
-        search: search || null,
-      });
-      store.setAccounts(accounts);
-      return accounts;
+      const result = await invoke<PaginatedResult<InstallmentAccount>>(
+        "get_accounts",
+        {
+          statusFilter: statusFilter === "all" ? null : (statusFilter ?? null),
+          accountType: accountType === "all" ? null : (accountType ?? null),
+          search: search || null,
+          limit: store.pageSize,
+          offset: (store.page - 1) * store.pageSize,
+        }
+      );
+      store.setAccounts(result.items);
+      store.setTotalCount(result.total);
+      return result.items;
     } finally {
       store.setLoading(false);
     }

@@ -4,6 +4,7 @@ use crate::db::connection::DbState;
 use crate::models::account::{
     AccountDetail, AccountPayment, InstallmentAccount, PaymentScheduleEntry, PenaltyApplied,
 };
+use crate::models::PaginatedResult;
 use crate::services::penalty;
 
 #[tauri::command]
@@ -12,11 +13,14 @@ pub fn get_accounts(
     status_filter: Option<String>,
     account_type: Option<String>,
     search: Option<String>,
-) -> Result<Vec<InstallmentAccount>, String> {
+    limit: Option<u32>,
+    offset: Option<u32>,
+) -> Result<PaginatedResult<InstallmentAccount>, String> {
     let conn = db.0.lock().map_err(|e| e.to_string())?;
 
     let mut conditions: Vec<String> = Vec::new();
-    let mut params: Vec<Box<dyn rusqlite::types::ToSql>> = Vec::new();
+    // Track string param values so we can rebuild for both COUNT and data queries
+    let mut string_params: Vec<String> = Vec::new();
 
     if let Some(ref status) = status_filter {
         match status.as_str() {
@@ -30,28 +34,24 @@ pub fn get_accounts(
                 );
             }
             _ => {
-                conditions.push("ia.status = ?".to_string());
-                params.push(Box::new(status.clone()));
+                conditions.push(format!("ia.status = ?{}", string_params.len() + 1));
+                string_params.push(status.clone());
             }
         }
     }
 
     if let Some(ref acct_type) = account_type {
         match acct_type.as_str() {
-            "installment" => {
-                conditions.push("ia.has_schedule = 1".to_string());
-            }
-            "utang" => {
-                conditions.push("ia.has_schedule = 0".to_string());
-            }
+            "installment" => conditions.push("ia.has_schedule = 1".to_string()),
+            "utang" => conditions.push("ia.has_schedule = 0".to_string()),
             _ => {}
         }
     }
 
     if let Some(ref s) = search {
         if !s.is_empty() {
-            conditions.push("c.name LIKE ?".to_string());
-            params.push(Box::new(format!("%{}%", s)));
+            conditions.push(format!("c.name LIKE ?{}", string_params.len() + 1));
+            string_params.push(format!("%{}%", s));
         }
     }
 
@@ -59,6 +59,29 @@ pub fn get_accounts(
         String::new()
     } else {
         format!("WHERE {}", conditions.join(" AND "))
+    };
+
+    // COUNT using a lighter query (no product JOINs needed for counting)
+    let count_sql = format!(
+        "SELECT COUNT(DISTINCT ia.id)
+         FROM installment_accounts ia
+         JOIN customers c ON c.id = ia.customer_id
+         {}",
+        where_clause
+    );
+    let count_params: Vec<Box<dyn rusqlite::types::ToSql>> = string_params
+        .iter()
+        .map(|v| Box::new(v.clone()) as Box<dyn rusqlite::types::ToSql>)
+        .collect();
+    let count_refs: Vec<&dyn rusqlite::types::ToSql> =
+        count_params.iter().map(|p| p.as_ref()).collect();
+    let total: u64 = conn
+        .query_row(&count_sql, count_refs.as_slice(), |row| row.get(0))
+        .unwrap_or(0);
+
+    let pagination = match limit {
+        Some(l) => format!("LIMIT {} OFFSET {}", l, offset.unwrap_or(0)),
+        None => String::new(),
     };
 
     let sql = format!(
@@ -88,12 +111,17 @@ pub fn get_accounts(
          GROUP BY ia.id
          ORDER BY
             CASE ia.status WHEN 'open' THEN 0 WHEN 'defaulted' THEN 1 ELSE 2 END,
-            ia.updated_at DESC",
-        where_clause
+            ia.updated_at DESC {}",
+        where_clause, pagination
     );
 
+    let data_params: Vec<Box<dyn rusqlite::types::ToSql>> = string_params
+        .iter()
+        .map(|v| Box::new(v.clone()) as Box<dyn rusqlite::types::ToSql>)
+        .collect();
     let mut stmt = conn.prepare(&sql).map_err(|e| e.to_string())?;
-    let param_refs: Vec<&dyn rusqlite::types::ToSql> = params.iter().map(|p| p.as_ref()).collect();
+    let param_refs: Vec<&dyn rusqlite::types::ToSql> =
+        data_params.iter().map(|p| p.as_ref()).collect();
 
     let rows = stmt
         .query_map(param_refs.as_slice(), |row| {
@@ -124,7 +152,7 @@ pub fn get_accounts(
         .map_err(|e| e.to_string())?;
 
     let accounts: Vec<InstallmentAccount> = rows.filter_map(|r| r.ok()).collect();
-    Ok(accounts)
+    Ok(PaginatedResult { items: accounts, total })
 }
 
 #[tauri::command]
@@ -264,7 +292,8 @@ pub fn get_account_by_id(db: State<DbState>, id: i64) -> Result<AccountDetail, S
 
 #[tauri::command]
 pub fn get_overdue_accounts(db: State<DbState>) -> Result<Vec<InstallmentAccount>, String> {
-    get_accounts(db, Some("overdue".to_string()), None, None)
+    let result = get_accounts(db, Some("overdue".to_string()), None, None, None, None)?;
+    Ok(result.items)
 }
 
 #[tauri::command]

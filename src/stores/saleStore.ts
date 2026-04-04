@@ -24,10 +24,16 @@ interface SaleState {
   sales: Sale[];
   loading: boolean;
   filters: SaleFilters;
+  page: number;
+  pageSize: number;
+  totalCount: number;
   setSales: (sales: Sale[]) => void;
   setLoading: (loading: boolean) => void;
   setFilter: <K extends keyof SaleFilters>(key: K, value: SaleFilters[K]) => void;
   resetFilters: () => void;
+  setPage: (page: number) => void;
+  setPageSize: (pageSize: number) => void;
+  setTotalCount: (totalCount: number) => void;
   filteredSales: () => Sale[];
 
   // Cart (new sale)
@@ -67,12 +73,18 @@ export const useSaleStore = create<SaleState>((set, get) => ({
   sales: [],
   loading: false,
   filters: { ...defaultFilters },
+  page: 1,
+  pageSize: 50,
+  totalCount: 0,
 
   setSales: (sales) => set({ sales }),
   setLoading: (loading) => set({ loading }),
   setFilter: (key, value) =>
-    set((state) => ({ filters: { ...state.filters, [key]: value } })),
-  resetFilters: () => set({ filters: { ...defaultFilters } }),
+    set((state) => ({ filters: { ...state.filters, [key]: value }, page: 1 })),
+  resetFilters: () => set({ filters: { ...defaultFilters }, page: 1 }),
+  setPage: (page) => set({ page }),
+  setPageSize: (pageSize) => set({ pageSize, page: 1 }),
+  setTotalCount: (totalCount) => set({ totalCount }),
 
   filteredSales: () => {
     const { sales, filters } = get();

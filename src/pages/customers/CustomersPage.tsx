@@ -1,6 +1,7 @@
 import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { PageHeader } from "@/components/PageHeader";
+import { Pagination } from "@/components/Pagination";
 import {
   Search,
   Plus,
@@ -51,8 +52,18 @@ type ModalState =
 
 export function CustomersPage() {
   const navigate = useNavigate();
-  const { fetchCustomers, archiveCustomer, restoreCustomer } = useCustomers();
-  const { filters, setFilter, filteredCustomers, loading, customers: rawCustomers } = useCustomerStore();
+  const { archiveCustomer, restoreCustomer } = useCustomers();
+  const {
+    filters,
+    setFilter,
+    filteredCustomers,
+    loading,
+    customers: rawCustomers,
+    page,
+    pageSize,
+    totalCount,
+    setPage,
+  } = useCustomerStore();
   const customers = useMemo(() => filteredCustomers(), [rawCustomers, filters]);
 
   const [modal, setModal] = useState<ModalState>({ type: "none" });
@@ -61,7 +72,6 @@ export function CustomersPage() {
     if (!value) return;
     const status = value as "all" | "active" | "archived";
     setFilter("status", status);
-    fetchCustomers(status !== "active");
   };
 
   const handleArchive = async (id: number) => {
@@ -209,6 +219,13 @@ export function CustomersPage() {
       )}
 
       {/* Modals */}
+      <Pagination
+        page={page}
+        pageSize={pageSize}
+        total={totalCount}
+        onPageChange={setPage}
+      />
+
       {modal.type === "form" && (
         <CustomerFormModal
           customer={modal.customer}

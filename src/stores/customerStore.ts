@@ -10,10 +10,16 @@ interface CustomerState {
   customers: Customer[];
   loading: boolean;
   filters: CustomerFilters;
+  page: number;
+  pageSize: number;
+  totalCount: number;
   setCustomers: (customers: Customer[]) => void;
   setLoading: (loading: boolean) => void;
   setFilter: <K extends keyof CustomerFilters>(key: K, value: CustomerFilters[K]) => void;
   resetFilters: () => void;
+  setPage: (page: number) => void;
+  setPageSize: (pageSize: number) => void;
+  setTotalCount: (totalCount: number) => void;
   filteredCustomers: () => Customer[];
 }
 
@@ -26,11 +32,17 @@ export const useCustomerStore = create<CustomerState>((set, get) => ({
   customers: [],
   loading: false,
   filters: { ...defaultFilters },
+  page: 1,
+  pageSize: 50,
+  totalCount: 0,
   setCustomers: (customers) => set({ customers }),
   setLoading: (loading) => set({ loading }),
   setFilter: (key, value) =>
-    set((state) => ({ filters: { ...state.filters, [key]: value } })),
-  resetFilters: () => set({ filters: { ...defaultFilters } }),
+    set((state) => ({ filters: { ...state.filters, [key]: value }, page: 1 })),
+  resetFilters: () => set({ filters: { ...defaultFilters }, page: 1 }),
+  setPage: (page) => set({ page }),
+  setPageSize: (pageSize) => set({ pageSize, page: 1 }),
+  setTotalCount: (totalCount) => set({ totalCount }),
   filteredCustomers: () => {
     const { customers, filters } = get();
     return customers.filter((c) => {

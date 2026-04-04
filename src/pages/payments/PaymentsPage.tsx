@@ -4,6 +4,7 @@ import { CreditCard, Search } from "lucide-react";
 
 import { usePayments } from "@/hooks/usePayments";
 import { usePaymentStore } from "@/stores/paymentStore";
+import { Pagination } from "@/components/Pagination";
 import { formatDate } from "@/lib/formatters";
 import { useCurrency } from "@/hooks/useCurrency";
 
@@ -38,12 +39,16 @@ export function PaymentsPage() {
     setDateTo,
     filteredPayments,
     totalShown,
+    page,
+    pageSize,
+    totalCount,
+    setPage,
   } = usePaymentStore();
 
   useEffect(() => {
-    fetchPayments(dateFrom || undefined, dateTo || undefined);
+    fetchPayments(dateFrom || undefined, dateTo || undefined, undefined, search || undefined);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [dateFrom, dateTo]);
+  }, [page, pageSize, dateFrom, dateTo, search]);
 
   const payments = filteredPayments();
   const total = totalShown();
@@ -151,6 +156,12 @@ export function PaymentsPage() {
           </TableBody>
         </Table>
       </div>
+      <Pagination
+        page={page}
+        pageSize={pageSize}
+        total={totalCount}
+        onPageChange={setPage}
+      />
     </div>
   );
 }

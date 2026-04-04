@@ -3,6 +3,7 @@ use tauri::State;
 
 use crate::db::connection::DbState;
 use crate::models::product::*;
+use crate::models::PaginatedResult;
 
 // ────────────────────────────────────────────
 // Categories
@@ -150,52 +151,90 @@ fn row_to_variant(row: &rusqlite::Row) -> rusqlite::Result<ProductVariant> {
 }
 
 #[tauri::command]
-pub fn get_products(db: State<'_, DbState>) -> Result<Vec<Product>, String> {
+pub fn get_products(
+    db: State<'_, DbState>,
+    limit: Option<u32>,
+    offset: Option<u32>,
+) -> Result<PaginatedResult<Product>, String> {
     let conn = db.0.lock().map_err(|e| e.to_string())?;
 
+    let total: u64 = conn
+        .query_row("SELECT COUNT(*) FROM products", [], |row| row.get(0))
+        .unwrap_or(0);
+
+    let pagination = match limit {
+        Some(l) => format!("LIMIT {} OFFSET {}", l, offset.unwrap_or(0)),
+        None => String::new(),
+    };
+
     let mut stmt = conn
-        .prepare(
+        .prepare(&format!(
             "SELECT p.id, p.category_id, p.name, p.description, p.is_active,
                     p.created_at, p.updated_at, c.name AS category_name
              FROM products p
              LEFT JOIN categories c ON c.id = p.category_id
-             ORDER BY p.name",
-        )
+             ORDER BY p.name {}",
+            pagination
+        ))
         .map_err(|e| e.to_string())?;
 
-    let products: Vec<Product> = stmt
+    let mut products: Vec<Product> = stmt
         .query_map([], |row| row_to_product(row))
         .map_err(|e| e.to_string())?
         .collect::<Result<Vec<_>, _>>()
         .map_err(|e| e.to_string())?;
 
-    // Fetch all active variants grouped by product
-    let mut v_stmt = conn
-        .prepare(
-            "SELECT id, product_id, sku, attributes, cost_price, selling_price,
-                    stock_qty, low_stock_threshold, is_active, created_at, updated_at
-             FROM product_variants
-             ORDER BY product_id, id",
-        )
-        .map_err(|e| e.to_string())?;
+    // Fetch variants — only for this page's product IDs when paginated
+    if !products.is_empty() {
+        let variants: Vec<ProductVariant> = if limit.is_some() {
+            let id_list = products
+                .iter()
+                .map(|p| p.id.to_string())
+                .collect::<Vec<_>>()
+                .join(", ");
+            let mut v_stmt = conn
+                .prepare(&format!(
+                    "SELECT id, product_id, sku, attributes, cost_price, selling_price,
+                            stock_qty, low_stock_threshold, is_active, created_at, updated_at
+                     FROM product_variants
+                     WHERE product_id IN ({})
+                     ORDER BY product_id, id",
+                    id_list
+                ))
+                .map_err(|e| e.to_string())?;
+            let result = v_stmt
+                .query_map([], |row| row_to_variant(row))
+                .map_err(|e| e.to_string())?
+                .collect::<Result<Vec<_>, _>>()
+                .map_err(|e| e.to_string())?;
+            result
+        } else {
+            let mut v_stmt = conn
+                .prepare(
+                    "SELECT id, product_id, sku, attributes, cost_price, selling_price,
+                            stock_qty, low_stock_threshold, is_active, created_at, updated_at
+                     FROM product_variants
+                     ORDER BY product_id, id",
+                )
+                .map_err(|e| e.to_string())?;
+            let result = v_stmt
+                .query_map([], |row| row_to_variant(row))
+                .map_err(|e| e.to_string())?
+                .collect::<Result<Vec<_>, _>>()
+                .map_err(|e| e.to_string())?;
+            result
+        };
 
-    let variants: Vec<ProductVariant> = v_stmt
-        .query_map([], |row| row_to_variant(row))
-        .map_err(|e| e.to_string())?
-        .collect::<Result<Vec<_>, _>>()
-        .map_err(|e| e.to_string())?;
-
-    // Attach variants to products
-    let mut products = products;
-    for product in &mut products {
-        product.variants = variants
-            .iter()
-            .filter(|v| v.product_id == product.id)
-            .cloned()
-            .collect();
+        for product in &mut products {
+            product.variants = variants
+                .iter()
+                .filter(|v| v.product_id == product.id)
+                .cloned()
+                .collect();
+        }
     }
 
-    Ok(products)
+    Ok(PaginatedResult { items: products, total })
 }
 
 #[tauri::command]

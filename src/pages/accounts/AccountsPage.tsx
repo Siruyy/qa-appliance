@@ -1,6 +1,7 @@
 import { useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { PageHeader } from "@/components/PageHeader";
+import { Pagination } from "@/components/Pagination";
 import {
   Search,
   AlertTriangle,
@@ -59,15 +60,23 @@ export function AccountsPage() {
     filteredAccounts,
     overdueCount,
     accounts: rawAccounts,
+    page,
+    pageSize,
+    totalCount,
+    setPage,
   } = useAccountStore();
 
   const accounts = useMemo(() => filteredAccounts(), [rawAccounts, search, statusFilter, typeFilter]);
   const overdue = useMemo(() => overdueCount(), [rawAccounts]);
 
   useEffect(() => {
-    fetchAccounts();
+    fetchAccounts(
+      statusFilter === "all" ? undefined : statusFilter,
+      typeFilter === "all" ? undefined : typeFilter,
+      search || undefined
+    );
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [page, pageSize, statusFilter, typeFilter, search]);
 
   const handleStatusChange = (value: string | null) => {
     if (!value) return;
@@ -216,6 +225,12 @@ export function AccountsPage() {
           </TableBody>
         </Table>
       </div>
+      <Pagination
+        page={page}
+        pageSize={pageSize}
+        total={totalCount}
+        onPageChange={setPage}
+      />
     </div>
   );
 }

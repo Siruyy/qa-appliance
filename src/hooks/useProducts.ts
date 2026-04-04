@@ -9,6 +9,7 @@ import type {
   UpdateVariantPayload,
   ProductVariant,
 } from "@/types/product";
+import type { PaginatedResult } from "@/types/shared";
 
 export function useProducts() {
   const { setProducts, setLoading } = useProductStore();
@@ -16,8 +17,11 @@ export function useProducts() {
   const fetchProducts = useCallback(async () => {
     setLoading(true);
     try {
-      const data = await invoke<Product[]>("get_products");
-      setProducts(data);
+      const { items } = await invoke<PaginatedResult<Product>>("get_products", {
+        limit: null,
+        offset: null,
+      });
+      setProducts(items);
     } finally {
       setLoading(false);
     }

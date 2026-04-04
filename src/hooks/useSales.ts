@@ -2,28 +2,44 @@ import { useCallback, useEffect } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { toast } from "sonner";
 import type { Sale, SaleDetail, CreateSalePayload } from "@/types/sale";
+import type { PaginatedResult } from "@/types/shared";
 import { useSaleStore } from "@/stores/saleStore";
 
 export function useSales() {
-  const { setSales, setLoading, filters } = useSaleStore();
+  const { setSales, setLoading, setTotalCount, filters, page, pageSize } =
+    useSaleStore();
 
   const fetchSales = useCallback(async () => {
     setLoading(true);
     try {
-      const sales = await invoke<Sale[]>("get_sales", {
+      const result = await invoke<PaginatedResult<Sale>>("get_sales", {
         search: filters.search || null,
         paymentType: filters.paymentType === "all" ? null : filters.paymentType,
         dateFrom: filters.dateFrom || null,
         dateTo: filters.dateTo || null,
         includeVoided: filters.includeVoided,
+        limit: pageSize,
+        offset: (page - 1) * pageSize,
       });
-      setSales(sales);
+      setSales(result.items);
+      setTotalCount(result.total);
     } catch (err) {
       toast.error(String(err));
     } finally {
       setLoading(false);
     }
-  }, [filters.search, filters.paymentType, filters.dateFrom, filters.dateTo, filters.includeVoided, setSales, setLoading]);
+  }, [
+    filters.search,
+    filters.paymentType,
+    filters.dateFrom,
+    filters.dateTo,
+    filters.includeVoided,
+    page,
+    pageSize,
+    setSales,
+    setLoading,
+    setTotalCount,
+  ]);
 
   useEffect(() => {
     fetchSales();

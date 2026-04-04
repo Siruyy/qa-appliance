@@ -2,6 +2,7 @@ import { useState, useMemo } from "react";
 import { PageHeader } from "@/components/PageHeader";
 import { EmptyState } from "@/components/EmptyState";
 import { TableSkeleton } from "@/components/TableSkeleton";
+import { Pagination } from "@/components/Pagination";
 import {
   Search,
   Plus,
@@ -63,8 +64,12 @@ export function InventoryPage() {
   const { archiveProduct, restoreProduct, archiveVariant, adjustStock } = useProducts();
   useCategories();
 
-  const { categories, loading, filters, setFilter, filteredProducts, products: rawProducts } = useProductStore();
-  const products = useMemo(() => filteredProducts(), [rawProducts, filters]);
+  const { categories, loading, filters, setFilter, filteredProducts, products: rawProducts, page, pageSize, setPage } = useProductStore();
+  const allFiltered = useMemo(() => filteredProducts(), [rawProducts, filters]);
+  const products = useMemo(
+    () => allFiltered.slice((page - 1) * pageSize, page * pageSize),
+    [allFiltered, page, pageSize]
+  );
 
   const [expandedIds, setExpandedIds] = useState<Set<number>>(new Set());
   const [modal, setModal] = useState<ModalState>({ type: "none" });
@@ -317,6 +322,13 @@ export function InventoryPage() {
           </Table>
         </div>
       )}
+
+      <Pagination
+        page={page}
+        pageSize={pageSize}
+        total={allFiltered.length}
+        onPageChange={setPage}
+      />
 
       {/* Modals */}
       {modal.type === "product" && (
