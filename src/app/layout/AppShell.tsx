@@ -4,6 +4,7 @@ import { invoke } from "@/lib/invoke";
 import { useSettingsStore } from "@/stores/settingsStore";
 import { useUIStore } from "@/stores/uiStore";
 import { useNavigate } from "react-router-dom";
+import type { PenaltyApplied } from "@/types/account";
 
 import { Sidebar } from "./Sidebar";
 import { TopBar } from "./TopBar";
@@ -43,10 +44,10 @@ export function AppShell({ children }: AppShellProps) {
     if (penaltyChecked.current) return;
     penaltyChecked.current = true;
 
-    invoke<number>("run_penalty_check")
-      .then((count) => {
-        if (count > 0) {
-          toast.warning(`${count} penalty/penalties applied to overdue accounts`);
+    invoke<PenaltyApplied[]>("run_penalty_check")
+      .then((applied) => {
+        if (applied.length > 0) {
+          toast.warning(`${applied.length} penalty/penalties applied to overdue accounts`);
         }
       })
       .catch((err) => {
