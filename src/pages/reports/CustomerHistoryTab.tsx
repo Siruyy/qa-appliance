@@ -21,6 +21,8 @@ import { useReportStore } from "@/stores/reportStore";
 import { formatDate } from "@/lib/formatters";
 import { useCurrency } from "@/hooks/useCurrency";
 import type { CustomerHistoryReport } from "@/types/report";
+import type { Customer } from "@/types/customer";
+import type { PaginatedResult } from "@/types/shared";
 import { toast } from "sonner";
 import { invoke } from "@/lib/invoke";
 
@@ -32,18 +34,21 @@ interface CustomerOption {
 export function CustomerHistoryTab() {
   const { selectedCustomerId, setSelectedCustomerId, dateFrom, dateTo } = useReportStore();
   const { getCustomerHistoryReport } = useReports();
+  const { format: formatCurrency } = useCurrency();
   const [customers, setCustomers] = useState<CustomerOption[]>([]);
   const [data, setData] = useState<CustomerHistoryReport | null>(null);
   const [loading, setLoading] = useState(false);
 
   // Load customer list for selector
   useEffect(() => {
-    invoke<{ id: number; first_name: string; last_name: string }[]>("list_customers", {
-      searchQuery: null,
-      isActive: true,
+    invoke<PaginatedResult<Customer>>("get_customers", {
+      includeArchived: false,
+      search: null,
+      limit: null,
+      offset: null,
     })
-      .then((list) =>
-        setCustomers(list.map((c) => ({ id: c.id, name: `${c.first_name} ${c.last_name}` })))
+      .then((result) =>
+        setCustomers(result.items.map((c) => ({ id: c.id, name: c.name })))
       )
       .catch(() => {});
   }, []);
@@ -61,7 +66,6 @@ export function CustomerHistoryTab() {
       .finally(() => setLoading(false));
   }, [selectedCustomerId, dateFrom, dateTo]);
 
-  const { format: formatCurrency } = useCurrency();
   return (
     <div className="space-y-6">
       {/* Customer selector */}
