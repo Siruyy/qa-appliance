@@ -2,6 +2,7 @@ import { Routes, Route, Navigate } from "react-router-dom";
 import { DashboardPage } from "@/pages/dashboard/DashboardPage";
 import { InventoryPage } from "@/pages/inventory/InventoryPage";
 import { CustomersPage } from "@/pages/customers/CustomersPage";
+import { CustomerDetailPage } from "@/pages/customers/CustomerDetailPage";
 import { NewSalePage } from "@/pages/sales/NewSalePage";
 import { SalesHistoryPage } from "@/pages/sales/SalesHistoryPage";
 import { AccountsPage } from "@/pages/accounts/AccountsPage";
@@ -18,6 +19,7 @@ export function AppRouter() {
       <Route path="/dashboard" element={<DashboardPage />} />
       <Route path="/inventory" element={<InventoryPage />} />
       <Route path="/customers" element={<CustomersPage />} />
+      <Route path="/customers/:id" element={<CustomerDetailPage />} />
       <Route path="/sales/new" element={<NewSalePage />} />
       <Route path="/sales" element={<SalesHistoryPage />} />
       <Route path="/accounts" element={<AccountsPage />} />
