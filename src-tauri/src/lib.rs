@@ -63,6 +63,9 @@ pub fn run() {
             commands::import_export::export_accounts_data,
             commands::import_export::export_payments_data,
             commands::import_export::export_all_data,
+            commands::import_export::preview_import,
+            commands::import_export::confirm_import,
+            commands::import_export::list_import_logs,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
