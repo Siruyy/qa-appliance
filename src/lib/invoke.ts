@@ -8,7 +8,9 @@ export async function invoke<T>(cmd: string, args?: Record<string, unknown>): Pr
   try {
     return await tauriInvoke<T>(cmd, args);
   } catch (error) {
-    console.error(`[invoke] ${cmd} failed:`, error);
+    if (import.meta.env.DEV) {
+      console.error(`[invoke] ${cmd} failed:`, error);
+    }
     throw error;
   }
 }

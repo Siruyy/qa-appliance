@@ -50,7 +50,9 @@ export function AppShell({ children }: AppShellProps) {
         }
       })
       .catch((err) => {
-        console.error("Penalty check failed:", err);
+        if (import.meta.env.DEV) {
+          console.error("Penalty check failed:", err);
+        }
       });
   }, []);
 
