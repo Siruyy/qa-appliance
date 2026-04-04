@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import type { AppSettings } from "@/types/settings";
+import { invoke } from "@tauri-apps/api/core";
 
 const defaultSettings: AppSettings = {
   default_interest_rate: "5",
@@ -17,13 +18,38 @@ const defaultSettings: AppSettings = {
 interface SettingsState {
   settings: AppSettings;
   loading: boolean;
-  setSettings: (settings: AppSettings) => void;
-  setLoading: (loading: boolean) => void;
+  loadSettings: () => Promise<void>;
+  updateSetting: (key: string, value: string) => Promise<void>;
+  updateSettingsBatch: (pairs: [string, string][]) => Promise<void>;
 }
 
-export const useSettingsStore = create<SettingsState>((set) => ({
+export const useSettingsStore = create<SettingsState>((set, get) => ({
   settings: defaultSettings,
   loading: false,
-  setSettings: (settings) => set({ settings }),
-  setLoading: (loading) => set({ loading }),
+
+  loadSettings: async () => {
+    set({ loading: true });
+    try {
+      const map = await invoke<Record<string, string>>("get_all_settings");
+      set({ settings: { ...defaultSettings, ...map } });
+    } catch {
+      // use defaults on error
+    } finally {
+      set({ loading: false });
+    }
+  },
+
+  updateSetting: async (key: string, value: string) => {
+    await invoke("update_setting", { key, value });
+    set({ settings: { ...get().settings, [key]: value } });
+  },
+
+  updateSettingsBatch: async (pairs: [string, string][]) => {
+    await invoke("update_settings_batch", { pairs });
+    const updated = { ...get().settings };
+    for (const [k, v] of pairs) {
+      updated[k] = v;
+    }
+    set({ settings: updated });
+  },
 }));

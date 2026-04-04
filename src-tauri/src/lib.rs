@@ -70,6 +70,7 @@ pub fn run() {
             commands::settings::get_all_settings,
             commands::settings::update_setting,
             commands::settings::update_settings_batch,
+            commands::dashboard::get_dashboard_data,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

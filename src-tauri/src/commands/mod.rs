@@ -1,5 +1,6 @@
 pub mod accounts;
 pub mod customers;
+pub mod dashboard;
 pub mod db;
 pub mod import_export;
 pub mod payments;
