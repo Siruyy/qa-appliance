@@ -44,31 +44,31 @@ export function useCustomers() {
     fetchCustomers();
   }, [fetchCustomers]);
 
-  const getCustomerById = async (id: number) => {
+  const getCustomerById = useCallback(async (id: number) => {
     return await invoke<CustomerDetail>("get_customer_by_id", { id });
-  };
+  }, []);
 
-  const createCustomer = async (payload: CreateCustomerPayload) => {
+  const createCustomer = useCallback(async (payload: CreateCustomerPayload) => {
     const customer = await invoke<Customer>("create_customer", { payload });
     await fetchCustomers();
     return customer;
-  };
+  }, [fetchCustomers]);
 
-  const updateCustomer = async (payload: UpdateCustomerPayload) => {
+  const updateCustomer = useCallback(async (payload: UpdateCustomerPayload) => {
     const customer = await invoke<Customer>("update_customer", { payload });
     await fetchCustomers();
     return customer;
-  };
+  }, [fetchCustomers]);
 
-  const archiveCustomer = async (id: number) => {
+  const archiveCustomer = useCallback(async (id: number) => {
     await invoke<void>("archive_customer", { id });
     await fetchCustomers();
-  };
+  }, [fetchCustomers]);
 
-  const restoreCustomer = async (id: number) => {
+  const restoreCustomer = useCallback(async (id: number) => {
     await invoke<void>("restore_customer", { id });
     await fetchCustomers();
-  };
+  }, [fetchCustomers]);
 
   return {
     fetchCustomers,

@@ -84,7 +84,7 @@ pub fn get_payments(
     let sql = format!(
         "SELECT pay.id, pay.account_id, pay.schedule_id, c.name AS customer_name,
                 COALESCE(
-                    GROUP_CONCAT(DISTINCT p.name || COALESCE(' ' || v.attributes, ''), ', '),
+                    GROUP_CONCAT(DISTINCT p.name || COALESCE(' ' || v.attributes, '')),
                     'Unknown Product'
                 ) AS product_summary,
                 pay.amount, pay.payment_date, pay.type, pay.notes, pay.created_at
@@ -137,7 +137,7 @@ pub fn get_payments_for_account(
         .prepare(
             "SELECT pay.id, pay.account_id, pay.schedule_id, c.name AS customer_name,
                     COALESCE(
-                        GROUP_CONCAT(DISTINCT p.name || COALESCE(' ' || v.attributes, ''), ', '),
+                        GROUP_CONCAT(DISTINCT p.name || COALESCE(' ' || v.attributes, '')),
                         'Unknown Product'
                     ) AS product_summary,
                     pay.amount, pay.payment_date, pay.type, pay.notes, pay.created_at
@@ -269,7 +269,7 @@ pub fn record_payment(
             .query_row(
                 "SELECT pay.id, pay.account_id, pay.schedule_id, c.name,
                         COALESCE(
-                            (SELECT GROUP_CONCAT(DISTINCT p2.name || COALESCE(' ' || v2.attributes, ''), ', ')
+                            (SELECT GROUP_CONCAT(DISTINCT p2.name || COALESCE(' ' || v2.attributes, ''))
                              FROM sale_items si2
                              JOIN product_variants v2 ON v2.id = si2.variant_id
                              JOIN products p2 ON p2.id = v2.product_id

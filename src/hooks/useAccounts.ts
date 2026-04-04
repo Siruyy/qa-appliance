@@ -1,3 +1,4 @@
+import { useCallback } from "react";
 import { invoke } from "@/lib/invoke";
 import { useAccountStore } from "@/stores/accountStore";
 import type { AccountDetail, InstallmentAccount, PenaltyApplied } from "@/types/account";
@@ -6,7 +7,7 @@ import type { PaginatedResult } from "@/types/shared";
 export function useAccounts() {
   const store = useAccountStore();
 
-  const fetchAccounts = async (
+  const fetchAccounts = useCallback(async (
     statusFilter?: string,
     accountType?: string,
     search?: string
@@ -29,35 +30,35 @@ export function useAccounts() {
     } finally {
       store.setLoading(false);
     }
-  };
+  }, [store.page, store.pageSize]);
 
-  const getAccountById = async (id: number): Promise<AccountDetail> => {
+  const getAccountById = useCallback(async (id: number): Promise<AccountDetail> => {
     return invoke<AccountDetail>("get_account_by_id", { id });
-  };
+  }, []);
 
-  const getOverdueAccounts = async (): Promise<InstallmentAccount[]> => {
+  const getOverdueAccounts = useCallback(async (): Promise<InstallmentAccount[]> => {
     return invoke<InstallmentAccount[]>("get_overdue_accounts");
-  };
+  }, []);
 
-  const markAccountPaid = async (id: number): Promise<void> => {
+  const markAccountPaid = useCallback(async (id: number): Promise<void> => {
     await invoke<void>("mark_account_paid", { id });
-  };
+  }, []);
 
-  const markAccountDefaulted = async (id: number): Promise<void> => {
+  const markAccountDefaulted = useCallback(async (id: number): Promise<void> => {
     await invoke<void>("mark_account_defaulted", { id });
-  };
+  }, []);
 
-  const updateAccountNotes = async (id: number, notes: string): Promise<void> => {
+  const updateAccountNotes = useCallback(async (id: number, notes: string): Promise<void> => {
     await invoke<void>("update_account_notes", { id, notes });
-  };
+  }, []);
 
-  const runPenaltyCheck = async (): Promise<PenaltyApplied[]> => {
+  const runPenaltyCheck = useCallback(async (): Promise<PenaltyApplied[]> => {
     return invoke<PenaltyApplied[]>("run_penalty_check");
-  };
+  }, []);
 
-  const recalculateBalance = async (accountId: number): Promise<number> => {
+  const recalculateBalance = useCallback(async (accountId: number): Promise<number> => {
     return invoke<number>("recalculate_balance", { accountId });
-  };
+  }, []);
 
   return {
     fetchAccounts,

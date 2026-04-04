@@ -169,12 +169,12 @@ pub fn get_inventory_valuation_report(
         "SELECT p.name as product_name,
                 COALESCE(pv.attributes, 'Default') as variant_name,
                 COALESCE(pv.sku, '') as sku,
-                pv.stock_quantity, pv.cost_price, pv.selling_price,
-                (pv.stock_quantity * pv.cost_price) as cost_value,
-                (pv.stock_quantity * pv.selling_price) as retail_value,
+                pv.stock_qty, pv.cost_price, pv.selling_price,
+                (pv.stock_qty * pv.cost_price) as cost_value,
+                (pv.stock_qty * pv.selling_price) as retail_value,
                 CASE
-                  WHEN pv.stock_quantity = 0 THEN 'Out of Stock'
-                  WHEN pv.stock_quantity <= pv.low_stock_threshold THEN 'Low Stock'
+                  WHEN pv.stock_qty = 0 THEN 'Out of Stock'
+                  WHEN pv.stock_qty <= pv.low_stock_threshold THEN 'Low Stock'
                   ELSE 'In Stock'
                 END as status
          FROM product_variants pv
@@ -222,8 +222,8 @@ pub fn get_inventory_valuation_report(
     // By category
     let mut cat_stmt = db.prepare(
         "SELECT COALESCE(cat.name, 'Uncategorized') as category,
-                SUM(pv.stock_quantity) as total_stock,
-                SUM(pv.stock_quantity * pv.cost_price) as total_cost_value
+                SUM(pv.stock_qty) as total_stock,
+                SUM(pv.stock_qty * pv.cost_price) as total_cost_value
          FROM product_variants pv
          JOIN products p ON p.id = pv.product_id
          LEFT JOIN categories cat ON cat.id = p.category_id

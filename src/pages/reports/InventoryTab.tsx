@@ -29,6 +29,7 @@ export function InventoryTab() {
   const { getInventoryValuationReport } = useReports();
   const [data, setData] = useState<InventoryReport | null>(null);
   const [loading, setLoading] = useState(false);
+  const { format: formatCurrency } = useCurrency();
 
   useEffect(() => {
     setLoading(true);
@@ -41,7 +42,6 @@ export function InventoryTab() {
   if (loading) return <p className="py-8 text-center text-muted-foreground">Loading…</p>;
   if (!data) return null;
 
-  const { format: formatCurrency } = useCurrency();
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-6">

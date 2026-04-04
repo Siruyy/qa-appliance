@@ -21,7 +21,7 @@ pub fn get_dashboard_data(
     // Today's sales
     let (today_sales_total, today_sales_count): (f64, i64) = db
         .query_row(
-            "SELECT COALESCE(SUM(total_amount), 0), COUNT(*)
+            "SELECT COALESCE(SUM(total), 0), COUNT(*)
              FROM sales WHERE DATE(sale_date) = ?1 AND status != 'voided'",
             params![today],
             |row| Ok((row.get(0)?, row.get(1)?)),
@@ -31,7 +31,7 @@ pub fn get_dashboard_data(
     // This month's sales
     let (month_sales_total, month_sales_count): (f64, i64) = db
         .query_row(
-            "SELECT COALESCE(SUM(total_amount), 0), COUNT(*)
+            "SELECT COALESCE(SUM(total), 0), COUNT(*)
              FROM sales WHERE DATE(sale_date) BETWEEN ?1 AND ?2 AND status != 'voided'",
             params![month_start, today],
             |row| Ok((row.get(0)?, row.get(1)?)),
@@ -41,7 +41,7 @@ pub fn get_dashboard_data(
     // Last month's sales
     let last_month_sales_total: f64 = db
         .query_row(
-            "SELECT COALESCE(SUM(total_amount), 0)
+            "SELECT COALESCE(SUM(total), 0)
              FROM sales WHERE DATE(sale_date) BETWEEN ?1 AND ?2 AND status != 'voided'",
             params![prev_start, prev_end],
             |row| row.get(0),
@@ -76,7 +76,7 @@ pub fn get_dashboard_data(
     let low_stock_count: i64 = db
         .query_row(
             "SELECT COUNT(*) FROM product_variants
-             WHERE is_active = 1 AND stock_quantity > 0 AND stock_quantity <= ?1",
+             WHERE is_active = 1 AND stock_qty > 0 AND stock_qty <= ?1",
             params![threshold],
             |row| row.get(0),
         )
@@ -85,7 +85,7 @@ pub fn get_dashboard_data(
     // Sales last 30 days
     let mut stmt = db
         .prepare(
-            "SELECT DATE(sale_date) as d, SUM(total_amount)
+            "SELECT DATE(sale_date) as d, SUM(total)
              FROM sales
              WHERE DATE(sale_date) >= ?1 AND status != 'voided'
              GROUP BY d ORDER BY d",
@@ -130,7 +130,7 @@ pub fn get_dashboard_data(
     let mut stmt3 = db
         .prepare(
             "SELECT s.id, s.sale_date,
-                    COALESCE(c.name, 'Walk-in'), s.total_amount, s.payment_type
+                    COALESCE(c.name, 'Walk-in'), s.total, s.payment_type
              FROM sales s
              LEFT JOIN customers c ON c.id = s.customer_id
              WHERE s.status != 'voided'

@@ -87,7 +87,7 @@ pub fn get_accounts(
     let sql = format!(
         "SELECT ia.id, ia.sale_id, ia.customer_id, c.name AS customer_name,
                 COALESCE(
-                    GROUP_CONCAT(DISTINCT p.name || COALESCE(' ' || v.attributes, ''), ', '),
+                    GROUP_CONCAT(DISTINCT p.name || COALESCE(' ' || v.attributes, '')),
                     'Unknown Product'
                 ) AS product_summary,
                 ia.principal, ia.down_payment, ia.interest_rate, ia.penalty_rate,
@@ -163,7 +163,7 @@ pub fn get_account_by_id(db: State<DbState>, id: i64) -> Result<AccountDetail, S
         .query_row(
             "SELECT ia.id, ia.sale_id, ia.customer_id, c.name AS customer_name,
                     COALESCE(
-                        GROUP_CONCAT(DISTINCT p.name || COALESCE(' ' || v.attributes, ''), ', '),
+                        GROUP_CONCAT(DISTINCT p.name || COALESCE(' ' || v.attributes, '')),
                         'Unknown Product'
                     ) AS product_summary,
                     ia.principal, ia.down_payment, ia.interest_rate, ia.penalty_rate,

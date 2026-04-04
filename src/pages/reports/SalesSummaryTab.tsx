@@ -30,6 +30,7 @@ export function SalesSummaryTab() {
   const { getSalesSummary } = useReports();
   const [data, setData] = useState<SalesSummaryReport | null>(null);
   const [loading, setLoading] = useState(false);
+  const { format: formatCurrency } = useCurrency();
 
   useEffect(() => {
     setLoading(true);
@@ -42,7 +43,6 @@ export function SalesSummaryTab() {
   if (loading) return <p className="py-8 text-center text-muted-foreground">Loading…</p>;
   if (!data) return null;
 
-  const { format: formatCurrency } = useCurrency();
   return (
     <div className="space-y-6">
       {/* KPIs */}

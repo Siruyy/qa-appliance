@@ -1,3 +1,4 @@
+import { useCallback } from "react";
 import { invoke } from "@/lib/invoke";
 import { usePaymentStore } from "@/stores/paymentStore";
 import type { Payment, RecordPaymentPayload } from "@/types/payment";
@@ -6,7 +7,7 @@ import type { PaginatedResult } from "@/types/shared";
 export function usePayments() {
   const store = usePaymentStore();
 
-  const fetchPayments = async (
+  const fetchPayments = useCallback(async (
     fromDate?: string,
     toDate?: string,
     customerId?: number,
@@ -28,15 +29,15 @@ export function usePayments() {
     } finally {
       store.setLoading(false);
     }
-  };
+  }, [store.page, store.pageSize]);
 
-  const getPaymentsForAccount = async (accountId: number): Promise<Payment[]> => {
+  const getPaymentsForAccount = useCallback(async (accountId: number): Promise<Payment[]> => {
     return invoke<Payment[]>("get_payments_for_account", { accountId });
-  };
+  }, []);
 
-  const recordPayment = async (payload: RecordPaymentPayload): Promise<Payment> => {
+  const recordPayment = useCallback(async (payload: RecordPaymentPayload): Promise<Payment> => {
     return invoke<Payment>("record_payment", { payload });
-  };
+  }, []);
 
   return {
     fetchPayments,
