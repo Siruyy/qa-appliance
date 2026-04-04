@@ -8,6 +8,44 @@ A standalone desktop management system for a physical appliance store (Philippin
 
 ---
 
+## Git Workflow
+
+**Branch:** work on `main` directly for solo development.
+
+After completing any meaningful unit of work (a feature, a bug fix, a new Tauri command, a new page), commit before moving on. Don't batch unrelated changes into a single commit.
+
+### Commit message format
+
+```
+<short imperative summary (max 72 chars)>
+
+<optional body: what changed and why, if not obvious>
+
+Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>
+```
+
+Good subject lines:
+- `Add get_products Tauri command`
+- `Implement installment account creation flow`
+- `Fix balance_remaining not updating after penalty`
+
+### When to commit
+
+| Situation | Commit? |
+|-----------|---------|
+| New Tauri command + matching TS type | ✅ Yes |
+| New page component (even if wired up partially) | ✅ Yes |
+| Schema migration added | ✅ Yes — commit migration and any dependent Rust/TS changes together |
+| Mid-feature, broken state | ❌ No — finish the unit first |
+| Docs-only change | ✅ Yes |
+
+After committing locally, push to keep the remote in sync:
+```bash
+git push
+```
+
+---
+
 ## Commands
 
 ```bash
