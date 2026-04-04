@@ -1,4 +1,4 @@
-import { formatCurrency } from "@/lib/formatters";
+import { useCurrency } from "@/hooks/useCurrency";
 
 interface KpiCardProps {
   label: string;
@@ -7,6 +7,8 @@ interface KpiCardProps {
 }
 
 export function KpiCard({ label, value, type }: KpiCardProps) {
+  const { format: formatCurrency } = useCurrency();
+
   let display: string;
   if (type === "currency" && typeof value === "number") {
     display = formatCurrency(value);

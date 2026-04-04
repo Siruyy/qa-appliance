@@ -4,7 +4,8 @@ import { CreditCard, Search } from "lucide-react";
 
 import { usePayments } from "@/hooks/usePayments";
 import { usePaymentStore } from "@/stores/paymentStore";
-import { formatCurrency, formatDate } from "@/lib/formatters";
+import { formatDate } from "@/lib/formatters";
+import { useCurrency } from "@/hooks/useCurrency";
 
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -47,6 +48,7 @@ export function PaymentsPage() {
   const payments = filteredPayments();
   const total = totalShown();
 
+  const { format: formatCurrency } = useCurrency();
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-3">

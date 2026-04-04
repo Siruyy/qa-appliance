@@ -45,6 +45,12 @@
     --radius-2xl: calc(var(--radius) * 1.8);
     --radius-3xl: calc(var(--radius) * 2.2);
     --radius-4xl: calc(var(--radius) * 2.6);
+    /* Custom semantic colors */
+    --color-warning: var(--warning);
+    --color-warning-foreground: var(--warning-foreground);
+    --color-warning-bg: var(--warning-bg);
+    --color-success: var(--success);
+    --color-success-foreground: var(--success-foreground);
 }
 
 :root {
@@ -85,14 +91,25 @@
     --sidebar-ring: #2563EB;
 
     /* App-specific semantic colors */
-    --color-success: #16A34A;
-    --color-success-bg: #F0FDF4;
-    --color-warning: #D97706;
-    --color-warning-bg: #FFFBEB;
-    --color-danger: #DC2626;
-    --color-danger-bg: #FEF2F2;
-    --color-info: #0284C7;
-    --color-info-bg: #F0F9FF;
+    --success: #16A34A;
+    --success-foreground: #FFFFFF;
+    --success-bg: #F0FDF4;
+    --warning: #D97706;
+    --warning-foreground: #FFFFFF;
+    --warning-bg: #FFFBEB;
+    --danger: #DC2626;
+    --danger-bg: #FEF2F2;
+    --info: #0284C7;
+    --info-bg: #F0F9FF;
+    /* Legacy aliases kept for compatibility */
+    --color-success: var(--success);
+    --color-success-bg: var(--success-bg);
+    --color-warning: var(--warning);
+    --color-warning-bg: var(--warning-bg);
+    --color-danger: var(--danger);
+    --color-danger-bg: var(--danger-bg);
+    --color-info: var(--info);
+    --color-info-bg: var(--info-bg);
 }
 
 @layer base {

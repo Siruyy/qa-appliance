@@ -5,7 +5,8 @@ import { toast } from "sonner";
 
 import { useAccounts } from "@/hooks/useAccounts";
 import type { AccountDetail } from "@/types/account";
-import { formatCurrency, formatDate } from "@/lib/formatters";
+import { formatDate } from "@/lib/formatters";
+import { useCurrency } from "@/hooks/useCurrency";
 
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -109,6 +110,7 @@ export function AccountDetailPage() {
     );
   }
 
+  const { format: formatCurrency } = useCurrency();
   return (
     <div className="space-y-6">
       {/* Header */}

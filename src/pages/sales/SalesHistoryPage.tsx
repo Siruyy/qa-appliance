@@ -21,7 +21,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { formatCurrency, formatDate } from "@/lib/formatters";
+import { formatDate } from "@/lib/formatters";
+import { useCurrency } from "@/hooks/useCurrency";
 import { useSaleStore } from "@/stores/saleStore";
 import { useSales } from "@/hooks/useSales";
 import { SaleDetailModal } from "./SaleDetailModal";
@@ -41,6 +42,7 @@ export function SalesHistoryPage() {
     setDetailOpen(true);
   };
 
+  const { format: formatCurrency } = useCurrency();
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">

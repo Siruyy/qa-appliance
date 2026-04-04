@@ -1,4 +1,5 @@
-import { formatCurrency, formatDate } from "@/lib/formatters";
+import { formatDate } from "@/lib/formatters";
+import { useCurrency } from "@/hooks/useCurrency";
 import type { AccountPayment } from "@/types/account";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -37,6 +38,7 @@ export function PaymentHistoryTable({ payments }: PaymentHistoryTableProps) {
     );
   }
 
+  const { format: formatCurrency } = useCurrency();
   return (
     <Table>
       <TableHeader>

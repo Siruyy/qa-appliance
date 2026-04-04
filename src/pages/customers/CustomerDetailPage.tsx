@@ -15,7 +15,8 @@ import {
 import { toast } from "sonner";
 
 import { useCustomers } from "@/hooks/useCustomers";
-import { formatCurrency, formatDate } from "@/lib/formatters";
+import { formatDate } from "@/lib/formatters";
+import { useCurrency } from "@/hooks/useCurrency";
 import type { CustomerDetail } from "@/types/customer";
 
 import { Button } from "@/components/ui/button";
@@ -100,6 +101,7 @@ export function CustomerDetailPage() {
 
   const openAccounts = accounts.filter((a) => a.status === "open");
 
+  const { format: formatCurrency } = useCurrency();
   return (
     <div className="space-y-6">
       {/* Header */}

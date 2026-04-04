@@ -18,7 +18,7 @@ import { toast } from "sonner";
 import { useProducts } from "@/hooks/useProducts";
 import { useCategories } from "@/hooks/useCategories";
 import { useProductStore } from "@/stores/productStore";
-import { formatCurrency } from "@/lib/formatters";
+import { useCurrency } from "@/hooks/useCurrency";
 import type { Product, ProductVariant } from "@/types/product";
 
 import { Input } from "@/components/ui/input";
@@ -343,6 +343,8 @@ function VariantRow({
         .map(([k, v]) => `${k}: ${v}`)
         .join(", ")
     : "—";
+
+  const { format: formatCurrency } = useCurrency();
 
   const stockBadge = () => {
     if (!variant.is_active) return <Badge variant="secondary">Archived</Badge>;

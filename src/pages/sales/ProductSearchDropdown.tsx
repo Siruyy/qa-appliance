@@ -14,7 +14,7 @@ import {
   CommandItem,
   CommandList,
 } from "@/components/ui/command";
-import { formatCurrency } from "@/lib/formatters";
+import { useCurrency } from "@/hooks/useCurrency";
 import { Badge } from "@/components/ui/badge";
 import { useProductStore } from "@/stores/productStore";
 import type { Product, ProductVariant } from "@/types/product";
@@ -60,6 +60,7 @@ export function ProductSearchDropdown({ onSelect, excludeVariantIds = [] }: Prod
     return result;
   }, [products, excludeVariantIds]);
 
+  const { format: formatCurrency } = useCurrency();
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger>

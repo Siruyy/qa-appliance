@@ -14,7 +14,7 @@ import { toast } from "sonner";
 
 import { useCustomers } from "@/hooks/useCustomers";
 import { useCustomerStore } from "@/stores/customerStore";
-import { formatCurrency } from "@/lib/formatters";
+import { useCurrency } from "@/hooks/useCurrency";
 import type { Customer } from "@/types/customer";
 
 import { Input } from "@/components/ui/input";
@@ -81,6 +81,7 @@ export function CustomersPage() {
     }
   };
 
+  const { format: formatCurrency } = useCurrency();
   return (
     <div className="space-y-6">
       {/* Header */}

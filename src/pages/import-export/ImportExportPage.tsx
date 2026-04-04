@@ -42,7 +42,7 @@ import {
   fetchImportLogs,
 } from "@/hooks/useImportExport";
 import { toExcel } from "@/lib/export";
-import { formatCurrency } from "@/lib/formatters";
+import { useCurrency } from "@/hooks/useCurrency";
 import type { ImportPreview } from "@/types/import-export";
 
 // ── Export Section ───────────────────────────────────
@@ -245,6 +245,7 @@ function ExportSection() {
     { type: "all", label: "Export All Data", icon: "📊" },
   ];
 
+  const { format: formatCurrency } = useCurrency();
   return (
     <div className="space-y-4">
       <div>

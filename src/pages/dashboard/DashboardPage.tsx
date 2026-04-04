@@ -23,7 +23,8 @@ import {
 } from "recharts";
 import { useDashboard } from "@/hooks/useDashboard";
 import { useSettingsStore } from "@/stores/settingsStore";
-import { formatCurrency, formatDate } from "@/lib/formatters";
+import { formatDate } from "@/lib/formatters";
+import { useCurrency } from "@/hooks/useCurrency";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import type { DashboardData } from "@/types/report";
@@ -60,6 +61,7 @@ export function DashboardPage() {
   const navigate = useNavigate();
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
+  const { format: formatCurrency } = useCurrency();
 
   const load = useCallback(async () => {
     setLoading(true);

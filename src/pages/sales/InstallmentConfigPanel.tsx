@@ -2,7 +2,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Separator } from "@/components/ui/separator";
-import { formatCurrency } from "@/lib/formatters";
+import { useCurrency } from "@/hooks/useCurrency";
 import { calculateAddOnInterest } from "@/lib/interest";
 import type { CreateInstallmentPayload } from "@/types/sale";
 
@@ -26,6 +26,7 @@ export function InstallmentConfigPanel({
       ? calculateAddOnInterest(principal, config.interest_rate, config.term_months)
       : null;
 
+  const { format: formatCurrency } = useCurrency();
   return (
     <div className="space-y-4 rounded-lg border p-4">
       <h3 className="font-semibold">Installment Details</h3>

@@ -1,5 +1,5 @@
 import type { CustomerAccountSummary } from "@/types/customer";
-import { formatCurrency } from "@/lib/formatters";
+import { useCurrency } from "@/hooks/useCurrency";
 import { Badge } from "@/components/ui/badge";
 
 interface Props {
@@ -14,6 +14,7 @@ const statusColors: Record<string, string> = {
 };
 
 export function AccountMiniCard({ account, onClick }: Props) {
+  const { format: formatCurrency } = useCurrency();
   return (
     <button
       type="button"

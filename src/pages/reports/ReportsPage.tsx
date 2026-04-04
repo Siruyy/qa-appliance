@@ -12,7 +12,7 @@ import {
 import { useReportStore, type ReportTab } from "@/stores/reportStore";
 import { useReports } from "@/hooks/useReports";
 import { toExcel, toPdf, toCsv } from "@/lib/export";
-import { formatCurrency } from "@/lib/formatters";
+import { useCurrency } from "@/hooks/useCurrency";
 import { toast } from "sonner";
 
 import { SalesSummaryTab } from "./SalesSummaryTab";
@@ -170,6 +170,7 @@ export function ReportsPage() {
     [activeTab, dateFrom, dateTo, statusFilter, selectedCustomerId]
   );
 
+  const { format: formatCurrency } = useCurrency();
   return (
     <div className="space-y-6">
       {/* Header */}

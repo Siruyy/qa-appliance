@@ -1,13 +1,15 @@
 import { format, parseISO } from "date-fns";
 
-/** Format a number as Philippine Peso currency */
-export function formatCurrency(amount: number): string {
-  return new Intl.NumberFormat("en-PH", {
-    style: "currency",
-    currency: "PHP",
+/**
+ * Format a number as currency using the given symbol.
+ * Falls back to "₱" if no symbol is provided.
+ */
+export function formatCurrency(amount: number, symbol = "₱"): string {
+  const formatted = new Intl.NumberFormat("en-PH", {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   }).format(amount);
+  return `${symbol}${formatted}`;
 }
 
 /** Format an ISO date string to "MMM d, yyyy" */

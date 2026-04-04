@@ -11,7 +11,8 @@ import {
 
 import { useAccounts } from "@/hooks/useAccounts";
 import { useAccountStore } from "@/stores/accountStore";
-import { formatCurrency, formatDate } from "@/lib/formatters";
+import { formatDate } from "@/lib/formatters";
+import { useCurrency } from "@/hooks/useCurrency";
 
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -75,6 +76,7 @@ export function AccountsPage() {
     setTypeFilter(value as "all" | "installment" | "utang");
   };
 
+  const { format: formatCurrency } = useCurrency();
   return (
     <div className="space-y-6">
       <div>

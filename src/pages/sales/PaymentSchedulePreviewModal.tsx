@@ -4,7 +4,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { formatCurrency, formatDate } from "@/lib/formatters";
+import { formatDate } from "@/lib/formatters";
+import { useCurrency } from "@/hooks/useCurrency";
 import type { PaymentScheduleEntry } from "@/lib/interest";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
@@ -23,6 +24,7 @@ export function PaymentSchedulePreviewModal({
   monthlyPayment,
   totalPayable,
 }: PaymentSchedulePreviewModalProps) {
+  const { format: formatCurrency } = useCurrency();
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md">

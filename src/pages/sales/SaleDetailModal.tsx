@@ -8,7 +8,8 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { formatCurrency, formatDateTime } from "@/lib/formatters";
+import { formatDateTime } from "@/lib/formatters";
+import { useCurrency } from "@/hooks/useCurrency";
 import type { SaleDetail } from "@/types/sale";
 import { useSales } from "@/hooks/useSales";
 import { Loader2 } from "lucide-react";
@@ -54,6 +55,7 @@ export function SaleDetailModal({ open, onOpenChange, saleId, onVoided }: SaleDe
 
   const sale = detail?.sale;
 
+  const { format: formatCurrency } = useCurrency();
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="max-w-lg">

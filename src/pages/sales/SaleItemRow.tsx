@@ -1,7 +1,7 @@
 import { Minus, Plus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { formatCurrency } from "@/lib/formatters";
+import { useCurrency } from "@/hooks/useCurrency";
 import type { CartItem } from "@/types/sale";
 
 interface SaleItemRowProps {
@@ -11,6 +11,7 @@ interface SaleItemRowProps {
 }
 
 export function SaleItemRow({ item, onUpdateQty, onRemove }: SaleItemRowProps) {
+  const { format: formatCurrency } = useCurrency();
   return (
     <tr className="border-b">
       <td className="py-2 px-3">

@@ -28,7 +28,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { toast } from "sonner";
-import { formatCurrency } from "@/lib/formatters";
+import { useCurrency } from "@/hooks/useCurrency";
 import { calculateAddOnInterest, generatePaymentSchedule } from "@/lib/interest";
 import type { CartItem, CreateInstallmentPayload, PaymentType } from "@/types/sale";
 import type { Customer } from "@/types/customer";
@@ -191,6 +191,7 @@ export function NewSalePage() {
   const subtotal = cartSubtotal();
   const total = cartTotal();
 
+  const { format: formatCurrency } = useCurrency();
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">

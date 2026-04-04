@@ -18,7 +18,8 @@ import {
 import { KpiCard } from "./KpiCard";
 import { useReports } from "@/hooks/useReports";
 import { useReportStore } from "@/stores/reportStore";
-import { formatCurrency, formatDate } from "@/lib/formatters";
+import { formatDate } from "@/lib/formatters";
+import { useCurrency } from "@/hooks/useCurrency";
 import type { CustomerHistoryReport } from "@/types/report";
 import { toast } from "sonner";
 import { invoke } from "@tauri-apps/api/core";
@@ -60,6 +61,7 @@ export function CustomerHistoryTab() {
       .finally(() => setLoading(false));
   }, [selectedCustomerId, dateFrom, dateTo]);
 
+  const { format: formatCurrency } = useCurrency();
   return (
     <div className="space-y-6">
       {/* Customer selector */}

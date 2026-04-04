@@ -1,4 +1,5 @@
-import { formatCurrency, formatDate } from "@/lib/formatters";
+import { formatDate } from "@/lib/formatters";
+import { useCurrency } from "@/hooks/useCurrency";
 import type { PaymentScheduleEntry } from "@/types/account";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -32,6 +33,7 @@ export function ScheduleTable({ schedule, onSelectEntry, selectedId }: ScheduleT
     );
   }
 
+  const { format: formatCurrency } = useCurrency();
   return (
     <Table>
       <TableHeader>

@@ -20,7 +20,8 @@ import { Badge } from "@/components/ui/badge";
 import { KpiCard } from "./KpiCard";
 import { useReports } from "@/hooks/useReports";
 import { useReportStore } from "@/stores/reportStore";
-import { formatCurrency, formatDate } from "@/lib/formatters";
+import { formatDate } from "@/lib/formatters";
+import { useCurrency } from "@/hooks/useCurrency";
 import type { SalesSummaryReport } from "@/types/report";
 import { toast } from "sonner";
 
@@ -41,6 +42,7 @@ export function SalesSummaryTab() {
   if (loading) return <p className="py-8 text-center text-muted-foreground">Loading…</p>;
   if (!data) return null;
 
+  const { format: formatCurrency } = useCurrency();
   return (
     <div className="space-y-6">
       {/* KPIs */}
