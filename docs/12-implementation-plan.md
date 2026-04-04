@@ -460,4 +460,31 @@
 
 ---
 
-*This plan supersedes any individual phase notes. Phases 8A and 8B should be implemented before release.*
+## Implementation Status
+
+All 29 tasks across Phases 8A–8F have been implemented.
+
+| Phase | Tasks | Status |
+|-------|-------|--------|
+| **8A** | A1–A5 | ✅ Complete |
+| **8B** | B1–B2 | ✅ Complete |
+| **8C** | C1–C5 | ✅ Complete |
+| **8D** | D1 | ✅ Complete |
+| **8E** | E1–E6 | ✅ Complete |
+| **8F** | F1–F7 | ✅ Complete |
+
+### Phase 8F — Completed Tasks
+
+| Task | Description | Commit |
+|------|-------------|--------|
+| F1 | Extract unified `KpiCard` to `src/components/KpiCard.tsx` | ae20ff1 |
+| F2 | Remove dead `DashboardStats` interface from `report.ts` | a778a0b |
+| F3 | Standardize all IPC calls through `@/lib/invoke` wrapper | 8061b27 |
+| F4 | Gate `console.error` behind `import.meta.env.DEV` | 5c44599 |
+| F5 | Unify Rust date utilities into `src-tauri/src/utils/date.rs` | deacfa4 |
+| F6 | Add Zod `max()` length constraints to all validation schemas | 37b4229 |
+| F7 | Fix ESLint exhaustive-deps suppressions with `useCallback` | 6f630b5 |
+
+---
+
+*This plan supersedes any individual phase notes. All phases have been implemented and committed.*
