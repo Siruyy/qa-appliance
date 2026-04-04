@@ -5,18 +5,6 @@ export interface ReportKPI {
   type: "currency" | "number" | "percent";
 }
 
-// Dashboard (kept from Phase 1)
-export interface DashboardStats {
-  total_products: number;
-  low_stock_count: number;
-  total_sales_today: number;
-  revenue_today: number;
-  open_accounts: number;
-  overdue_accounts: number;
-  total_receivables: number;
-  collections_this_month: number;
-}
-
 // Dashboard full data (Phase 7)
 export interface DailySales {
   date: string;
