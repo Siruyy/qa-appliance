@@ -29,6 +29,7 @@ import {
 } from "@/components/ui/popover";
 import { toast } from "sonner";
 import { useCurrency } from "@/hooks/useCurrency";
+import { useSettingsStore } from "@/stores/settingsStore";
 import { calculateAddOnInterest, generatePaymentSchedule } from "@/lib/interest";
 import type { CartItem, CreateInstallmentPayload, PaymentType } from "@/types/sale";
 import type { Customer } from "@/types/customer";
@@ -42,21 +43,22 @@ import { SaleItemRow } from "./SaleItemRow";
 import { InstallmentConfigPanel } from "./InstallmentConfigPanel";
 import { PaymentSchedulePreviewModal } from "./PaymentSchedulePreviewModal";
 
-const defaultInstallment: CreateInstallmentPayload = {
-  down_payment: 0,
-  interest_rate: 0,
-  penalty_rate: 5,
-  has_schedule: true,
-  term_months: 6,
-  start_date: new Date().toISOString().split("T")[0],
-};
-
 export function NewSalePage() {
   const navigate = useNavigate();
   const { createSale } = useSales();
   const { fetchProducts } = useProducts();
   const { fetchCustomers } = useCustomers();
   const customers = useCustomerStore((s) => s.customers);
+  const settings = useSettingsStore((s) => s.settings);
+
+  const defaultInstallment = useMemo<CreateInstallmentPayload>(() => ({
+    down_payment: 0,
+    interest_rate: parseFloat(settings.default_interest_rate) || 0,
+    penalty_rate: parseFloat(settings.default_penalty_rate) || 0,
+    has_schedule: true,
+    term_months: parseInt(settings.default_term_months, 10) || 12,
+    start_date: new Date().toISOString().split("T")[0],
+  }), [settings.default_interest_rate, settings.default_penalty_rate, settings.default_term_months]);
 
   const {
     cart,
