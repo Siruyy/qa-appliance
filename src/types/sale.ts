@@ -29,15 +29,36 @@ export interface SaleItem {
 }
 
 export interface CreateSalePayload {
-  customer_id?: number;
+  customer_id: number | null;
   payment_type: PaymentType;
-  discount?: number;
-  notes?: string;
+  discount: number;
+  notes: string | null;
   items: CreateSaleItemPayload[];
+  installment?: CreateInstallmentPayload;
 }
 
 export interface CreateSaleItemPayload {
   variant_id: number;
   quantity: number;
   unit_price: number;
+}
+
+export interface CreateInstallmentPayload {
+  down_payment: number;
+  interest_rate: number;
+  penalty_rate: number;
+  has_schedule: boolean;
+  term_months: number | null;
+  start_date: string | null;
+}
+
+/** Cart item used in the New Sale page (display + data) */
+export interface CartItem {
+  variant_id: number;
+  product_name: string;
+  variant_label: string;
+  quantity: number;
+  unit_price: number;
+  subtotal: number;
+  stock_qty: number;
 }
