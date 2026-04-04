@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { ArrowLeft, CreditCard, XCircle, NotebookPen, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
@@ -47,7 +47,7 @@ export function AccountDetailPage() {
   const [notes, setNotes] = useState("");
   const [recalculating, setRecalculating] = useState(false);
 
-  const loadAccount = async () => {
+  const loadAccount = useCallback(async () => {
     if (!id) return;
     setLoading(true);
     try {
@@ -59,12 +59,11 @@ export function AccountDetailPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [id, getAccountById]);
 
   useEffect(() => {
     loadAccount();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [id]);
+  }, [loadAccount]);
 
   useEffect(() => {
     const action = searchParams.get("action");

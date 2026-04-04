@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { CreditCard, Search } from "lucide-react";
 
@@ -45,10 +45,13 @@ export function PaymentsPage() {
     setPage,
   } = usePaymentStore();
 
-  useEffect(() => {
+  const loadPayments = useCallback(() => {
     fetchPayments(dateFrom || undefined, dateTo || undefined, undefined, search || undefined);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [page, pageSize, dateFrom, dateTo, search]);
+  }, [fetchPayments, page, pageSize, dateFrom, dateTo, search]);
+
+  useEffect(() => {
+    loadPayments();
+  }, [loadPayments]);
 
   const payments = filteredPayments();
   const total = totalShown();

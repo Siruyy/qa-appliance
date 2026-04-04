@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { PageHeader } from "@/components/PageHeader";
 import { Pagination } from "@/components/Pagination";
@@ -69,14 +69,17 @@ export function AccountsPage() {
   const accounts = useMemo(() => filteredAccounts(), [rawAccounts, search, statusFilter, typeFilter]);
   const overdue = useMemo(() => overdueCount(), [rawAccounts]);
 
-  useEffect(() => {
+  const loadAccounts = useCallback(() => {
     fetchAccounts(
       statusFilter === "all" ? undefined : statusFilter,
       typeFilter === "all" ? undefined : typeFilter,
       search || undefined
     );
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [page, pageSize, statusFilter, typeFilter, search]);
+  }, [fetchAccounts, page, pageSize, statusFilter, typeFilter, search]);
+
+  useEffect(() => {
+    loadAccounts();
+  }, [loadAccounts]);
 
   const handleStatusChange = (value: string | null) => {
     if (!value) return;

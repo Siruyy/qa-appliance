@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import {
   ArrowLeft,
@@ -43,7 +43,7 @@ export function CustomerDetailPage() {
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(false);
 
-  const fetchDetail = async () => {
+  const fetchDetail = useCallback(async () => {
     if (!id) return;
     setLoading(true);
     try {
@@ -54,12 +54,11 @@ export function CustomerDetailPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [id, getCustomerById]);
 
   useEffect(() => {
     fetchDetail();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [id]);
+  }, [fetchDetail]);
 
   if (loading) {
     return (
