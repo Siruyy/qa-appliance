@@ -17,6 +17,50 @@ export interface DashboardStats {
   collections_this_month: number;
 }
 
+// Dashboard full data (Phase 7)
+export interface DailySales {
+  date: string;
+  total: number;
+}
+
+export interface DailyCollection {
+  date: string;
+  total: number;
+}
+
+export interface RecentSale {
+  id: number;
+  sale_date: string;
+  customer_name: string;
+  total: number;
+  payment_type: string;
+}
+
+export interface UpcomingDue {
+  account_id: number;
+  customer_name: string;
+  due_date: string;
+  amount_due: number;
+  product_summary: string;
+}
+
+export interface DashboardData {
+  today_sales_total: number;
+  today_sales_count: number;
+  month_sales_total: number;
+  month_sales_count: number;
+  last_month_sales_total: number;
+  total_receivables: number;
+  open_accounts_count: number;
+  overdue_accounts_count: number;
+  overdue_total: number;
+  low_stock_count: number;
+  sales_last_30_days: DailySales[];
+  collections_last_30_days: DailyCollection[];
+  recent_sales: RecentSale[];
+  upcoming_due: UpcomingDue[];
+}
+
 // Report 1: Sales Summary
 export interface SalesSummaryRow {
   id: number;

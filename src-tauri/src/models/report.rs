@@ -160,3 +160,53 @@ pub struct ProfitLossReport {
     pub gross_margin_pct: f64,
     pub by_category: Vec<CategoryRevenue>,
 }
+
+// ── Dashboard (Phase 7) ──────────────────────────────
+
+#[derive(Debug, Serialize)]
+pub struct DailySales {
+    pub date: String,
+    pub total: f64,
+}
+
+#[derive(Debug, Serialize)]
+pub struct DailyCollection {
+    pub date: String,
+    pub total: f64,
+}
+
+#[derive(Debug, Serialize)]
+pub struct RecentSale {
+    pub id: i64,
+    pub sale_date: String,
+    pub customer_name: String,
+    pub total: f64,
+    pub payment_type: String,
+}
+
+#[derive(Debug, Serialize)]
+pub struct UpcomingDue {
+    pub account_id: i64,
+    pub customer_name: String,
+    pub due_date: String,
+    pub amount_due: f64,
+    pub product_summary: String,
+}
+
+#[derive(Debug, Serialize)]
+pub struct DashboardData {
+    pub today_sales_total: f64,
+    pub today_sales_count: i64,
+    pub month_sales_total: f64,
+    pub month_sales_count: i64,
+    pub last_month_sales_total: f64,
+    pub total_receivables: f64,
+    pub open_accounts_count: i64,
+    pub overdue_accounts_count: i64,
+    pub overdue_total: f64,
+    pub low_stock_count: i64,
+    pub sales_last_30_days: Vec<DailySales>,
+    pub collections_last_30_days: Vec<DailyCollection>,
+    pub recent_sales: Vec<RecentSale>,
+    pub upcoming_due: Vec<UpcomingDue>,
+}
