@@ -42,7 +42,7 @@ import {
   previewImport,
   confirmImport,
   fetchImportLogs,
-} from "@/hooks/useImportExport";
+} from "@/lib/importExport";
 import { toExcel } from "@/lib/export";
 import { useCurrency } from "@/hooks/useCurrency";
 import { formatProductSummary } from "@/lib/formatters";
