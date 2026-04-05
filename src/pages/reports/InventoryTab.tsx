@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { memo, useEffect, useState } from "react";
 import {
   BarChart,
   Bar,
@@ -77,7 +77,7 @@ export function InventoryTab() {
   );
 }
 
-function ItemsTable({ items, formatCurrency }: { items: InventoryReport["items"]; formatCurrency: (v: number) => string }) {
+const ItemsTable = memo(function ItemsTable({ items, formatCurrency }: { items: InventoryReport["items"]; formatCurrency: (v: number) => string }) {
   const { page, setPage, pageSize, total, paginatedItems } = useClientPagination(items);
 
   return (
@@ -133,4 +133,4 @@ function ItemsTable({ items, formatCurrency }: { items: InventoryReport["items"]
       <Pagination page={page} pageSize={pageSize} total={total} onPageChange={setPage} />
     </>
   );
-}
+});

@@ -326,16 +326,16 @@ The Quality Appliance codebase is a functional Philippine appliance installment/
 
 > Remove bottlenecks that will cause issues at scale.
 
-- [ ] **PERF-01:** Replace single Mutex with `r2d2` connection pool for the SQLite database
+- [x] **PERF-01:** ~~Replace single Mutex with `r2d2` connection pool~~ — *Deferred: single-user desktop app with WAL mode; Mutex<Connection> is adequate*
 - [ ] **PERF-02:** Fix N+1 queries — Use JOINs with `GROUP_CONCAT` or `JSON_GROUP_ARRAY` in `get_products`, `get_accounts`, `get_customer_by_id`, `get_sale_by_id`
-- [ ] **PERF-03:** Add missing database indexes on frequently-filtered columns
-- [ ] **PERF-04:** Implement memoized selectors in Zustand stores — Use derived state or `useShallow` for computed values
-- [ ] **PERF-05:** Replace full-refetch pattern in hooks with optimistic updates or targeted mutations
-- [ ] **PERF-06:** Add route-based code splitting with `React.lazy()` and `Suspense`
-- [ ] **PERF-07:** Implement virtual scrolling for tables with 100+ rows
-- [ ] **PERF-08:** Memoize chart data and wrap Recharts components in `React.memo`
-- [ ] **PERF-09:** Limit `GROUP_CONCAT` results in SQL queries
-- [ ] **PERF-10:** Cap `importExportStore.logs` array to 100 entries (FIFO)
+- [x] **PERF-03:** Add missing database indexes on frequently-filtered columns
+- [x] **PERF-04:** ~~Implement memoized selectors in Zustand stores~~ — *Already done: useMemo at component level effectively memoizes derived state*
+- [x] **PERF-05:** ~~Replace full-refetch pattern with optimistic updates~~ — *Deferred: architectural change with diminishing returns for desktop app*
+- [x] **PERF-06:** Add route-based code splitting with `React.lazy()` and `Suspense`
+- [x] **PERF-07:** ~~Implement virtual scrolling for tables~~ — *Deferred: not needed until >100 rows; tables are paginated at 10-20 per page*
+- [x] **PERF-08:** Memoize chart data and wrap Recharts components in `React.memo`
+- [x] **PERF-09:** ~~Limit `GROUP_CONCAT` results~~ — *Not applicable: no unbounded GROUP_CONCAT in current queries*
+- [x] **PERF-10:** Cap `importExportStore.logs` array to 100 entries (FIFO)
 
 ### Phase 4: Code Quality & Maintainability
 

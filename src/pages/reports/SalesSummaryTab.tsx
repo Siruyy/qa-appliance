@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { memo, useEffect, useState } from "react";
 import {
   LineChart,
   Line,
@@ -77,7 +77,7 @@ export function SalesSummaryTab() {
   );
 }
 
-function SalesTable({ sales, formatCurrency }: { sales: SalesSummaryReport["sales"]; formatCurrency: (v: number) => string }) {
+const SalesTable = memo(function SalesTable({ sales, formatCurrency }: { sales: SalesSummaryReport["sales"]; formatCurrency: (v: number) => string }) {
   const { page, setPage, pageSize, total, paginatedItems } = useClientPagination(sales);
 
   return (
@@ -127,4 +127,4 @@ function SalesTable({ sales, formatCurrency }: { sales: SalesSummaryReport["sale
       <Pagination page={page} pageSize={pageSize} total={total} onPageChange={setPage} />
     </>
   );
-}
+});

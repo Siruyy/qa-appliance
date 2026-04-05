@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { memo, useEffect, useState } from "react";
 import {
   BarChart,
   Bar,
@@ -76,7 +76,7 @@ export function CollectionsTab() {
   );
 }
 
-function PaymentsTable({ payments, formatCurrency }: { payments: CollectionsReport["payments"]; formatCurrency: (v: number) => string }) {
+const PaymentsTable = memo(function PaymentsTable({ payments, formatCurrency }: { payments: CollectionsReport["payments"]; formatCurrency: (v: number) => string }) {
   const { page, setPage, pageSize, total, paginatedItems } = useClientPagination(payments);
 
   return (
@@ -120,4 +120,4 @@ function PaymentsTable({ payments, formatCurrency }: { payments: CollectionsRepo
       <Pagination page={page} pageSize={pageSize} total={total} onPageChange={setPage} />
     </>
   );
-}
+});

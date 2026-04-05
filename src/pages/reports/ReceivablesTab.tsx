@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { memo, useEffect, useState } from "react";
 import {
   PieChart,
   Pie,
@@ -87,7 +87,7 @@ export function ReceivablesTab() {
   );
 }
 
-function AccountsTable({ accounts, formatCurrency }: { accounts: ReceivablesReport["accounts"]; formatCurrency: (v: number) => string }) {
+const AccountsTable = memo(function AccountsTable({ accounts, formatCurrency }: { accounts: ReceivablesReport["accounts"]; formatCurrency: (v: number) => string }) {
   const { page, setPage, pageSize, total, paginatedItems } = useClientPagination(accounts);
 
   return (
@@ -137,4 +137,4 @@ function AccountsTable({ accounts, formatCurrency }: { accounts: ReceivablesRepo
       <Pagination page={page} pageSize={pageSize} total={total} onPageChange={setPage} />
     </>
   );
-}
+});
