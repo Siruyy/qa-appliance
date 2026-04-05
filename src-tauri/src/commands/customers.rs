@@ -153,7 +153,7 @@ pub fn get_customer_by_id(
     let mut sales_stmt = conn
         .prepare(
             "SELECT s.id, s.sale_date, s.total, s.payment_type, s.status,
-                    GROUP_CONCAT(p.name || COALESCE(' ' || pv.attributes, ''), ', ') AS items_summary
+                    GROUP_CONCAT(p.name || ' (×' || si.quantity || ')', ', ') AS items_summary
              FROM sales s
              LEFT JOIN sale_items si ON si.sale_id = s.id
              LEFT JOIN product_variants pv ON pv.id = si.variant_id
@@ -184,7 +184,7 @@ pub fn get_customer_by_id(
         .prepare(
             "SELECT ia.id, ia.sale_id, ia.principal, ia.balance_remaining,
                     ia.has_schedule, ia.term_months, ia.monthly_amount, ia.status,
-                    GROUP_CONCAT(p.name || COALESCE(' ' || pv.attributes, ''), ', ') AS items_summary
+                    GROUP_CONCAT(p.name || ' (×' || si.quantity || ')', ', ') AS items_summary
              FROM installment_accounts ia
              LEFT JOIN sales s ON s.id = ia.sale_id
              LEFT JOIN sale_items si ON si.sale_id = s.id

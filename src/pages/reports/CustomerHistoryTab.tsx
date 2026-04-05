@@ -78,7 +78,11 @@ export function CustomerHistoryTab() {
           onValueChange={(val) => setSelectedCustomerId(val ? Number(val) : null)}
         >
           <SelectTrigger className="w-[260px]">
-            <SelectValue placeholder="Select a customer…" />
+            <SelectValue placeholder="Select a customer…">
+              {selectedCustomerId
+                ? customers.find((c) => c.id === selectedCustomerId)?.name ?? "Loading…"
+                : undefined}
+            </SelectValue>
           </SelectTrigger>
           <SelectContent>
             {customers.map((c) => (
