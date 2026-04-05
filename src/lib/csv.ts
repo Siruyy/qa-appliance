@@ -1,7 +1,10 @@
+import { save } from "@tauri-apps/plugin-dialog";
+import { writeFile } from "@tauri-apps/plugin-fs";
+
 /**
- * Convert an array of objects to CSV and trigger a browser download.
+ * Convert an array of objects to CSV and save via native file dialog.
  */
-export function downloadCsv<T extends object>(
+export async function downloadCsv<T extends object>(
   data: T[],
   filename: string,
   columns?: { key: string; label: string }[]
@@ -16,13 +19,16 @@ export function downloadCsv<T extends object>(
   );
 
   const csv = [header, ...rows].join("\n");
-  const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = filename.endsWith(".csv") ? filename : `${filename}.csv`;
-  a.click();
-  URL.revokeObjectURL(url);
+  const defaultName = filename.endsWith(".csv") ? filename : `${filename}.csv`;
+
+  const path = await save({
+    defaultPath: defaultName,
+    filters: [{ name: "CSV", extensions: ["csv"] }],
+  });
+  if (!path) return; // user cancelled
+
+  const encoder = new TextEncoder();
+  await writeFile(path, encoder.encode("\uFEFF" + csv));
 }
 
 function escapeCsvField(value: string): string {

@@ -27,4 +27,5 @@ chrono = { version = "0.4", features = ["serde"] }
 dirs = "5"
 calamine = "0.34.0"
 tauri-plugin-dialog = "2.6.0"
+tauri-plugin-fs = "2"
 

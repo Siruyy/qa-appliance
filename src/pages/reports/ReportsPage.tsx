@@ -285,7 +285,7 @@ export function ReportsPage() {
 }
 
 // Shared helper to dispatch export based on format
-function doExport(
+async function doExport(
   format: "excel" | "pdf" | "csv",
   filename: string,
   title: string,
@@ -296,10 +296,10 @@ function doExport(
   storeName?: string
 ) {
   if (format === "excel") {
-    toExcel({ filename, sheetName: title, kpis, headers, rows });
+    await toExcel({ filename, sheetName: title, kpis, headers, rows });
   } else if (format === "pdf") {
-    toPdf({ filename, title, storeName, dateRange, kpis, headers, rows });
+    await toPdf({ filename, title, storeName, dateRange, kpis, headers, rows });
   } else {
-    toCsv({ filename, headers, rows });
+    await toCsv({ filename, headers, rows });
   }
 }

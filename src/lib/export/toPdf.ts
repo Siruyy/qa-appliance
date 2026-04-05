@@ -1,5 +1,7 @@
 import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
+import { save } from "@tauri-apps/plugin-dialog";
+import { writeFile } from "@tauri-apps/plugin-fs";
 
 interface PdfExportOptions {
   filename: string;
@@ -15,7 +17,7 @@ interface PdfExportOptions {
 // Emerald-based header color matching --cta theme
 const HEADER_COLOR: [number, number, number] = [16, 185, 129];
 
-export function toPdf({
+export async function toPdf({
   filename,
   title,
   storeName = "Quality Appliance",
@@ -75,5 +77,12 @@ export function toPdf({
     },
   });
 
-  doc.save(`${filename}.pdf`);
+  const path = await save({
+    defaultPath: `${filename}.pdf`,
+    filters: [{ name: "PDF", extensions: ["pdf"] }],
+  });
+  if (!path) return; // user cancelled
+
+  const buf = doc.output("arraybuffer");
+  await writeFile(path, new Uint8Array(buf));
 }

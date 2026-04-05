@@ -43,7 +43,7 @@ import {
   confirmImport,
   fetchImportLogs,
 } from "@/lib/importExport";
-import { toExcel } from "@/lib/export";
+import { toExcel, toExcelMultiSheet } from "@/lib/export";
 import { useCurrency } from "@/hooks/useCurrency";
 import { formatProductSummary } from "@/lib/formatters";
 import type { ImportPreview } from "@/types/import-export";
@@ -201,32 +201,62 @@ function ExportSection() {
               data.sales.length +
               data.accounts.length +
               data.payments.length;
-            // Export each category as a separate sheet
-            await toExcel({
+            await toExcelMultiSheet({
               filename: "all_data_export",
-              sheetName: "Products",
-              headers: [
-                "Category",
-                "Product Name",
-                "Color",
-                "Size",
-                "SKU",
-                "Cost",
-                "Price",
-                "Stock",
-                "Active",
+              sheets: [
+                {
+                  sheetName: "Products",
+                  headers: ["Category", "Product Name", "Color", "Size", "SKU", "Cost", "Price", "Stock", "Active"],
+                  rows: data.products.map((p) => [
+                    p.category, p.product_name, p.variant_color ?? "", p.variant_size ?? "",
+                    p.sku, formatCurrency(p.cost_price), formatCurrency(p.selling_price),
+                    String(p.stock_qty), p.is_active ? "Yes" : "No",
+                  ]),
+                },
+                {
+                  sheetName: "Categories",
+                  headers: ["ID", "Name", "Description"],
+                  rows: data.categories.map((c) => [
+                    String(c.id), c.name, c.description ?? "",
+                  ]),
+                },
+                {
+                  sheetName: "Customers",
+                  headers: ["ID", "Name", "Phone", "Address", "Notes", "Active", "Created"],
+                  rows: data.customers.map((c) => [
+                    String(c.id), c.name, c.phone ?? "", c.address ?? "",
+                    c.notes ?? "", c.is_active ? "Yes" : "No", c.created_at,
+                  ]),
+                },
+                {
+                  sheetName: "Sales",
+                  headers: ["ID", "Date", "Customer", "Items", "Total", "Payment Type", "Down Payment", "Status"],
+                  rows: data.sales.map((s) => [
+                    String(s.id), s.sale_date, s.customer_name, s.items_summary,
+                    formatCurrency(s.total_amount), s.payment_type,
+                    s.down_payment != null ? formatCurrency(s.down_payment) : "", s.status,
+                  ]),
+                },
+                {
+                  sheetName: "Accounts",
+                  headers: ["ID", "Customer", "Product", "Principal", "Balance", "Interest %", "Penalty %", "Term", "Status", "Created"],
+                  rows: data.accounts.map((a) => [
+                    String(a.id), a.customer_name, formatProductSummary(a.product_summary),
+                    formatCurrency(a.principal), formatCurrency(a.balance_remaining),
+                    `${a.interest_rate}%`, `${a.penalty_rate}%`,
+                    a.term_months ? `${a.term_months} mo` : "N/A", a.status, a.created_at,
+                  ]),
+                },
+                {
+                  sheetName: "Payments",
+                  headers: ["ID", "Date", "Customer", "Product", "Amount", "Type", "Notes"],
+                  rows: data.payments.map((p) => [
+                    String(p.id), p.payment_date, p.customer_name,
+                    formatProductSummary(p.product_summary), formatCurrency(p.amount),
+                    p.payment_type, p.notes ?? "",
+                  ]),
+                },
               ],
-              rows: data.products.map((p) => [
-                p.category,
-                p.product_name,
-                p.variant_color ?? "",
-                p.variant_size ?? "",
-                p.sku,
-                formatCurrency(p.cost_price),
-                formatCurrency(p.selling_price),
-                String(p.stock_qty),
-                p.is_active ? "Yes" : "No",
-              ]),
             });
             toast.success(`Exported ${total} records across all data`);
             break;

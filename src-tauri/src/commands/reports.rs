@@ -533,7 +533,7 @@ pub fn get_aging_report(state: State<DbState>) -> Result<AgingReport, String> {
     let sql = "
         SELECT
             c.id AS customer_id,
-            c.first_name || ' ' || c.last_name AS customer_name,
+            c.name AS customer_name,
             ia.balance_remaining,
             COALESCE(
                 (SELECT MIN(ps.due_date) FROM payment_schedules ps
@@ -544,7 +544,7 @@ pub fn get_aging_report(state: State<DbState>) -> Result<AgingReport, String> {
         JOIN sales s ON s.id = ia.sale_id
         JOIN customers c ON c.id = s.customer_id
         WHERE ia.status = 'open' AND ia.balance_remaining > 0.01
-        ORDER BY c.last_name, c.first_name
+        ORDER BY c.name
     ";
 
     let mut stmt = db.prepare(sql).map_err(|e| e.to_string())?;
@@ -553,7 +553,7 @@ pub fn get_aging_report(state: State<DbState>) -> Result<AgingReport, String> {
             row.get::<_, i64>(0)?,
             row.get::<_, String>(1)?,
             row.get::<_, f64>(2)?,
-            row.get::<_, String>(3)?,
+            row.get::<_, Option<String>>(3)?,
         ))
     }).map_err(|e| e.to_string())?;
 
@@ -563,7 +563,9 @@ pub fn get_aging_report(state: State<DbState>) -> Result<AgingReport, String> {
     let mut customer_map: std::collections::HashMap<i64, AgingBucket> = std::collections::HashMap::new();
 
     for row in rows {
-        let (cid, cname, balance, earliest_due) = row.map_err(|e| e.to_string())?;
+        let (cid, cname, balance, earliest_due_opt) = row.map_err(|e| e.to_string())?;
+
+        let earliest_due = earliest_due_opt.unwrap_or_else(|| today.clone());
 
         let days_overdue = if earliest_due <= today {
             let due_date = chrono::NaiveDate::parse_from_str(&earliest_due, "%Y-%m-%d")
