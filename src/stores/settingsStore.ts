@@ -44,17 +44,29 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
 
   /** Persist a single setting and update local state. */
   updateSetting: async (key: string, value: string) => {
-    await invoke("update_setting", { key, value });
-    set({ settings: { ...get().settings, [key]: value } });
+    const prev = get().settings;
+    set({ settings: { ...prev, [key]: value } });
+    try {
+      await invoke("update_setting", { key, value });
+    } catch (err) {
+      set({ settings: prev });
+      throw err;
+    }
   },
 
   /** Persist multiple settings at once and update local state. */
   updateSettingsBatch: async (pairs: [string, string][]) => {
-    await invoke("update_settings_batch", { pairs });
-    const updated = { ...get().settings };
+    const prev = get().settings;
+    const updated = { ...prev };
     for (const [k, v] of pairs) {
       updated[k] = v;
     }
     set({ settings: updated });
+    try {
+      await invoke("update_settings_batch", { pairs });
+    } catch (err) {
+      set({ settings: prev });
+      throw err;
+    }
   },
 }));

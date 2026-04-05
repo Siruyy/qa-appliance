@@ -1,6 +1,7 @@
 use tauri::State;
 use crate::db::connection::DbState;
 use crate::models::report::*;
+use crate::utils::date::{today_iso, days_since};
 use std::collections::HashMap;
 
 // ──────────────────────────────────────────────────────────
@@ -557,7 +558,7 @@ pub fn get_aging_report(state: State<DbState>) -> Result<AgingReport, String> {
         ))
     }).map_err(|e| e.to_string())?;
 
-    let today = chrono::Local::now().format("%Y-%m-%d").to_string();
+    let today = today_iso();
 
     // Aggregate by customer
     let mut customer_map: std::collections::HashMap<i64, AgingBucket> = std::collections::HashMap::new();
@@ -568,11 +569,7 @@ pub fn get_aging_report(state: State<DbState>) -> Result<AgingReport, String> {
         let earliest_due = earliest_due_opt.unwrap_or_else(|| today.clone());
 
         let days_overdue = if earliest_due <= today {
-            let due_date = chrono::NaiveDate::parse_from_str(&earliest_due, "%Y-%m-%d")
-                .map_err(|e| e.to_string())?;
-            let today_date = chrono::NaiveDate::parse_from_str(&today, "%Y-%m-%d")
-                .map_err(|e| e.to_string())?;
-            (today_date - due_date).num_days()
+            days_since(&earliest_due, &today)
         } else {
             0
         };

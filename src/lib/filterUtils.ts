@@ -18,15 +18,17 @@ export function matchesSearch<T>(
   });
 }
 
-/** Check whether a date string falls within an optional range. */
+/** Check whether an ISO date string (YYYY-MM-DD) falls within an optional range. */
 export function matchesDateRange(
   dateStr: string | null | undefined,
   from: string,
   to: string
 ): boolean {
   if (!dateStr) return true;
-  if (from && dateStr < from) return false;
-  if (to && dateStr > to) return false;
+  // Normalize to date-only (first 10 chars) for safe lexicographic comparison
+  const d = dateStr.slice(0, 10);
+  if (from && d < from.slice(0, 10)) return false;
+  if (to && d > to.slice(0, 10)) return false;
   return true;
 }
 

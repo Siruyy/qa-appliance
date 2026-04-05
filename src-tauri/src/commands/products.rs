@@ -283,10 +283,13 @@ pub fn get_product_by_id(db: State<'_, DbState>, id: i64) -> Result<Product, Str
 
 #[tauri::command]
 pub fn create_product(db: State<'_, DbState>, payload: CreateProductPayload) -> Result<Product, String> {
+    let name = require_text("Product name", &payload.name, 300)?;
+    let description = optional_text("Description", &payload.description, 2000)?;
+
     let conn = db.0.lock().map_err(|e| e.to_string())?;
     conn.execute(
         "INSERT INTO products (category_id, name, description) VALUES (?1, ?2, ?3)",
-        params![payload.category_id, payload.name, payload.description],
+        params![payload.category_id, name, description],
     )
     .map_err(|e| e.to_string())?;
 
@@ -303,12 +306,14 @@ pub fn update_product(db: State<'_, DbState>, payload: UpdateProductPayload) -> 
     let mut values: Vec<Box<dyn rusqlite::types::ToSql>> = Vec::new();
 
     if let Some(ref name) = payload.name {
+        let name = require_text("Product name", name, 300)?;
         sets.push("name = ?".into());
-        values.push(Box::new(name.clone()));
+        values.push(Box::new(name));
     }
     if let Some(ref desc) = payload.description {
+        let desc = optional_text("Description", &Some(desc.clone()), 2000)?.unwrap_or_default();
         sets.push("description = ?".into());
-        values.push(Box::new(desc.clone()));
+        values.push(Box::new(desc));
     }
     if let Some(cat_id) = payload.category_id {
         sets.push("category_id = ?".into());
