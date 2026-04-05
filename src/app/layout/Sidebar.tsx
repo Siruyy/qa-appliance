@@ -71,13 +71,13 @@ export function Sidebar() {
     <aside
       className={cn(
         "flex h-full shrink-0 flex-col bg-[var(--sidebar)] text-[var(--sidebar-foreground)] transition-all duration-200",
-        sidebarCollapsed ? "w-16" : "w-60"
+        sidebarCollapsed ? "w-[var(--sidebar-width-collapsed)]" : "w-[var(--sidebar-width)]"
       )}
     >
       {/* Brand */}
       <div
         className={cn(
-          "flex h-14 items-center gap-2 px-4",
+          "flex h-[var(--topbar-height)] items-center gap-2 px-4",
           sidebarCollapsed && "justify-center px-0"
         )}
       >

@@ -33,7 +33,7 @@ export function TopBar() {
   const title = pathKey ? pageTitles[pathKey] : "Quality Appliance";
 
   return (
-    <header className="flex h-14 shrink-0 items-center justify-between border-b border-border bg-background px-6">
+    <header className="flex h-[var(--topbar-height)] shrink-0 items-center justify-between border-b border-border bg-background px-6">
       <h1 className="text-lg font-semibold text-foreground" style={{ fontFamily: "var(--font-heading)" }}>
         {title}
       </h1>

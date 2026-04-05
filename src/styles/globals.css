@@ -165,6 +165,23 @@
     --cta-foreground: #052E16;
 }
 
+/* Layout constants */
+:root {
+    --sidebar-width: 15rem;       /* 240px — w-60 */
+    --sidebar-width-collapsed: 4rem; /* 64px — w-16 */
+    --topbar-height: 3.5rem;      /* 56px — h-14 */
+}
+
+/* Animation / transition tokens */
+:root {
+    --duration-fast: 100ms;
+    --duration-normal: 200ms;
+    --duration-slow: 300ms;
+    --ease-default: cubic-bezier(0.4, 0, 0.2, 1);
+    --ease-in: cubic-bezier(0.4, 0, 1, 1);
+    --ease-out: cubic-bezier(0, 0, 0.2, 1);
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;
