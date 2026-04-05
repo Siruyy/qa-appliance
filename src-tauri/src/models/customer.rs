@@ -16,20 +16,6 @@ pub struct Customer {
     pub updated_at: String,
 }
 
-/// Lighter struct when we don't need computed fields
-#[allow(dead_code)]
-#[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct CustomerBasic {
-    pub id: i64,
-    pub name: String,
-    pub phone: Option<String>,
-    pub address: Option<String>,
-    pub notes: Option<String>,
-    pub is_active: bool,
-    pub created_at: String,
-    pub updated_at: String,
-}
-
 // ── Customer Detail (includes linked data) ──
 
 #[derive(Debug, Serialize, Deserialize, Clone)]

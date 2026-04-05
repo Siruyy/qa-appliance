@@ -189,6 +189,7 @@ fn migrate_v1(conn: &Connection) -> Result<()> {
         CREATE INDEX IF NOT EXISTS idx_payments_account ON payments(account_id);
         CREATE INDEX IF NOT EXISTS idx_payments_date ON payments(payment_date);
         CREATE INDEX IF NOT EXISTS idx_payments_schedule ON payments(schedule_id);
+        CREATE INDEX IF NOT EXISTS idx_payments_type ON payments(type);
 
         -- Settings
         CREATE TABLE IF NOT EXISTS settings (

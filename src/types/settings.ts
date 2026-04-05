@@ -1,4 +1,4 @@
-export interface AppSettings {
+export interface AppSettings extends Record<string, string> {
   default_interest_rate: string;
   default_penalty_rate: string;
   default_term_months: string;
@@ -9,7 +9,6 @@ export interface AppSettings {
   store_phone: string;
   currency_symbol: string;
   preset_terms: string;
-  [key: string]: string;
 }
 
 /** Typed settings with proper number/boolean types */

@@ -13,6 +13,7 @@ const defaultSettings: AppSettings = {
   store_phone: "",
   currency_symbol: "₱",
   preset_terms: "3,6,12,18,24",
+  receipt_footer: "",
 };
 
 interface SettingsState {

@@ -45,14 +45,16 @@ pub fn update_settings_batch(
     state: State<'_, DbState>,
     pairs: Vec<(String, String)>,
 ) -> Result<(), String> {
-    let db = state.0.lock().map_err(|e| e.to_string())?;
+    let mut db = state.0.lock().map_err(|e| e.to_string())?;
+    let tx = db.transaction().map_err(|e| e.to_string())?;
     for (key, value) in &pairs {
-        db.execute(
+        tx.execute(
             "INSERT INTO settings (key, value) VALUES (?1, ?2)
              ON CONFLICT(key) DO UPDATE SET value = excluded.value",
             params![key, value],
         )
         .map_err(|e| e.to_string())?;
     }
+    tx.commit().map_err(|e| e.to_string())?;
     Ok(())
 }

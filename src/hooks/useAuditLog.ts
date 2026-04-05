@@ -2,16 +2,10 @@ import { extractErrorMessage } from "@/lib/error";
 import { useCallback, useState } from "react";
 import { invoke } from "@/lib/invoke";
 import type { PaginatedResult } from "@/types/shared";
+import type { AuditEntry } from "@/types/audit";
 import { toast } from "sonner";
 
-export interface AuditEntry {
-  id: number;
-  action: string;
-  entity_type: string;
-  entity_id: number | null;
-  details: string | null;
-  created_at: string;
-}
+export type { AuditEntry } from "@/types/audit";
 
 export function useAuditLog() {
   const [entries, setEntries] = useState<AuditEntry[]>([]);

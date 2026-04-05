@@ -131,7 +131,7 @@ pub fn get_accounts(
 pub fn get_account_by_id(db: State<DbState>, id: i64) -> Result<AccountDetail, String> {
     let conn = db.0.lock().map_err(|e| e.to_string())?;
 
-    let account = conn
+    let mut account: AccountDetail = conn
         .query_row(
             "SELECT ia.id, ia.sale_id, ia.customer_id, c.name AS customer_name,
                     COALESCE(
@@ -159,29 +159,31 @@ pub fn get_account_by_id(db: State<DbState>, id: i64) -> Result<AccountDetail, S
              GROUP BY ia.id",
             rusqlite::params![id],
             |row| {
-                Ok((
-                    row.get::<_, i64>(0)?,
-                    row.get::<_, i64>(1)?,
-                    row.get::<_, i64>(2)?,
-                    row.get::<_, String>(3)?,
-                    row.get::<_, String>(4)?,
-                    row.get::<_, f64>(5)?,
-                    row.get::<_, f64>(6)?,
-                    row.get::<_, f64>(7)?,
-                    row.get::<_, f64>(8)?,
-                    row.get::<_, f64>(9)?,
-                    row.get::<_, bool>(10)?,
-                    row.get::<_, Option<i64>>(11)?,
-                    row.get::<_, Option<f64>>(12)?,
-                    row.get::<_, Option<String>>(13)?,
-                    row.get::<_, String>(14)?,
-                    row.get::<_, Option<String>>(15)?,
-                    row.get::<_, Option<String>>(16)?,
-                    row.get::<_, bool>(17)?,
-                    row.get::<_, Option<String>>(18)?,
-                    row.get::<_, String>(19)?,
-                    row.get::<_, String>(20)?,
-                ))
+                Ok(AccountDetail {
+                    id: row.get(0)?,
+                    sale_id: row.get(1)?,
+                    customer_id: row.get(2)?,
+                    customer_name: row.get(3)?,
+                    product_summary: row.get(4)?,
+                    principal: row.get(5)?,
+                    down_payment: row.get(6)?,
+                    interest_rate: row.get(7)?,
+                    penalty_rate: row.get(8)?,
+                    balance_remaining: row.get(9)?,
+                    has_schedule: row.get(10)?,
+                    term_months: row.get(11)?,
+                    monthly_amount: row.get(12)?,
+                    start_date: row.get(13)?,
+                    status: row.get(14)?,
+                    last_penalty_date: row.get(15)?,
+                    next_due_date: row.get(16)?,
+                    is_overdue: row.get(17)?,
+                    notes: row.get(18)?,
+                    created_at: row.get(19)?,
+                    updated_at: row.get(20)?,
+                    schedule: Vec::new(),
+                    payments: Vec::new(),
+                })
             },
         )
         .map_err(|_| format!("Account with id {} not found", id))?;
@@ -235,31 +237,10 @@ pub fn get_account_by_id(db: State<DbState>, id: i64) -> Result<AccountDetail, S
         .collect::<Result<Vec<_>, _>>()
         .map_err(|e| format!("Row read error: {}", e))?;
 
-    Ok(AccountDetail {
-        id: account.0,
-        sale_id: account.1,
-        customer_id: account.2,
-        customer_name: account.3,
-        product_summary: account.4,
-        principal: account.5,
-        down_payment: account.6,
-        interest_rate: account.7,
-        penalty_rate: account.8,
-        balance_remaining: account.9,
-        has_schedule: account.10,
-        term_months: account.11,
-        monthly_amount: account.12,
-        start_date: account.13,
-        status: account.14,
-        last_penalty_date: account.15,
-        next_due_date: account.16,
-        is_overdue: account.17,
-        notes: account.18,
-        created_at: account.19,
-        updated_at: account.20,
-        schedule,
-        payments,
-    })
+    account.schedule = schedule;
+    account.payments = payments;
+
+    Ok(account)
 }
 
 #[tauri::command]
