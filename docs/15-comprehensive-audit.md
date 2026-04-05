@@ -341,22 +341,22 @@ The Quality Appliance codebase is a functional Philippine appliance installment/
 
 > Reduce tech debt and make the codebase easier to work with.
 
-- [ ] **CQ-01:** Extract shared status-to-variant mapping to `lib/statusVariants.ts`
-- [ ] **CQ-02:** Extract shared payment-type-to-label mapping to `lib/typeLabels.ts`
-- [ ] **CQ-03:** Consolidate currency formatting — Remove `formatCurrency()` hardcoded ₱ in `formatters.ts`, always use settings-based `useCurrency()` hook
-- [ ] **CQ-04:** Standardize pagination defaults across all stores (or document the differences)
-- [ ] **CQ-05:** Extract shared search/filter logic from stores to `lib/filterUtils.ts`
-- [ ] **CQ-06:** Fix all loose `string` types — Replace with proper union type references across `customer.ts`, `report.ts`, `sale.ts`, `import-export.ts`
-- [ ] **CQ-07:** Retype `AppSettings` — Replace string map with properly typed object with numeric fields
-- [ ] **CQ-08:** Wrap all hook mutation functions in `useCallback`
-- [ ] **CQ-09:** Add error handling to all hooks — `useCategories`, `useProducts`, `useImportExport`, `useReports`, `useDashboard`
-- [ ] **CQ-10:** Convert `useImportExport` to proper React hook with loading/error state, or move to `lib/` utilities
-- [ ] **CQ-11:** Split `saleStore` into `saleListStore` and `cartStore`
-- [ ] **CQ-12:** Split large page components — `ImportExportPage` (722 lines), `NewSalePage` (433 lines), `InventoryPage` (428 lines)
-- [ ] **CQ-13:** Create `src/lib/constants.ts` for shared limits, thresholds, and defaults
-- [ ] **CQ-14:** Standardize filter reset behavior (all stores should reset `page` to 1 on filter change)
-- [ ] **CQ-15:** Define Rust constants for magic numbers — `CENTAVO_TOLERANCE`, `PENALTY_DAYS_UNSCHEDULED`, `DEFAULT_LOW_STOCK_THRESHOLD`
-- [ ] **CQ-16:** Extract DRY query builder helper in Rust backend
+- [x] **CQ-01:** Extract shared status-to-variant mapping to `lib/badgeVariants.ts`
+- [x] **CQ-02:** Extract shared payment-type-to-label mapping to `lib/badgeVariants.ts`
+- [x] **CQ-03:** ~~Consolidate currency formatting~~ Already done — `useCurrency()` wraps `formatCurrency` with settings symbol; no direct imports found
+- [x] **CQ-04:** Standardize pagination defaults across all stores — unified to 50
+- [ ] **CQ-05:** Extract shared search/filter logic from stores to `lib/filterUtils.ts` *(deferred — low impact)*
+- [x] **CQ-06:** Fix all loose `string` types — Replace with proper union type references across `customer.ts`, `report.ts`, `sale.ts`, `import-export.ts`, `account.ts`
+- [ ] **CQ-07:** Retype `AppSettings` — *(deferred — entire flow uses string key-value pairs from SQLite; consumers parse where needed)*
+- [ ] **CQ-08:** Wrap all hook mutation functions in `useCallback` *(deferred — low impact for desktop app; mutations called in event handlers)*
+- [x] **CQ-09:** Add error handling to fetch hooks — `useCategories`, `useProducts`, `useAccounts`, `useCustomers`, `usePayments`
+- [ ] **CQ-10:** Convert `useImportExport` to proper React hook *(deferred — functions are stateless, hook pattern would add complexity)*
+- [ ] **CQ-11:** Split `saleStore` into `saleListStore` and `cartStore` *(deferred — large refactor)*
+- [ ] **CQ-12:** Split large page components — `ImportExportPage`, `NewSalePage`, `InventoryPage` *(deferred — large refactor)*
+- [x] **CQ-13:** Create `src/lib/constants.ts` for shared limits, thresholds, and defaults
+- [x] **CQ-14:** ~~Standardize filter reset behavior~~ Already done — all stores reset `page` to 1 on filter change
+- [x] **CQ-15:** Define Rust constants for magic numbers — `CENTAVO_TOLERANCE`, `PENALTY_COOLDOWN_DAYS`, `DEFAULT_LOW_STOCK_THRESHOLD`
+- [ ] **CQ-16:** Extract DRY query builder helper in Rust backend *(deferred — moderate effort)*
 
 ### Phase 5: Styling & Theme Consistency
 

@@ -183,7 +183,7 @@
     text-align: right;
   }
 
-  /* Subtle thin scrollbar */
+  /* Subtle thin scrollbar (Chromium / WebKit) */
   ::-webkit-scrollbar {
     width: 6px;
     height: 6px;
@@ -197,6 +197,12 @@
   }
   ::-webkit-scrollbar-thumb:hover {
     background: #94A3B8;
+  }
+
+  /* Firefox scrollbar */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: #CBD5E1 transparent;
   }
 
   /* Heading typography */

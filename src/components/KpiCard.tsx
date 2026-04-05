@@ -16,17 +16,17 @@ export interface KpiCardProps {
 }
 
 const borderColors: Record<string, string> = {
-  default: "border-l-slate-400 dark:border-l-slate-500",
-  success: "border-l-emerald-500 dark:border-l-emerald-400",
-  warning: "border-l-amber-500 dark:border-l-amber-400",
-  danger: "border-l-red-500 dark:border-l-red-400",
+  default: "border-l-[var(--primary)]",
+  success: "border-l-[var(--success)]",
+  warning: "border-l-[var(--warning)]",
+  danger: "border-l-[var(--danger)]",
 };
 
 const iconBgColors: Record<string, string> = {
-  default: "bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300",
-  success: "bg-emerald-50 text-emerald-600 dark:bg-emerald-950 dark:text-emerald-400",
-  warning: "bg-amber-50 text-amber-600 dark:bg-amber-950 dark:text-amber-400",
-  danger: "bg-red-50 text-red-600 dark:bg-red-950 dark:text-red-400",
+  default: "bg-muted text-muted-foreground",
+  success: "bg-[var(--success-bg)] text-[var(--success)]",
+  warning: "bg-[var(--warning-bg)] text-[var(--warning)]",
+  danger: "bg-[var(--danger-bg)] text-[var(--danger)]",
 };
 
 export function KpiCard({ title, label, value, sub, description, type, alert, icon: Icon, color }: KpiCardProps) {
@@ -46,7 +46,7 @@ export function KpiCard({ title, label, value, sub, description, type, alert, ic
   const subText = sub ?? description;
 
   return (
-    <Card className={cn("border-l-4", borderColors[resolvedColor], alert && "border-destructive border-l-red-500")}>
+    <Card className={cn("border-l-4", borderColors[resolvedColor], alert && "border-destructive border-l-[var(--danger)]")}>
       <CardContent className="flex items-start gap-3 pt-4 pb-4">
         {Icon && (
           <div className={cn("flex h-9 w-9 shrink-0 items-center justify-center rounded-lg", iconBgColors[resolvedColor])}>
