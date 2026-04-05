@@ -708,6 +708,14 @@ fn import_balance_row(db: &rusqlite::Connection, data: &HashMap<String, String>)
     ).map_err(|e| e.to_string())?;
     let sale_id = db.last_insert_rowid();
 
+    // Create a synthetic sale_item so report joins don't miss this sale.
+    // Use variant_id = 0 (no real variant) with the product description as context.
+    db.execute(
+        "INSERT INTO sale_items (sale_id, variant_id, quantity, unit_price)
+         VALUES (?1, 0, 1, ?2)",
+        params![sale_id, original_amount],
+    ).map_err(|e| e.to_string())?;
+
     // Create installment account
     db.execute(
         "INSERT INTO installment_accounts

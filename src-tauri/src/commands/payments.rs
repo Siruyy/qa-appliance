@@ -148,7 +148,7 @@ pub fn record_payment(
     db: State<DbState>,
     payload: RecordPaymentPayload,
 ) -> Result<Payment, String> {
-    let conn = db.0.lock().map_err(|e| e.to_string())?;
+    let mut conn = db.0.lock().map_err(|e| e.to_string())?;
 
     // Validate amount
     if payload.amount <= 0.0 {
@@ -175,113 +175,99 @@ pub fn record_payment(
         ));
     }
 
-    // Begin transaction
-    conn.execute("BEGIN TRANSACTION", rusqlite::params![])
-        .map_err(|e| e.to_string())?;
+    // Use rusqlite Transaction API for automatic rollback on error
+    let tx = conn.transaction().map_err(|e| e.to_string())?;
 
-    let result = (|| -> Result<Payment, String> {
-        // 1. Insert payment record
-        conn.execute(
-            "INSERT INTO payments (account_id, schedule_id, amount, payment_date, type, notes)
-             VALUES (?1, ?2, ?3, ?4, 'payment', ?5)",
-            rusqlite::params![
-                payload.account_id,
-                payload.schedule_id,
-                payload.amount,
-                payload.payment_date,
-                payload.notes,
-            ],
-        )
-        .map_err(|e| format!("Failed to insert payment: {}", e))?;
+    // 1. Insert payment record
+    tx.execute(
+        "INSERT INTO payments (account_id, schedule_id, amount, payment_date, type, notes)
+         VALUES (?1, ?2, ?3, ?4, 'payment', ?5)",
+        rusqlite::params![
+            payload.account_id,
+            payload.schedule_id,
+            payload.amount,
+            payload.payment_date,
+            payload.notes,
+        ],
+    )
+    .map_err(|e| format!("Failed to insert payment: {}", e))?;
 
-        let payment_id = conn.last_insert_rowid();
+    let payment_id = tx.last_insert_rowid();
 
-        // 2. Update account balance
-        let new_balance = ((balance - payload.amount) * 100.0).round() / 100.0;
-        let new_balance = if new_balance < 0.0 { 0.0 } else { new_balance };
+    // 2. Update account balance
+    let new_balance = ((balance - payload.amount) * 100.0).round() / 100.0;
+    let new_balance = if new_balance < 0.0 { 0.0 } else { new_balance };
 
-        conn.execute(
-            "UPDATE installment_accounts
-             SET balance_remaining = ?1, updated_at = datetime('now')
-             WHERE id = ?2",
-            rusqlite::params![new_balance, payload.account_id],
-        )
-        .map_err(|e| format!("Failed to update balance: {}", e))?;
+    tx.execute(
+        "UPDATE installment_accounts
+         SET balance_remaining = ?1, updated_at = datetime('now')
+         WHERE id = ?2",
+        rusqlite::params![new_balance, payload.account_id],
+    )
+    .map_err(|e| format!("Failed to update balance: {}", e))?;
 
-        // 3. If schedule_id provided, update that specific schedule entry
-        if let Some(sid) = payload.schedule_id {
-            apply_payment_to_schedule(&conn, sid, payload.amount)?;
-        } else {
-            // Auto-apply to earliest overdue/pending schedule entry
-            auto_apply_to_schedule(&conn, payload.account_id, payload.amount)?;
-        }
-
-        // 4. Auto-close if fully paid
-        if new_balance <= 0.0 {
-            conn.execute(
-                "UPDATE installment_accounts SET status = 'paid', updated_at = datetime('now') WHERE id = ?1",
-                rusqlite::params![payload.account_id],
-            )
-            .map_err(|e| format!("Failed to update status: {}", e))?;
-
-            // Mark remaining schedule entries as paid
-            conn.execute(
-                "UPDATE payment_schedules SET status = 'paid' WHERE account_id = ?1 AND status != 'paid'",
-                rusqlite::params![payload.account_id],
-            )
-            .map_err(|e| e.to_string())?;
-        }
-
-        // Fetch the created payment with JOINs
-        let payment = conn
-            .query_row(
-                "SELECT pay.id, pay.account_id, pay.schedule_id, c.name,
-                        COALESCE(
-                            (SELECT GROUP_CONCAT(DISTINCT p2.name || COALESCE(' ' || v2.attributes, ''))
-                             FROM sale_items si2
-                             JOIN product_variants v2 ON v2.id = si2.variant_id
-                             JOIN products p2 ON p2.id = v2.product_id
-                             WHERE si2.sale_id = ia.sale_id),
-                            'Unknown Product'
-                        ),
-                        pay.amount, pay.payment_date, pay.type, pay.notes, pay.created_at
-                 FROM payments pay
-                 JOIN installment_accounts ia ON ia.id = pay.account_id
-                 JOIN customers c ON c.id = ia.customer_id
-                 WHERE pay.id = ?1",
-                rusqlite::params![payment_id],
-                |row| {
-                    Ok(Payment {
-                        id: row.get(0)?,
-                        account_id: row.get(1)?,
-                        schedule_id: row.get(2)?,
-                        customer_name: row.get(3)?,
-                        product_summary: row.get(4)?,
-                        amount: row.get(5)?,
-                        payment_date: row.get(6)?,
-                        payment_type: row.get(7)?,
-                        notes: row.get(8)?,
-                        created_at: row.get(9)?,
-                    })
-                },
-            )
-            .map_err(|e| format!("Failed to fetch created payment: {}", e))?;
-
-        Ok(payment)
-    })();
-
-    match result {
-        Ok(payment) => {
-            let _ = insert_audit(&conn, "payment_recorded", "payment", Some(payment.id), Some(&format!("₱{:.2} for account #{}", payment.amount, payment.account_id)));
-            conn.execute("COMMIT", rusqlite::params![])
-                .map_err(|e| e.to_string())?;
-            Ok(payment)
-        }
-        Err(e) => {
-            let _ = conn.execute("ROLLBACK", rusqlite::params![]);
-            Err(e)
-        }
+    // 3. If schedule_id provided, update that specific schedule entry
+    if let Some(sid) = payload.schedule_id {
+        apply_payment_to_schedule(&tx, sid, payload.amount)?;
+    } else {
+        // Auto-apply to earliest overdue/pending schedule entry
+        auto_apply_to_schedule(&tx, payload.account_id, payload.amount)?;
     }
+
+    // 4. Auto-close if fully paid
+    if new_balance <= 0.0 {
+        tx.execute(
+            "UPDATE installment_accounts SET status = 'paid', updated_at = datetime('now') WHERE id = ?1",
+            rusqlite::params![payload.account_id],
+        )
+        .map_err(|e| format!("Failed to update status: {}", e))?;
+
+        // Mark remaining schedule entries as paid
+        tx.execute(
+            "UPDATE payment_schedules SET status = 'paid' WHERE account_id = ?1 AND status != 'paid'",
+            rusqlite::params![payload.account_id],
+        )
+        .map_err(|e| e.to_string())?;
+    }
+
+    // Fetch the created payment with JOINs
+    let payment = tx
+        .query_row(
+            "SELECT pay.id, pay.account_id, pay.schedule_id, c.name,
+                    COALESCE(
+                        (SELECT GROUP_CONCAT(DISTINCT p2.name || COALESCE(' ' || v2.attributes, ''))
+                         FROM sale_items si2
+                         JOIN product_variants v2 ON v2.id = si2.variant_id
+                         JOIN products p2 ON p2.id = v2.product_id
+                         WHERE si2.sale_id = ia.sale_id),
+                        'Unknown Product'
+                    ),
+                    pay.amount, pay.payment_date, pay.type, pay.notes, pay.created_at
+             FROM payments pay
+             JOIN installment_accounts ia ON ia.id = pay.account_id
+             JOIN customers c ON c.id = ia.customer_id
+             WHERE pay.id = ?1",
+            rusqlite::params![payment_id],
+            |row| {
+                Ok(Payment {
+                    id: row.get(0)?,
+                    account_id: row.get(1)?,
+                    schedule_id: row.get(2)?,
+                    customer_name: row.get(3)?,
+                    product_summary: row.get(4)?,
+                    amount: row.get(5)?,
+                    payment_date: row.get(6)?,
+                    payment_type: row.get(7)?,
+                    notes: row.get(8)?,
+                    created_at: row.get(9)?,
+                })
+            },
+        )
+        .map_err(|e| format!("Failed to fetch created payment: {}", e))?;
+
+    let _ = insert_audit(&tx, "payment_recorded", "payment", Some(payment.id), Some(&format!("₱{:.2} for account #{}", payment.amount, payment.account_id)));
+    tx.commit().map_err(|e| e.to_string())?;
+    Ok(payment)
 }
 
 fn apply_payment_to_schedule(

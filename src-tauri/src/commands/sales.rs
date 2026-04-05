@@ -181,7 +181,7 @@ pub fn get_sale_by_id(db: State<DbState>, id: i64) -> Result<SaleDetail, String>
 /// For installment: creates sale → sale_items → deducts stock → installment_account → payment_schedules
 #[tauri::command]
 pub fn create_sale(db: State<DbState>, payload: CreateSalePayload) -> Result<i64, String> {
-    let conn = db.0.lock().map_err(|e| e.to_string())?;
+    let mut conn = db.0.lock().map_err(|e| e.to_string())?;
 
     // Validate items
     if payload.items.is_empty() {
@@ -216,161 +216,149 @@ pub fn create_sale(db: State<DbState>, payload: CreateSalePayload) -> Result<i64
         return Err("Sale total must be positive".to_string());
     }
 
-    // Begin transaction
-    conn.execute("BEGIN TRANSACTION", rusqlite::params![]).map_err(|e| e.to_string())?;
+    // Use rusqlite Transaction API for automatic rollback on error
+    let tx = conn.transaction().map_err(|e| e.to_string())?;
 
-    let result = (|| -> Result<i64, String> {
-        // 1. Insert sale
-        conn.execute(
-            "INSERT INTO sales (customer_id, subtotal, discount, total, payment_type, notes)
+    // 1. Insert sale
+    tx.execute(
+        "INSERT INTO sales (customer_id, subtotal, discount, total, payment_type, notes)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
+        rusqlite::params![
+            payload.customer_id,
+            subtotal,
+            payload.discount,
+            total,
+            payload.payment_type,
+            payload.notes,
+        ],
+    )
+    .map_err(|e| e.to_string())?;
+
+    let sale_id = tx.last_insert_rowid();
+
+    // 2. Insert sale items and deduct stock
+    for item in &payload.items {
+        let item_subtotal = item.unit_price * item.quantity as f64;
+
+        // Snapshot the current cost_price so P&L is historically accurate
+        let cost_price_snapshot: f64 = tx.query_row(
+            "SELECT cost_price FROM product_variants WHERE id = ?1",
+            rusqlite::params![item.variant_id],
+            |row| row.get(0),
+        ).unwrap_or(0.0);
+
+        tx.execute(
+            "INSERT INTO sale_items (sale_id, variant_id, quantity, unit_price, subtotal, cost_price_snapshot)
              VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
+            rusqlite::params![sale_id, item.variant_id, item.quantity, item.unit_price, item_subtotal, cost_price_snapshot],
+        )
+        .map_err(|e| e.to_string())?;
+
+        // Deduct stock
+        let updated = tx.execute(
+            "UPDATE product_variants SET stock_qty = stock_qty - ?1
+             WHERE id = ?2 AND stock_qty >= ?1",
+            rusqlite::params![item.quantity, item.variant_id],
+        )
+        .map_err(|e| e.to_string())?;
+
+        if updated == 0 {
+            return Err(format!("Insufficient stock for variant {}", item.variant_id));
+        }
+    }
+
+    // 3. Handle installment account
+    if payload.payment_type == "installment" {
+        let inst = payload.installment.ok_or("Installment details required")?;
+        let principal = total - inst.down_payment;
+
+        if principal < 0.0 {
+            return Err("Down payment exceeds sale total".to_string());
+        }
+
+        if let Some(ref start) = inst.start_date {
+            crate::utils::validation::require_iso_date("start_date", start)?;
+        }
+
+        // All installments have schedules — calculate monthly amount
+        // Filipino add-on (flat) interest: total_interest = principal × monthly_rate × term_months
+        // interest_rate is stored as a monthly percentage (e.g. 5 = 5%/month)
+        let term = inst.term_months.ok_or("Term months required for installment")?;
+        let monthly_rate = inst.interest_rate / 100.0;
+        let total_interest = principal * monthly_rate * term as f64;
+        let total_payable = principal + total_interest;
+        let monthly_amount = (total_payable / term as f64 * 100.0).ceil() / 100.0;
+        let balance = total_payable - inst.down_payment;
+
+        tx.execute(
+            "INSERT INTO installment_accounts
+             (sale_id, customer_id, principal, down_payment, interest_rate, penalty_rate,
+              balance_remaining, has_schedule, term_months, monthly_amount, start_date)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11)",
             rusqlite::params![
+                sale_id,
                 payload.customer_id,
-                subtotal,
-                payload.discount,
-                total,
-                payload.payment_type,
-                payload.notes,
+                principal,
+                inst.down_payment,
+                inst.interest_rate,
+                inst.penalty_rate,
+                balance,
+                1_i64, // has_schedule always true
+                inst.term_months,
+                Some(monthly_amount),
+                inst.start_date,
             ],
         )
         .map_err(|e| e.to_string())?;
 
-        let sale_id = conn.last_insert_rowid();
+        let account_id = tx.last_insert_rowid();
 
-        // 2. Insert sale items and deduct stock
-        for item in &payload.items {
-            let item_subtotal = item.unit_price * item.quantity as f64;
-
-            // Snapshot the current cost_price so P&L is historically accurate
-            let cost_price_snapshot: f64 = conn.query_row(
-                "SELECT cost_price FROM product_variants WHERE id = ?1",
-                rusqlite::params![item.variant_id],
-                |row| row.get(0),
-            ).unwrap_or(0.0);
-
-            conn.execute(
-                "INSERT INTO sale_items (sale_id, variant_id, quantity, unit_price, subtotal, cost_price_snapshot)
-                 VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
-                rusqlite::params![sale_id, item.variant_id, item.quantity, item.unit_price, item_subtotal, cost_price_snapshot],
+        // Record down payment if > 0
+        if inst.down_payment > 0.0 {
+            tx.execute(
+                "INSERT INTO payments (account_id, amount, type, notes)
+                 VALUES (?1, ?2, 'down_payment', 'Initial down payment')",
+                rusqlite::params![account_id, inst.down_payment],
             )
             .map_err(|e| e.to_string())?;
-
-            // Deduct stock
-            let updated = conn.execute(
-                "UPDATE product_variants SET stock_qty = stock_qty - ?1
-                 WHERE id = ?2 AND stock_qty >= ?1",
-                rusqlite::params![item.quantity, item.variant_id],
-            )
-            .map_err(|e| e.to_string())?;
-
-            if updated == 0 {
-                return Err(format!("Insufficient stock for variant {}", item.variant_id));
-            }
         }
 
-        // 3. Handle installment account
-        if payload.payment_type == "installment" {
-            let inst = payload.installment.ok_or("Installment details required")?;
-            let principal = total - inst.down_payment;
+        // Generate payment schedule (always)
+        {
+            let start = inst.start_date.as_deref().unwrap_or("");
+            let monthly = monthly_amount;
 
-            if principal < 0.0 {
-                return Err("Down payment exceeds sale total".to_string());
-            }
+            for i in 0..term {
+                // Calculate due date by adding months
+                let due_date = add_months_to_date(start, (i + 1) as u32)
+                    .map_err(|e| format!("Date calc error: {}", e))?;
 
-            if let Some(ref start) = inst.start_date {
-                crate::utils::validation::require_iso_date("start_date", start)?;
-            }
+                // Last payment absorbs rounding
+                let amount = if i == term - 1 {
+                    balance - monthly * (term - 1) as f64
+                } else {
+                    monthly
+                };
 
-            // All installments have schedules — calculate monthly amount
-            // Filipino add-on (flat) interest: total_interest = principal × monthly_rate × term_months
-            // interest_rate is stored as a monthly percentage (e.g. 5 = 5%/month)
-            let term = inst.term_months.ok_or("Term months required for installment")?;
-            let monthly_rate = inst.interest_rate / 100.0;
-            let total_interest = principal * monthly_rate * term as f64;
-            let total_payable = principal + total_interest;
-            let monthly_amount = (total_payable / term as f64 * 100.0).ceil() / 100.0;
-            let balance = total_payable - inst.down_payment;
-
-            conn.execute(
-                "INSERT INTO installment_accounts
-                 (sale_id, customer_id, principal, down_payment, interest_rate, penalty_rate,
-                  balance_remaining, has_schedule, term_months, monthly_amount, start_date)
-                 VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11)",
-                rusqlite::params![
-                    sale_id,
-                    payload.customer_id,
-                    principal,
-                    inst.down_payment,
-                    inst.interest_rate,
-                    inst.penalty_rate,
-                    balance,
-                    1_i64, // has_schedule always true
-                    inst.term_months,
-                    Some(monthly_amount),
-                    inst.start_date,
-                ],
-            )
-            .map_err(|e| e.to_string())?;
-
-            let account_id = conn.last_insert_rowid();
-
-            // Record down payment if > 0
-            if inst.down_payment > 0.0 {
-                conn.execute(
-                    "INSERT INTO payments (account_id, amount, type, notes)
-                     VALUES (?1, ?2, 'down_payment', 'Initial down payment')",
-                    rusqlite::params![account_id, inst.down_payment],
+                tx.execute(
+                    "INSERT INTO payment_schedules (account_id, due_date, amount_due)
+                     VALUES (?1, ?2, ?3)",
+                    rusqlite::params![account_id, due_date, amount],
                 )
                 .map_err(|e| e.to_string())?;
             }
-
-            // Generate payment schedule (always)
-            {
-                let start = inst.start_date.as_deref().unwrap_or("");
-                let monthly = monthly_amount;
-
-                for i in 0..term {
-                    // Calculate due date by adding months
-                    let due_date = add_months_to_date(start, (i + 1) as u32)
-                        .map_err(|e| format!("Date calc error: {}", e))?;
-
-                    // Last payment absorbs rounding
-                    let amount = if i == term - 1 {
-                        balance - monthly * (term - 1) as f64
-                    } else {
-                        monthly
-                    };
-
-                    conn.execute(
-                        "INSERT INTO payment_schedules (account_id, due_date, amount_due)
-                         VALUES (?1, ?2, ?3)",
-                        rusqlite::params![account_id, due_date, amount],
-                    )
-                    .map_err(|e| e.to_string())?;
-                }
-            }
-        }
-
-        Ok(sale_id)
-    })();
-
-    match result {
-        Ok(sale_id) => {
-            conn.execute("COMMIT", rusqlite::params![]).map_err(|e| e.to_string())?;
-            let _ = insert_audit(&conn, "sale_created", "sale", Some(sale_id), Some(&format!("{} sale, {} items", payload.payment_type, payload.items.len())));
-            Ok(sale_id)
-        }
-        Err(e) => {
-            let _ = conn.execute("ROLLBACK", rusqlite::params![]);
-            Err(e)
         }
     }
+
+    let _ = insert_audit(&tx, "sale_created", "sale", Some(sale_id), Some(&format!("{} sale, {} items", payload.payment_type, payload.items.len())));
+    tx.commit().map_err(|e| e.to_string())?;
+    Ok(sale_id)
 }
 
 /// Void a sale (soft delete, restores stock)
 #[tauri::command]
 pub fn void_sale(db: State<DbState>, id: i64) -> Result<(), String> {
-    let conn = db.0.lock().map_err(|e| e.to_string())?;
+    let mut conn = db.0.lock().map_err(|e| e.to_string())?;
 
     // Check current status
     let status: String = conn
@@ -400,53 +388,41 @@ pub fn void_sale(db: State<DbState>, id: i64) -> Result<(), String> {
         return Err("Cannot void sale with recorded payments. Reverse payments first.".to_string());
     }
 
-    conn.execute("BEGIN TRANSACTION", rusqlite::params![]).map_err(|e| e.to_string())?;
+    let tx = conn.transaction().map_err(|e| e.to_string())?;
 
-    let result = (|| -> Result<(), String> {
-        // Restore stock for all items — use SUM to handle multiple items for the same variant
-        conn.execute(
-            "UPDATE product_variants SET stock_qty = stock_qty + (
-                SELECT COALESCE(SUM(si.quantity), 0) FROM sale_items si
-                WHERE si.variant_id = product_variants.id AND si.sale_id = ?1
-             ) WHERE id IN (SELECT variant_id FROM sale_items WHERE sale_id = ?1)",
-            rusqlite::params![id],
-        )
-        .map_err(|e| e.to_string())?;
+    // Restore stock for all items — use SUM to handle multiple items for the same variant
+    tx.execute(
+        "UPDATE product_variants SET stock_qty = stock_qty + (
+            SELECT COALESCE(SUM(si.quantity), 0) FROM sale_items si
+            WHERE si.variant_id = product_variants.id AND si.sale_id = ?1
+         ) WHERE id IN (SELECT variant_id FROM sale_items WHERE sale_id = ?1)",
+        rusqlite::params![id],
+    )
+    .map_err(|e| e.to_string())?;
 
-        // Soft-delete installment data — set status to 'voided' instead of hard DELETE
-        conn.execute(
-            "UPDATE payment_schedules SET status = 'voided'
-             WHERE account_id IN (SELECT id FROM installment_accounts WHERE sale_id = ?1)",
-            rusqlite::params![id],
-        )
-        .map_err(|e| e.to_string())?;
+    // Soft-delete installment data — set status to 'voided' instead of hard DELETE
+    tx.execute(
+        "UPDATE payment_schedules SET status = 'voided'
+         WHERE account_id IN (SELECT id FROM installment_accounts WHERE sale_id = ?1)",
+        rusqlite::params![id],
+    )
+    .map_err(|e| e.to_string())?;
 
-        conn.execute(
-            "UPDATE installment_accounts SET status = 'voided', updated_at = datetime('now')
-             WHERE sale_id = ?1",
-            rusqlite::params![id],
-        )
-        .map_err(|e| e.to_string())?;
+    tx.execute(
+        "UPDATE installment_accounts SET status = 'voided', updated_at = datetime('now')
+         WHERE sale_id = ?1",
+        rusqlite::params![id],
+    )
+    .map_err(|e| e.to_string())?;
 
-        // Mark sale as voided
-        conn.execute(
-            "UPDATE sales SET status = 'voided' WHERE id = ?1",
-            rusqlite::params![id],
-        )
-        .map_err(|e| e.to_string())?;
+    // Mark sale as voided
+    tx.execute(
+        "UPDATE sales SET status = 'voided' WHERE id = ?1",
+        rusqlite::params![id],
+    )
+    .map_err(|e| e.to_string())?;
 
-        Ok(())
-    })();
-
-    match result {
-        Ok(()) => {
-            conn.execute("COMMIT", rusqlite::params![]).map_err(|e| e.to_string())?;
-            let _ = insert_audit(&conn, "sale_voided", "sale", Some(id), None);
-            Ok(())
-        }
-        Err(e) => {
-            let _ = conn.execute("ROLLBACK", rusqlite::params![]);
-            Err(e)
-        }
-    }
+    let _ = insert_audit(&tx, "sale_voided", "sale", Some(id), None);
+    tx.commit().map_err(|e| e.to_string())?;
+    Ok(())
 }
