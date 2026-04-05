@@ -4,6 +4,7 @@ use tauri::State;
 use crate::db::connection::DbState;
 use crate::models::customer::*;
 use crate::models::PaginatedResult;
+use crate::utils::validation::{require_text, optional_text, optional_phone};
 
 // ────────────────────────────────────────────
 // Get Customers (list with computed fields)
@@ -258,11 +259,16 @@ pub fn create_customer(
     db: State<'_, DbState>,
     payload: CreateCustomerPayload,
 ) -> Result<Customer, String> {
+    let name = require_text("Name", &payload.name, 200)?;
+    let phone = optional_phone(&payload.phone)?;
+    let address = optional_text("Address", &payload.address, 500)?;
+    let notes = optional_text("Notes", &payload.notes, 2000)?;
+
     let conn = db.0.lock().map_err(|e| e.to_string())?;
 
     conn.execute(
         "INSERT INTO customers (name, phone, address, notes) VALUES (?1, ?2, ?3, ?4)",
-        params![payload.name, payload.phone, payload.address, payload.notes],
+        params![name, phone, address, notes],
     )
     .map_err(|e| e.to_string())?;
 
@@ -305,23 +311,27 @@ pub fn update_customer(
     let mut idx = 1;
 
     if let Some(ref name) = payload.name {
+        let validated = require_text("Name", name, 200)?;
         sets.push(format!("name = ?{}", idx));
-        param_values.push(Box::new(name.clone()));
+        param_values.push(Box::new(validated));
         idx += 1;
     }
     if let Some(ref phone) = payload.phone {
+        let validated = optional_phone(&Some(phone.clone()))?;
         sets.push(format!("phone = ?{}", idx));
-        param_values.push(Box::new(phone.clone()));
+        param_values.push(Box::new(validated));
         idx += 1;
     }
     if let Some(ref address) = payload.address {
+        let validated = optional_text("Address", &Some(address.clone()), 500)?;
         sets.push(format!("address = ?{}", idx));
-        param_values.push(Box::new(address.clone()));
+        param_values.push(Box::new(validated));
         idx += 1;
     }
     if let Some(ref notes) = payload.notes {
+        let validated = optional_text("Notes", &Some(notes.clone()), 2000)?;
         sets.push(format!("notes = ?{}", idx));
-        param_values.push(Box::new(notes.clone()));
+        param_values.push(Box::new(validated));
         idx += 1;
     }
 

@@ -79,7 +79,12 @@ pub fn check_and_apply_penalties(conn: &Connection) -> Result<Vec<PenaltyApplied
                     |row| row.get(0),
                 )
                 .unwrap_or(0);
+            // Must have overdue entries AND respect 30-day cooldown to prevent daily penalties
             overdue_count > 0
+                && match &last_penalty_date {
+                    None => true,
+                    Some(date) => days_since(date, &today) >= 30,
+                }
         } else {
             // Open-ended: penalize if last_penalty_date is NULL or >= 30 days ago
             match &last_penalty_date {

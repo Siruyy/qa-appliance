@@ -3,6 +3,7 @@ use tauri::State;
 
 use crate::db::connection::DbState;
 use crate::models::product::*;
+use crate::utils::validation::{require_text, optional_text};
 use crate::models::PaginatedResult;
 
 // ────────────────────────────────────────────
@@ -37,6 +38,9 @@ pub fn get_categories(db: State<'_, DbState>) -> Result<Vec<Category>, String> {
 
 #[tauri::command]
 pub fn create_category(db: State<'_, DbState>, name: String, description: Option<String>) -> Result<Category, String> {
+    let name = require_text("Category name", &name, 200)?;
+    let description = optional_text("Description", &description, 1000)?;
+
     let conn = db.0.lock().map_err(|e| e.to_string())?;
     conn.execute(
         "INSERT INTO categories (name, description) VALUES (?1, ?2)",
@@ -63,6 +67,9 @@ pub fn create_category(db: State<'_, DbState>, name: String, description: Option
 
 #[tauri::command]
 pub fn update_category(db: State<'_, DbState>, id: i64, name: String, description: Option<String>) -> Result<Category, String> {
+    let name = require_text("Category name", &name, 200)?;
+    let description = optional_text("Description", &description, 1000)?;
+
     let conn = db.0.lock().map_err(|e| e.to_string())?;
     let affected = conn
         .execute(
@@ -187,11 +194,8 @@ pub fn get_products(
     // Fetch variants — only for this page's product IDs when paginated
     if !products.is_empty() {
         let variants: Vec<ProductVariant> = if limit.is_some() {
-            let id_list = products
-                .iter()
-                .map(|p| p.id.to_string())
-                .collect::<Vec<_>>()
-                .join(", ");
+            let product_ids: Vec<i64> = products.iter().map(|p| p.id).collect();
+            let placeholders: String = product_ids.iter().map(|_| "?").collect::<Vec<_>>().join(", ");
             let mut v_stmt = conn
                 .prepare(&format!(
                     "SELECT id, product_id, sku, attributes, cost_price, selling_price,
@@ -199,11 +203,11 @@ pub fn get_products(
                      FROM product_variants
                      WHERE product_id IN ({})
                      ORDER BY product_id, id",
-                    id_list
+                    placeholders
                 ))
                 .map_err(|e| e.to_string())?;
             let result = v_stmt
-                .query_map([], |row| row_to_variant(row))
+                .query_map(rusqlite::params_from_iter(product_ids.iter()), |row| row_to_variant(row))
                 .map_err(|e| e.to_string())?
                 .collect::<Result<Vec<_>, _>>()
                 .map_err(|e| e.to_string())?;

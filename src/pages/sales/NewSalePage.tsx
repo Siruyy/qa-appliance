@@ -141,7 +141,8 @@ export function NewSalePage() {
     const schedule = generatePaymentSchedule(
       monthlyPayment,
       cart.installment.term_months,
-      cart.installment.start_date
+      cart.installment.start_date,
+      totalPayable
     );
     return { schedule, monthlyPayment, totalPayable };
   }, [cart.installment, cartTotal]);
@@ -157,6 +158,14 @@ export function NewSalePage() {
       toast.error("Add at least one item");
       return;
     }
+    if (cart.items.some((i) => i.quantity <= 0)) {
+      toast.error("All item quantities must be greater than 0");
+      return;
+    }
+    if (cart.discount < 0) {
+      toast.error("Discount cannot be negative");
+      return;
+    }
     if (cart.paymentType === "installment" && !cart.customerId) {
       toast.error("Select a customer for installment sales");
       return;
@@ -164,6 +173,12 @@ export function NewSalePage() {
     if (cartTotal() <= 0) {
       toast.error("Sale total must be positive");
       return;
+    }
+    if (cart.paymentType === "installment" && cart.installment) {
+      if (cart.installment.down_payment > cartTotal()) {
+        toast.error("Down payment cannot exceed the sale total");
+        return;
+      }
     }
 
     setSubmitting(true);

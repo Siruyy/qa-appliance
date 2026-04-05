@@ -6,6 +6,7 @@ use crate::models::account::{
 };
 use crate::models::PaginatedResult;
 use crate::services::penalty;
+use crate::utils::validation::optional_text;
 
 #[tauri::command]
 pub fn get_accounts(
@@ -346,6 +347,7 @@ pub fn mark_account_defaulted(db: State<DbState>, id: i64) -> Result<(), String>
 
 #[tauri::command]
 pub fn update_account_notes(db: State<DbState>, id: i64, notes: String) -> Result<(), String> {
+    let notes = optional_text("Notes", &Some(notes), 5000)?.unwrap_or_default();
     let conn = db.0.lock().map_err(|e| e.to_string())?;
 
     conn.execute(

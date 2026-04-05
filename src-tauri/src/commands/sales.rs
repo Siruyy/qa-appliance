@@ -292,19 +292,20 @@ pub fn create_sale(db: State<DbState>, payload: CreateSalePayload) -> Result<i64
             }
 
             // Calculate monthly amount if schedule exists
-            let monthly_amount = if inst.has_schedule {
+            let (monthly_amount, total_payable) = if inst.has_schedule {
                 let term = inst.term_months.ok_or("Term months required for scheduled installment")?;
                 let term_years = term as f64 / 12.0;
                 let total_interest = principal * (inst.interest_rate / 100.0) * term_years;
-                let total_payable = principal + total_interest;
-                Some((total_payable / term as f64 * 100.0).ceil() / 100.0)
+                let tp = principal + total_interest;
+                let monthly = (tp / term as f64 * 100.0).ceil() / 100.0;
+                (Some(monthly), tp)
             } else {
-                None
+                (None, principal)
             };
 
+            // Balance = actual total payable (not monthly × term, which would overshoot due to ceiling)
             let balance = if inst.has_schedule {
-                let term = inst.term_months.unwrap();
-                monthly_amount.unwrap() * term as f64
+                total_payable
             } else {
                 principal
             };
