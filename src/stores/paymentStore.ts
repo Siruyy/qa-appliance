@@ -25,6 +25,7 @@ interface PaymentState {
   totalShown: () => number;
 }
 
+/** Zustand store for payment list, filters, and pagination. */
 export const usePaymentStore = create<PaymentState>((set, get) => ({
   payments: [],
   loading: false,
@@ -37,13 +38,18 @@ export const usePaymentStore = create<PaymentState>((set, get) => ({
   totalCount: 0,
   setPayments: (payments) => set({ payments }),
   setLoading: (loading) => set({ loading }),
+  /** Update the search term and reset to page 1. */
   setSearch: (search) => set({ search, page: 1 }),
+  /** Update the date-from filter and reset to page 1. */
   setDateFrom: (dateFrom) => set({ dateFrom, page: 1 }),
+  /** Update the date-to filter and reset to page 1. */
   setDateTo: (dateTo) => set({ dateTo, page: 1 }),
+  /** Update the payment type filter and reset to page 1. */
   setTypeFilter: (typeFilter) => set({ typeFilter, page: 1 }),
   setPage: (page) => set({ page }),
   setPageSize: (pageSize) => set({ pageSize, page: 1 }),
   setTotalCount: (totalCount) => set({ totalCount }),
+  /** Derive a client-side filtered payment list from current state. */
   filteredPayments: () => {
     const { payments, search, dateFrom, dateTo, typeFilter } = get();
     return payments.filter((p) => {
@@ -52,6 +58,7 @@ export const usePaymentStore = create<PaymentState>((set, get) => ({
       return matchesSearch(p, ["customer_name", "product_summary"], search);
     });
   },
+  /** Sum the amounts of all currently filtered payments. */
   totalShown: () => {
     return get()
       .filteredPayments()

@@ -26,6 +26,7 @@ interface AccountState {
   overdueCount: () => number;
 }
 
+/** Zustand store for installment account list, filters, and pagination. */
 export const useAccountStore = create<AccountState>((set, get) => ({
   accounts: [],
   loading: false,
@@ -37,12 +38,16 @@ export const useAccountStore = create<AccountState>((set, get) => ({
   totalCount: 0,
   setAccounts: (accounts) => set({ accounts }),
   setLoading: (loading) => set({ loading }),
+  /** Update the search term and reset to page 1. */
   setSearch: (search) => set({ search, page: 1 }),
+  /** Update the status filter and reset to page 1. */
   setStatusFilter: (statusFilter) => set({ statusFilter, page: 1 }),
+  /** Update the account type filter and reset to page 1. */
   setTypeFilter: (typeFilter) => set({ typeFilter, page: 1 }),
   setPage: (page) => set({ page }),
   setPageSize: (pageSize) => set({ pageSize, page: 1 }),
   setTotalCount: (totalCount) => set({ totalCount }),
+  /** Derive a client-side filtered account list from the current state. */
   filteredAccounts: () => {
     const { accounts, search, statusFilter, typeFilter } = get();
     return accounts.filter((a) => {
@@ -53,6 +58,7 @@ export const useAccountStore = create<AccountState>((set, get) => ({
       return matchesSearch(a, ["customer_name", "product_summary"], search);
     });
   },
+  /** Count open accounts that are currently overdue. */
   overdueCount: () => {
     return get().accounts.filter((a) => a.is_overdue && a.status === "open").length;
   },

@@ -23,10 +23,12 @@ interface SettingsState {
   updateSettingsBatch: (pairs: [string, string][]) => Promise<void>;
 }
 
+/** Zustand store for app-wide settings with backend persistence. */
 export const useSettingsStore = create<SettingsState>((set, get) => ({
   settings: defaultSettings,
   loading: false,
 
+  /** Load all settings from the backend, falling back to defaults on error. */
   loadSettings: async () => {
     set({ loading: true });
     try {
@@ -39,11 +41,13 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
     }
   },
 
+  /** Persist a single setting and update local state. */
   updateSetting: async (key: string, value: string) => {
     await invoke("update_setting", { key, value });
     set({ settings: { ...get().settings, [key]: value } });
   },
 
+  /** Persist multiple settings at once and update local state. */
   updateSettingsBatch: async (pairs: [string, string][]) => {
     await invoke("update_settings_batch", { pairs });
     const updated = { ...get().settings };

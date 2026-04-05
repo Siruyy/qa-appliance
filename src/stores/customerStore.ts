@@ -28,6 +28,7 @@ const defaultFilters: CustomerFilters = {
   status: "active",
 };
 
+/** Zustand store for customer list state, filters, and pagination. */
 export const useCustomerStore = create<CustomerState>((set, get) => ({
   customers: [],
   loading: false,
@@ -37,12 +38,15 @@ export const useCustomerStore = create<CustomerState>((set, get) => ({
   totalCount: 0,
   setCustomers: (customers) => set({ customers }),
   setLoading: (loading) => set({ loading }),
+  /** Update a single filter field and reset to page 1. */
   setFilter: (key, value) =>
     set((state) => ({ filters: { ...state.filters, [key]: value }, page: 1 })),
+  /** Reset all filters to defaults and go to page 1. */
   resetFilters: () => set({ filters: { ...defaultFilters }, page: 1 }),
   setPage: (page) => set({ page }),
   setPageSize: (pageSize) => set({ pageSize, page: 1 }),
   setTotalCount: (totalCount) => set({ totalCount }),
+  /** Derive a client-side filtered customer list from the current state. */
   filteredCustomers: () => {
     const { customers, filters } = get();
     return customers.filter((c) => {

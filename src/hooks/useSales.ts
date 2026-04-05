@@ -6,10 +6,12 @@ import type { Sale, SaleDetail, CreateSalePayload } from "@/types/sale";
 import type { PaginatedResult } from "@/types/shared";
 import { useSaleStore } from "@/stores/saleStore";
 
+/** Hook for sales CRUD with auto-fetch on filter and page changes. */
 export function useSales() {
   const { setSales, setLoading, setTotalCount, filters, page, pageSize } =
     useSaleStore();
 
+  /** Fetch paginated sales based on current store filters. */
   const fetchSales = useCallback(async () => {
     setLoading(true);
     try {
@@ -46,6 +48,7 @@ export function useSales() {
     fetchSales();
   }, [fetchSales]);
 
+  /** Fetch full sale details by ID. @returns sale detail or null on error */
   const getSaleById = useCallback(async (id: number): Promise<SaleDetail | null> => {
     try {
       return await invoke<SaleDetail>("get_sale_by_id", { id });
@@ -55,6 +58,7 @@ export function useSales() {
     }
   }, []);
 
+  /** Create a new sale, show a toast, and refresh the list. @returns new sale ID or null on error */
   const createSale = useCallback(async (payload: CreateSalePayload): Promise<number | null> => {
     try {
       const id = await invoke<number>("create_sale", { payload });
@@ -67,6 +71,7 @@ export function useSales() {
     }
   }, [fetchSales]);
 
+  /** Void a sale and refresh the list. @returns true on success */
   const voidSale = useCallback(async (id: number): Promise<boolean> => {
     try {
       await invoke("void_sale", { id });

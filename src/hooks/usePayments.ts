@@ -6,9 +6,11 @@ import { extractErrorMessage } from "@/lib/error";
 import type { Payment, RecordPaymentPayload } from "@/types/payment";
 import type { PaginatedResult } from "@/types/shared";
 
+/** Hook for managing payment records with pagination and filtering. */
 export function usePayments() {
   const store = usePaymentStore();
 
+  /** Fetch paginated payments with optional date range, customer, and search filters. */
   const fetchPayments = useCallback(async (
     fromDate?: string,
     toDate?: string,
@@ -36,10 +38,12 @@ export function usePayments() {
     }
   }, [store.page, store.pageSize]);
 
+  /** Get all payments associated with an installment account. */
   const getPaymentsForAccount = useCallback(async (accountId: number): Promise<Payment[]> => {
     return invoke<Payment[]>("get_payments_for_account", { accountId });
   }, []);
 
+  /** Record a new payment and refresh the payments list. */
   const recordPayment = useCallback(async (payload: RecordPaymentPayload): Promise<Payment> => {
     const payment = await invoke<Payment>("record_payment", { payload });
     // Refetch payments list so the store reflects the new payment

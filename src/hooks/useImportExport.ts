@@ -13,14 +13,17 @@ import type {
 
 // ── Export hooks ──────────────────────────────────────
 
+/** Export all products as a flat array. */
 export async function exportProducts(): Promise<ExportProduct[]> {
   return invoke<ExportProduct[]>("export_products_data");
 }
 
+/** Export all customers as a flat array. */
 export async function exportCustomers(): Promise<ExportCustomer[]> {
   return invoke<ExportCustomer[]>("export_customers_data");
 }
 
+/** Export sales within an optional date range. */
 export async function exportSales(
   startDate?: string,
   endDate?: string
@@ -31,10 +34,12 @@ export async function exportSales(
   });
 }
 
+/** Export all installment accounts. */
 export async function exportAccounts(): Promise<ExportAccount[]> {
   return invoke<ExportAccount[]>("export_accounts_data");
 }
 
+/** Export payments within an optional date range. */
 export async function exportPayments(
   startDate?: string,
   endDate?: string
@@ -45,12 +50,14 @@ export async function exportPayments(
   });
 }
 
+/** Export all data types bundled into a single object. */
 export async function exportAllData(): Promise<ExportAllData> {
   return invoke<ExportAllData>("export_all_data");
 }
 
 // ── Import hooks ─────────────────────────────────────
 
+/** Preview an import file before committing changes. */
 export async function previewImport(
   importType: string,
   filePath: string
@@ -58,6 +65,7 @@ export async function previewImport(
   return invoke<ImportPreview>("preview_import", { importType, filePath });
 }
 
+/** Execute a previously-previewed import. */
 export async function confirmImport(
   importType: string,
   filePath: string
@@ -65,6 +73,7 @@ export async function confirmImport(
   return invoke<ImportResult>("confirm_import", { importType, filePath });
 }
 
+/** Fetch recent import log entries. */
 export async function fetchImportLogs(
   limit?: number
 ): Promise<ImportLog[]> {

@@ -11,10 +11,12 @@ import type {
 } from "@/types/customer";
 import type { PaginatedResult } from "@/types/shared";
 
+/** Hook for customer CRUD operations with auto-fetch on filter/page changes. */
 export function useCustomers() {
   const { setCustomers, setLoading, setTotalCount, setPage, filters, page, pageSize } =
     useCustomerStore();
 
+  /** Fetch paginated customers based on current store filters. */
   const fetchCustomers = useCallback(async () => {
     setLoading(true);
     try {
@@ -48,28 +50,33 @@ export function useCustomers() {
     fetchCustomers();
   }, [fetchCustomers]);
 
+  /** Fetch full details for a single customer by ID. */
   const getCustomerById = useCallback(async (id: number) => {
     return await invoke<CustomerDetail>("get_customer_by_id", { id });
   }, []);
 
+  /** Create a new customer and refresh the list. */
   const createCustomer = useCallback(async (payload: CreateCustomerPayload) => {
     const customer = await invoke<Customer>("create_customer", { payload });
     await fetchCustomers();
     return customer;
   }, [fetchCustomers]);
 
+  /** Update an existing customer and refresh the list. */
   const updateCustomer = useCallback(async (payload: UpdateCustomerPayload) => {
     const customer = await invoke<Customer>("update_customer", { payload });
     await fetchCustomers();
     return customer;
   }, [fetchCustomers]);
 
+  /** Soft-delete a customer and reset to page 1. */
   const archiveCustomer = useCallback(async (id: number) => {
     await invoke<void>("archive_customer", { id });
     setPage(1);
     await fetchCustomers();
   }, [fetchCustomers, setPage]);
 
+  /** Restore an archived customer and reset to page 1. */
   const restoreCustomer = useCallback(async (id: number) => {
     await invoke<void>("restore_customer", { id });
     setPage(1);

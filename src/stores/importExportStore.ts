@@ -26,6 +26,7 @@ interface ImportExportState {
   resetImport: () => void;
 }
 
+/** Zustand store for import/export workflow state. */
 export const useImportExportStore = create<ImportExportState>((set) => ({
   exportLoading: false,
   setExportLoading: (v) => set({ exportLoading: v }),
@@ -40,8 +41,10 @@ export const useImportExportStore = create<ImportExportState>((set) => ({
   setImporting: (v) => set({ importing: v }),
 
   logs: [],
+  /** Set import logs, keeping only the last 100 entries. */
   setLogs: (logs) => set({ logs: logs.slice(-100) }),
 
+  /** Reset the import workflow state (file, preview, importing flag). */
   resetImport: () =>
     set({
       selectedFile: null,
