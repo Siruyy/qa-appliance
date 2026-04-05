@@ -7,6 +7,7 @@ import { useSettingsStore } from "@/stores/settingsStore";
 import { toast } from "sonner";
 import { CategoryManagement } from "./CategoryManagement";
 import { DatabaseBackupRestore } from "./DatabaseBackupRestore";
+import { AuditLogViewer } from "./AuditLogViewer";
 import { Check, Loader2 } from "lucide-react";
 
 const AUTO_SAVE_DELAY = 1500;
@@ -273,6 +274,11 @@ export function SettingsPage() {
 
       {/* Database Backup & Restore */}
       <DatabaseBackupRestore />
+
+      <Separator />
+
+      {/* Audit Log */}
+      <AuditLogViewer />
     </div>
   );
 }

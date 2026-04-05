@@ -4,6 +4,7 @@ use crate::db::connection::DbState;
 use crate::models::payment::{Payment, RecordPaymentPayload};
 use crate::models::PaginatedResult;
 use crate::utils::constants::CENTAVO_TOLERANCE;
+use crate::commands::audit_log::insert_audit;
 
 #[tauri::command]
 pub fn get_payments(
@@ -305,6 +306,7 @@ pub fn record_payment(
 
     match result {
         Ok(payment) => {
+            let _ = insert_audit(&conn, "payment_recorded", "payment", Some(payment.id), Some(&format!("₱{:.2} for account #{}", payment.amount, payment.account_id)));
             conn.execute("COMMIT", rusqlite::params![])
                 .map_err(|e| e.to_string())?;
             Ok(payment)

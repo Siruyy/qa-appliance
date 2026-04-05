@@ -8,6 +8,7 @@ use crate::models::PaginatedResult;
 use crate::services::penalty;
 use crate::utils::constants::CENTAVO_TOLERANCE;
 use crate::utils::validation::optional_text;
+use crate::commands::audit_log::insert_audit;
 
 #[tauri::command]
 pub fn get_accounts(
@@ -363,7 +364,11 @@ pub fn update_account_notes(db: State<DbState>, id: i64, notes: String) -> Resul
 #[tauri::command]
 pub fn run_penalty_check(db: State<DbState>) -> Result<Vec<PenaltyApplied>, String> {
     let conn = db.0.lock().map_err(|e| e.to_string())?;
-    penalty::check_and_apply_penalties(&conn)
+    let results = penalty::check_and_apply_penalties(&conn)?;
+    for p in &results {
+        let _ = insert_audit(&conn, "penalty_applied", "account", Some(p.account_id), Some(&format!("₱{:.2} penalty", p.penalty_amount)));
+    }
+    Ok(results)
 }
 
 #[tauri::command]

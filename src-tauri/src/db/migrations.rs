@@ -38,6 +38,10 @@ pub fn run(conn: &Connection) -> Result<()> {
         migrate_v5(conn)?;
     }
 
+    if version < 6 {
+        migrate_v6(conn)?;
+    }
+
     Ok(())
 }
 
@@ -1296,5 +1300,27 @@ fn migrate_v5(conn: &Connection) -> Result<()> {
         "
     )?;
     println!("[db] Applied migration v5 — additional performance indexes");
+    Ok(())
+}
+
+/// V6 — Audit log table for financial operations
+fn migrate_v6(conn: &Connection) -> Result<()> {
+    conn.execute_batch(
+        "
+        CREATE TABLE IF NOT EXISTS audit_log (
+            id          INTEGER PRIMARY KEY AUTOINCREMENT,
+            action      TEXT NOT NULL,
+            entity_type TEXT NOT NULL,
+            entity_id   INTEGER,
+            details     TEXT,
+            created_at  TEXT NOT NULL DEFAULT (datetime('now'))
+        );
+        CREATE INDEX IF NOT EXISTS idx_audit_log_action ON audit_log(action);
+        CREATE INDEX IF NOT EXISTS idx_audit_log_entity ON audit_log(entity_type, entity_id);
+        CREATE INDEX IF NOT EXISTS idx_audit_log_created ON audit_log(created_at);
+        INSERT INTO schema_migrations (version) VALUES (6);
+        "
+    )?;
+    println!("[db] Applied migration v6 — audit log table");
     Ok(())
 }

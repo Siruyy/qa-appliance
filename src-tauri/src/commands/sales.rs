@@ -3,6 +3,7 @@ use tauri::State;
 use crate::db::connection::DbState;
 use crate::models::sale::*;
 use crate::models::PaginatedResult;
+use crate::commands::audit_log::insert_audit;
 
 /// List sales with optional search and date range filtering
 #[tauri::command]
@@ -376,6 +377,7 @@ pub fn create_sale(db: State<DbState>, payload: CreateSalePayload) -> Result<i64
 
     match result {
         Ok(sale_id) => {
+            let _ = insert_audit(&conn, "sale_created", "sale", Some(sale_id), Some(&format!("{} sale, {} items", payload.payment_type, payload.items.len())));
             conn.execute("COMMIT", rusqlite::params![]).map_err(|e| e.to_string())?;
             Ok(sale_id)
         }
@@ -464,6 +466,7 @@ pub fn void_sale(db: State<DbState>, id: i64) -> Result<(), String> {
 
     match result {
         Ok(()) => {
+            let _ = insert_audit(&conn, "sale_voided", "sale", Some(id), None);
             conn.execute("COMMIT", rusqlite::params![]).map_err(|e| e.to_string())?;
             Ok(())
         }

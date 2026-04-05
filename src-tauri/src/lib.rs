@@ -75,6 +75,7 @@ pub fn run() {
             commands::settings::update_setting,
             commands::settings::update_settings_batch,
             commands::dashboard::get_dashboard_data,
+            commands::audit_log::get_audit_log,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
