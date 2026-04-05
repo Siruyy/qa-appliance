@@ -1,23 +1,9 @@
-import { useState, useMemo, Fragment, useCallback } from "react";
+import { useState, useMemo, useCallback } from "react";
 import { PageHeader } from "@/components/PageHeader";
 import { EmptyState } from "@/components/EmptyState";
 import { TableSkeleton } from "@/components/TableSkeleton";
 import { Pagination } from "@/components/Pagination";
-import {
-  Search,
-  Plus,
-  ChevronDown,
-  ChevronRight,
-  MoreHorizontal,
-  Package,
-  Archive,
-  RotateCcw,
-  Pencil,
-  PackagePlus,
-  AlertTriangle,
-  XCircle,
-  Download,
-} from "lucide-react";
+import { Plus, Package, Download } from "lucide-react";
 import { toast } from "sonner";
 
 import { extractErrorMessage } from "@/lib/error";
@@ -26,9 +12,7 @@ import { useCategories } from "@/hooks/useCategories";
 import { useProductStore } from "@/stores/productStore";
 import type { Product, ProductVariant } from "@/types/product";
 
-import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
   AlertDialog,
@@ -41,31 +25,18 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
   Table,
   TableBody,
-  TableCell,
   TableHead,
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 
 import { ProductFormModal } from "./ProductFormModal";
 import { VariantFormModal } from "./VariantFormModal";
 import { StockAdjustModal } from "./StockAdjustModal";
-import { VariantRow } from "./VariantRow";
+import { InventoryToolbar } from "./InventoryToolbar";
+import { ProductRow } from "./ProductRow";
 import { downloadCsv } from "@/lib/csv";
 
 type ModalState =
@@ -138,7 +109,7 @@ export function InventoryPage() {
     setIsArchiving(false);
   };
 
-  const toggleExpanded = (id: number) => {
+  const toggleExpanded = useCallback((id: number) => {
     setExpandedIds((prev) => {
       const next = new Set(prev);
       if (next.has(id)) next.delete(id);
@@ -146,7 +117,7 @@ export function InventoryPage() {
       localStorage.setItem("inventory-expanded-rows", JSON.stringify([...next]));
       return next;
     });
-  };
+  }, []);
 
   const handleArchiveProduct = async (product: Product) => {
     if (isArchiving) return;
@@ -256,63 +227,14 @@ export function InventoryPage() {
         }
       />
 
-      {/* Filters */}
-      <div className="flex flex-wrap items-center gap-3">
-        <div className="relative flex-1 min-w-[200px] max-w-sm">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Search products, SKU…"
-            className="pl-9"
-            value={filters.search}
-            onChange={(e) => setFilter("search", e.target.value)}
-          />
-        </div>
-
-        <Select
-          value={filters.categoryId?.toString() ?? "all"}
-          onValueChange={(v) => setFilter("categoryId", v === "all" ? null : Number(v))}
-        >
-          <SelectTrigger className="w-[180px]">
-            <SelectValue placeholder="All Categories" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Categories</SelectItem>
-            {categories.map((c) => (
-              <SelectItem key={c.id} value={c.id.toString()}>
-                {c.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-
-        <Select
-          value={filters.status}
-          onValueChange={(v) => setFilter("status", v as "all" | "active" | "archived")}
-        >
-          <SelectTrigger className="w-[140px]">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="active">Active</SelectItem>
-            <SelectItem value="archived">Archived</SelectItem>
-            <SelectItem value="all">All</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
-
-      {/* Bulk Action Bar */}
-      {selectedIds.size > 0 && (
-        <div className="flex items-center gap-3 rounded-md border bg-muted/50 p-2">
-          <span className="text-sm font-medium">{selectedIds.size} selected</span>
-          <Button variant="destructive" size="sm" onClick={() => setBulkArchiveOpen(true)}>
-            <Archive className="mr-1 h-4 w-4" />
-            Archive Selected
-          </Button>
-          <Button variant="ghost" size="sm" onClick={() => setSelectedIds(new Set())}>
-            Clear
-          </Button>
-        </div>
-      )}
+      <InventoryToolbar
+        filters={filters}
+        categories={categories}
+        selectedCount={selectedIds.size}
+        onFilterChange={setFilter}
+        onBulkArchive={() => setBulkArchiveOpen(true)}
+        onClearSelection={() => setSelectedIds(new Set())}
+      />
 
       {/* Table */}
       {loading ? (
@@ -361,120 +283,24 @@ export function InventoryPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {products.map((product) => {
-                const isExpanded = expandedIds.has(product.id);
-                const variants = product.variants ?? [];
-                const totalStock = variants.reduce((sum, v) => sum + v.stock_qty, 0);
-                const hasLowStock = variants.some(
-                  (v) => v.is_active && v.stock_qty > 0 && v.stock_qty <= v.low_stock_threshold
-                );
-                const hasOutOfStock = variants.some((v) => v.is_active && v.stock_qty === 0);
-
-                return (
-                  <Fragment key={product.id}>
-                    {/* Product Row */}
-                    <TableRow
-                      className="cursor-pointer hover:bg-muted/50"
-                      onClick={() => toggleExpanded(product.id)}
-                    >
-                      <TableCell onClick={(e) => e.stopPropagation()}>
-                        {product.is_active && (
-                          <Checkbox
-                            checked={selectedIds.has(product.id)}
-                            onCheckedChange={() => toggleSelect(product.id)}
-                            aria-label={`Select ${product.name}`}
-                          />
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        {variants.length > 0 &&
-                          (isExpanded ? (
-                            <ChevronDown className="h-4 w-4" />
-                          ) : (
-                            <ChevronRight className="h-4 w-4" />
-                          ))}
-                      </TableCell>
-                      <TableCell className="font-medium">{product.name}</TableCell>
-                      <TableCell>{product.category_name ?? "—"}</TableCell>
-                      <TableCell className="text-right">{variants.length}</TableCell>
-                      <TableCell className="text-right tabular-nums">
-                        <span className="flex items-center justify-end gap-1.5">
-                          {totalStock}
-                          {hasOutOfStock && (
-                            <XCircle className="h-3.5 w-3.5 text-destructive" />
-                          )}
-                          {hasLowStock && !hasOutOfStock && (
-                            <AlertTriangle className="h-3.5 w-3.5 text-warning" />
-                          )}
-                        </span>
-                      </TableCell>
-                      <TableCell>
-                        {product.is_active ? (
-                          <Badge variant="default">Active</Badge>
-                        ) : (
-                          <Badge variant="secondary">Archived</Badge>
-                        )}
-                      </TableCell>
-                      <TableCell onClick={(e) => e.stopPropagation()}>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger className="inline-flex items-center justify-center rounded-md h-8 w-8 hover:bg-accent hover:text-accent-foreground" title="Product actions">
-                            <MoreHorizontal className="h-4 w-4" />
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem
-                              onClick={() => setModal({ type: "product", product })}
-                            >
-                              <Pencil className="mr-2 h-4 w-4" />
-                              Edit
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                              onClick={() =>
-                                setModal({ type: "variant", productId: product.id })
-                              }
-                            >
-                              <PackagePlus className="mr-2 h-4 w-4" />
-                              Add Variant
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                              onClick={() => handleArchiveProduct(product)}
-                            >
-                              {product.is_active ? (
-                                <>
-                                  <Archive className="mr-2 h-4 w-4" />
-                                  Archive
-                                </>
-                              ) : (
-                                <>
-                                  <RotateCcw className="mr-2 h-4 w-4" />
-                                  Restore
-                                </>
-                              )}
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </TableCell>
-                    </TableRow>
-
-                    {/* Variant Rows */}
-                    {isExpanded &&
-                      variants.map((variant) => (
-                        <VariantRow
-                          key={`v-${variant.id}`}
-                          variant={variant}
-                          onEdit={() =>
-                            setModal({
-                              type: "variant",
-                              productId: product.id,
-                              variant,
-                            })
-                          }
-                          onAdjustStock={() => setModal({ type: "stock", variant })}
-                          onArchive={() => handleArchiveVariant(variant)}
-                        />
-                      ))}
-                  </Fragment>
-                );
-              })}
+              {products.map((product) => (
+                <ProductRow
+                  key={product.id}
+                  product={product}
+                  isExpanded={expandedIds.has(product.id)}
+                  isSelected={selectedIds.has(product.id)}
+                  onToggleExpand={() => toggleExpanded(product.id)}
+                  onToggleSelect={() => toggleSelect(product.id)}
+                  onEdit={() => setModal({ type: "product", product })}
+                  onArchive={() => handleArchiveProduct(product)}
+                  onAddVariant={() => setModal({ type: "variant", productId: product.id })}
+                  onEditVariant={(variant) =>
+                    setModal({ type: "variant", productId: product.id, variant })
+                  }
+                  onAdjustStock={(variant) => setModal({ type: "stock", variant })}
+                  onArchiveVariant={handleArchiveVariant}
+                />
+              ))}
             </TableBody>
           </Table>
         </div>

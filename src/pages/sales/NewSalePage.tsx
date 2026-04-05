@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams, useBlocker } from "react-router-dom";
 import { ShoppingCart, User, Banknote, CreditCard, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -81,6 +81,22 @@ export function NewSalePage() {
   const [submitting, setSubmitting] = useState(false);
   const [showSchedulePreview, setShowSchedulePreview] = useState(false);
   const [customerSearchOpen, setCustomerSearchOpen] = useState(false);
+
+  // Warn before navigating away if the cart has items
+  const blocker = useBlocker(() => cart.items.length > 0 && !submitting);
+
+  useEffect(() => {
+    if (blocker.state === "blocked") {
+      const leave = window.confirm(
+        "You have unsaved items in your cart. Are you sure you want to leave?"
+      );
+      if (leave) {
+        blocker.proceed();
+      } else {
+        blocker.reset();
+      }
+    }
+  }, [blocker]);
 
   useEffect(() => {
     fetchProducts();

@@ -9,7 +9,11 @@ export interface AppSettings extends Record<string, string> {
   store_phone: string;
   currency_symbol: string;
   preset_terms: string;
+  receipt_footer: string;
 }
+
+/** Known setting key names for type-safe access. */
+export type SettingsKey = keyof AppSettings;
 
 /** Typed settings with proper number/boolean types */
 export interface TypedSettings {

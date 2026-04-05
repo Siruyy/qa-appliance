@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import type { AppSettings } from "@/types/settings";
+import type { AppSettings, SettingsKey } from "@/types/settings";
 import { invoke } from "@/lib/invoke";
 
 const defaultSettings: AppSettings = {
@@ -20,8 +20,8 @@ interface SettingsState {
   settings: AppSettings;
   loading: boolean;
   loadSettings: () => Promise<void>;
-  updateSetting: (key: string, value: string) => Promise<void>;
-  updateSettingsBatch: (pairs: [string, string][]) => Promise<void>;
+  updateSetting: (key: SettingsKey, value: string) => Promise<void>;
+  updateSettingsBatch: (pairs: [SettingsKey, string][]) => Promise<void>;
 }
 
 /** Zustand store for app-wide settings with backend persistence. */
@@ -43,7 +43,7 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
   },
 
   /** Persist a single setting and update local state. */
-  updateSetting: async (key: string, value: string) => {
+  updateSetting: async (key: SettingsKey, value: string) => {
     const prev = get().settings;
     set({ settings: { ...prev, [key]: value } });
     try {
@@ -55,7 +55,7 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
   },
 
   /** Persist multiple settings at once and update local state. */
-  updateSettingsBatch: async (pairs: [string, string][]) => {
+  updateSettingsBatch: async (pairs: [SettingsKey, string][]) => {
     const prev = get().settings;
     const updated = { ...prev };
     for (const [k, v] of pairs) {

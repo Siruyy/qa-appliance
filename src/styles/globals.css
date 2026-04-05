@@ -216,10 +216,21 @@
     background: #94A3B8;
   }
 
+  /* Dark-mode scrollbar overrides */
+  .dark ::-webkit-scrollbar-thumb {
+    background: #475569;
+  }
+  .dark ::-webkit-scrollbar-thumb:hover {
+    background: #64748B;
+  }
+
   /* Firefox scrollbar */
   * {
     scrollbar-width: thin;
     scrollbar-color: #CBD5E1 transparent;
+  }
+  .dark * {
+    scrollbar-color: #475569 transparent;
   }
 
   /* Heading typography */
