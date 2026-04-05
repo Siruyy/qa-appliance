@@ -23,6 +23,7 @@ import { useReports } from "@/hooks/useReports";
 import { useReportStore } from "@/stores/reportStore";
 import { useCurrency } from "@/hooks/useCurrency";
 import type { ProfitLossReport } from "@/types/report";
+import { TableSkeleton } from "@/components/TableSkeleton";
 import { toast } from "sonner";
 
 export function ProfitLossTab() {
@@ -40,7 +41,7 @@ export function ProfitLossTab() {
       .finally(() => setLoading(false));
   }, [dateFrom, dateTo]);
 
-  if (loading) return <p className="py-8 text-center text-muted-foreground">Loading…</p>;
+  if (loading) return <TableSkeleton cols={4} />;
   if (!data) return null;
 
   return (

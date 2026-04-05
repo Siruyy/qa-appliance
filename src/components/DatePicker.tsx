@@ -13,6 +13,8 @@ interface DatePickerProps {
   onChange: (date: string) => void;
   placeholder?: string;
   className?: string;
+  /** Accessible label for the trigger button */
+  ariaLabel?: string;
 }
 
 export function DatePicker({
@@ -20,6 +22,7 @@ export function DatePicker({
   onChange,
   placeholder = "Pick a date",
   className,
+  ariaLabel,
 }: DatePickerProps) {
   const [open, setOpen] = useState(false);
   const selected = value ? parseISO(value) : undefined;
@@ -30,6 +33,7 @@ export function DatePicker({
         render={
           <Button
             variant="outline"
+            aria-label={ariaLabel ?? placeholder}
             className={cn(
               "h-8 w-[150px] justify-start gap-2 text-left font-normal",
               !value && "text-muted-foreground",

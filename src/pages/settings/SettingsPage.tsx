@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import { CategoryManagement } from "./CategoryManagement";
 import { DatabaseBackupRestore } from "./DatabaseBackupRestore";
 import { AuditLogViewer } from "./AuditLogViewer";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Check, Loader2 } from "lucide-react";
 
 const AUTO_SAVE_DELAY = 1500;
@@ -79,7 +80,7 @@ export function SettingsPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <p className="text-muted-foreground">Loading settings…</p>
+        <div className="space-y-4">{Array.from({ length: 3 }).map((_, i) => (<Skeleton key={i} className="h-32 rounded-lg" />))}</div>
       </div>
     );
   }

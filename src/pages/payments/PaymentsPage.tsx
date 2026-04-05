@@ -1,8 +1,10 @@
 import { useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { CreditCard, Search, Download } from "lucide-react";
+import { CreditCard, Search, Download, Banknote } from "lucide-react";
 
 import { usePayments } from "@/hooks/usePayments";
+import { EmptyState } from "@/components/EmptyState";
+import { TableSkeleton } from "@/components/TableSkeleton";
 import { usePaymentStore } from "@/stores/paymentStore";
 import { Pagination } from "@/components/Pagination";
 import { formatDate, formatProductSummary } from "@/lib/formatters";
@@ -158,14 +160,18 @@ export function PaymentsPage() {
           <TableBody>
             {loading ? (
               <TableRow>
-                <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
-                  Loading…
+                <TableCell colSpan={6}>
+                  <TableSkeleton cols={6} />
                 </TableCell>
               </TableRow>
             ) : payments.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
-                  No payments found
+                <TableCell colSpan={6}>
+                  <EmptyState
+                    icon={Banknote}
+                    title="No payments found"
+                    description="Payments will appear here once recorded."
+                  />
                 </TableCell>
               </TableRow>
             ) : (

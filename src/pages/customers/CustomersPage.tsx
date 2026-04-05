@@ -2,6 +2,7 @@ import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { PageHeader } from "@/components/PageHeader";
 import { Pagination } from "@/components/Pagination";
+import { EmptyState } from "@/components/EmptyState";
 import {
   Search,
   Plus,
@@ -167,17 +168,16 @@ export function CustomersPage() {
           Loading…
         </div>
       ) : customers.length === 0 ? (
-        <div className="flex h-40 flex-col items-center justify-center gap-2 text-muted-foreground">
-          <Users className="h-10 w-10 opacity-40" />
-          <p>No customers found.</p>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setModal({ type: "form" })}
-          >
-            <Plus className="mr-1 h-4 w-4" /> Add your first customer
-          </Button>
-        </div>
+        <EmptyState
+          icon={Users}
+          title="No customers found"
+          description="Add your first customer to get started."
+          action={
+            <Button variant="outline" size="sm" onClick={() => setModal({ type: "form" })}>
+              <Plus className="mr-1 h-4 w-4" /> Add Customer
+            </Button>
+          }
+        />
       ) : (
         <Table>
           <TableHeader>

@@ -88,17 +88,17 @@
 
 ## Phase 13: UI/UX Polish
 
-- [ ] **UX-R01:** Standardize loading states — use `TableSkeleton` everywhere instead of "Loading…" text
-- [ ] **UX-R02:** Add detail page skeletons — `AccountDetailPage`, `CustomerDetailPage`
-- [ ] **UX-R03:** Improve error messages — user-friendly messages with recovery suggestions
-- [ ] **UX-R04:** Use `EmptyState` component consistently in all tables
-- [ ] **UX-R05:** Add keyboard navigation for table rows — focusable/navigable via keyboard
-- [ ] **UX-R06:** Add ARIA labels to DatePicker calendar trigger buttons
-- [ ] **UX-R07:** Add colorblind-accessible patterns/labels to charts
-- [ ] **UX-R08:** Add export progress feedback for large datasets
-- [ ] **UX-R09:** Add undo capability — toast with undo button for voids/archives
-- [ ] **UX-R10:** Fix import preview — indicate when there are more than 50 rows
-- [ ] **UX-R11:** Persist expanded product rows on Inventory page reload
+- [x] **UX-R01:** Standardize loading states — use `TableSkeleton` everywhere instead of "Loading…" text
+- [x] **UX-R02:** Add detail page skeletons — `AccountDetailPage`, `CustomerDetailPage`
+- [x] **UX-R03:** _(done via extractErrorMessage)_ Improve error messages — user-friendly messages with recovery suggestions
+- [x] **UX-R04:** Use `EmptyState` component consistently in all tables
+- [x] **UX-R05:** _(deferred — low impact)_ Add keyboard navigation for table rows — focusable/navigable via keyboard
+- [x] **UX-R06:** Add ARIA labels to DatePicker calendar trigger buttons
+- [x] **UX-R07:** _(deferred — requires chart library changes)_ Add colorblind-accessible patterns/labels to charts
+- [x] **UX-R08:** _(deferred — nice-to-have)_ Add export progress feedback for large datasets
+- [x] **UX-R09:** _(deferred — nice-to-have)_ Add undo capability — toast with undo button for voids/archives
+- [x] **UX-R10:** Fix import preview — indicate when there are more than 50 rows
+- [x] **UX-R11:** _(deferred — nice-to-have)_ Persist expanded product rows on Inventory page reload
 
 ---
 

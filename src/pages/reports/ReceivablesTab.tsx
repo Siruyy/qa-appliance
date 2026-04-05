@@ -26,6 +26,7 @@ import { useCurrency } from "@/hooks/useCurrency";
 import { accountStatusVariant } from "@/lib/badgeVariants";
 import { formatProductSummary } from "@/lib/formatters";
 import type { ReceivablesReport } from "@/types/report";
+import { TableSkeleton } from "@/components/TableSkeleton";
 import { toast } from "sonner";
 
 const PIE_COLORS = ["var(--chart-1)", "var(--chart-3)", "var(--chart-4)", "var(--chart-2)", "var(--chart-5)"];
@@ -45,7 +46,7 @@ export function ReceivablesTab() {
       .finally(() => setLoading(false));
   }, [statusFilter]);
 
-  if (loading) return <p className="py-8 text-center text-muted-foreground">Loading…</p>;
+  if (loading) return <TableSkeleton cols={6} />;
   if (!data) return null;
 
   return (

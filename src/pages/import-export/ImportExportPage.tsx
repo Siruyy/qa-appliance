@@ -511,12 +511,19 @@ function ImportPreviewDialog({
               {preview.valid_rows.length === 0 ? (
                 <p className="text-sm text-muted-foreground p-4">No valid rows.</p>
               ) : (
-                <PreviewTable
-                  rows={preview.valid_rows.slice(0, 50).map((r) => ({
-                    row: r.row_number,
-                    data: r.data,
-                  }))}
-                />
+                <>
+                  <PreviewTable
+                    rows={preview.valid_rows.slice(0, 50).map((r) => ({
+                      row: r.row_number,
+                      data: r.data,
+                    }))}
+                  />
+                  {preview.valid_rows.length > 50 && (
+                    <p className="text-sm text-muted-foreground mt-2">
+                      Showing first 50 of {preview.valid_rows.length} rows
+                    </p>
+                  )}
+                </>
               )}
             </TabsContent>
 
@@ -524,6 +531,7 @@ function ImportPreviewDialog({
               {preview.error_rows.length === 0 ? (
                 <p className="text-sm text-muted-foreground p-4">No errors.</p>
               ) : (
+                <>
                 <Table>
                   <TableHeader>
                     <TableRow>
@@ -550,6 +558,12 @@ function ImportPreviewDialog({
                     ))}
                   </TableBody>
                 </Table>
+                {preview.error_rows.length > 50 && (
+                  <p className="text-sm text-muted-foreground mt-2">
+                    Showing first 50 of {preview.error_rows.length} rows
+                  </p>
+                )}
+                </>
               )}
             </TabsContent>
 
@@ -557,6 +571,7 @@ function ImportPreviewDialog({
               {preview.skip_rows.length === 0 ? (
                 <p className="text-sm text-muted-foreground p-4">No skipped rows.</p>
               ) : (
+                <>
                 <Table>
                   <TableHeader>
                     <TableRow>
@@ -581,6 +596,12 @@ function ImportPreviewDialog({
                     ))}
                   </TableBody>
                 </Table>
+                {preview.skip_rows.length > 50 && (
+                  <p className="text-sm text-muted-foreground mt-2">
+                    Showing first 50 of {preview.skip_rows.length} rows
+                  </p>
+                )}
+                </>
               )}
             </TabsContent>
           </ScrollArea>

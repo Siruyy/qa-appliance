@@ -26,6 +26,7 @@ import { useClientPagination } from "@/hooks/useClientPagination";
 import { useCurrency } from "@/hooks/useCurrency";
 import { stockStatusVariant } from "@/lib/badgeVariants";
 import type { InventoryReport } from "@/types/report";
+import { TableSkeleton } from "@/components/TableSkeleton";
 import { toast } from "sonner";
 
 export function InventoryTab() {
@@ -43,7 +44,7 @@ export function InventoryTab() {
       .finally(() => setLoading(false));
   }, [categoryId]);
 
-  if (loading) return <p className="py-8 text-center text-muted-foreground">Loading…</p>;
+  if (loading) return <TableSkeleton cols={7} />;
   if (!data) return null;
 
   return (

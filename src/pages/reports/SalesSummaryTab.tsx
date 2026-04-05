@@ -27,6 +27,7 @@ import { formatDate } from "@/lib/formatters";
 import { useCurrency } from "@/hooks/useCurrency";
 import { paymentTypeVariant, saleStatusVariant } from "@/lib/badgeVariants";
 import type { SalesSummaryReport } from "@/types/report";
+import { TableSkeleton } from "@/components/TableSkeleton";
 import { toast } from "sonner";
 
 export function SalesSummaryTab() {
@@ -44,7 +45,7 @@ export function SalesSummaryTab() {
       .finally(() => setLoading(false));
   }, [dateFrom, dateTo]);
 
-  if (loading) return <p className="py-8 text-center text-muted-foreground">Loading…</p>;
+  if (loading) return <TableSkeleton cols={6} />;
   if (!data) return null;
 
   return (

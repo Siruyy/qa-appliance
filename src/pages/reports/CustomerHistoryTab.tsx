@@ -26,6 +26,7 @@ import { paymentTypeVariant, collectionTypeVariant } from "@/lib/badgeVariants";
 import type { CustomerHistoryReport } from "@/types/report";
 import type { Customer } from "@/types/customer";
 import type { PaginatedResult } from "@/types/shared";
+import { TableSkeleton } from "@/components/TableSkeleton";
 import { toast } from "sonner";
 import { invoke } from "@/lib/invoke";
 
@@ -99,7 +100,7 @@ export function CustomerHistoryTab() {
         <p className="py-8 text-center text-muted-foreground">Select a customer to view history</p>
       )}
 
-      {loading && <p className="py-8 text-center text-muted-foreground">Loading…</p>}
+      {loading && <TableSkeleton cols={6} />}
 
       {data && !loading && (
         <>

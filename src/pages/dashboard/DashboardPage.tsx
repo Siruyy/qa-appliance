@@ -31,6 +31,7 @@ import { useNavigate } from "react-router-dom";
 import type { DashboardData } from "@/types/report";
 import { KpiCard } from "@/components/KpiCard";
 import { ChartTooltip, gridStyle, axisTickStyle, barRadius, animationProps } from "@/components/charts";
+import { Skeleton } from "@/components/ui/skeleton";
 import { ShoppingCart, TrendingUp, Wallet, AlertTriangle } from "lucide-react";
 
 export function DashboardPage() {
@@ -60,7 +61,7 @@ export function DashboardPage() {
   if (loading || !data) {
     return (
       <div className="flex items-center justify-center h-64">
-        <p className="text-muted-foreground">Loading dashboard…</p>
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">{Array.from({ length: 4 }).map((_, i) => (<Skeleton key={i} className="h-24 rounded-lg" />))}</div>
       </div>
     );
   }

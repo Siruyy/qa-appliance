@@ -2,6 +2,7 @@ import { useEffect, useMemo, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { PageHeader } from "@/components/PageHeader";
 import { Pagination } from "@/components/Pagination";
+import { EmptyState } from "@/components/EmptyState";
 import {
   Search,
   AlertTriangle,
@@ -163,8 +164,12 @@ export function AccountsPage() {
             <TableBody>
               {accounts.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
-                  No accounts found
+                <TableCell colSpan={7}>
+                  <EmptyState
+                    icon={CreditCard}
+                    title="No accounts found"
+                    description="Accounts are created when installment sales are made."
+                  />
                 </TableCell>
               </TableRow>
             ) : (
