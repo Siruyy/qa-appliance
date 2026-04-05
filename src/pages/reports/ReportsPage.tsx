@@ -1,5 +1,5 @@
 import { extractErrorMessage } from "@/lib/error";
-import { useCallback } from "react";
+import { useCallback, useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import {
@@ -15,6 +15,7 @@ import { toExcel, toPdf, toCsv } from "@/lib/export";
 import { formatProductSummary } from "@/lib/formatters";
 import { useCurrency } from "@/hooks/useCurrency";
 import { useSettingsStore } from "@/stores/settingsStore";
+import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { SalesSummaryTab } from "./SalesSummaryTab";
@@ -64,9 +65,11 @@ export function ReportsPage() {
 
   const { format: formatCurrency } = useCurrency();
   const storeName = useSettingsStore((s) => s.settings.store_name);
+  const [isExporting, setIsExporting] = useState(false);
 
   const handleExport = useCallback(
     async (format: "excel" | "pdf" | "csv") => {
+      setIsExporting(true);
       try {
         const tabLabel = TAB_CONFIG.find((t) => t.value === activeTab)?.label ?? activeTab;
         const dateRange = `${dateFrom} to ${dateTo}`;
@@ -118,7 +121,7 @@ export function ReportsPage() {
             i.product_name,
             i.variant_name,
             i.sku,
-            i.stock_quantity,
+            i.stock_qty,
             i.cost_price,
             i.selling_price,
             i.cost_value,
@@ -174,6 +177,8 @@ export function ReportsPage() {
         toast.success(`Exported as ${format.toUpperCase()}`);
       } catch (e) {
         toast.error(`Export failed: ${extractErrorMessage(e)}`);
+      } finally {
+        setIsExporting(false);
       }
     },
     [activeTab, dateFrom, dateTo, statusFilter, selectedCustomerId]
@@ -187,13 +192,16 @@ export function ReportsPage() {
         description="Generate and export business reports."
         actions={
           <div className="flex gap-2">
-            <Button variant="outline" size="sm" onClick={() => handleExport("excel")}>
+            <Button variant="outline" size="sm" onClick={() => handleExport("excel")} disabled={isExporting}>
+              {isExporting ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : null}
               Excel
             </Button>
-            <Button variant="outline" size="sm" onClick={() => handleExport("pdf")}>
+            <Button variant="outline" size="sm" onClick={() => handleExport("pdf")} disabled={isExporting}>
+              {isExporting ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : null}
               PDF
             </Button>
-            <Button variant="outline" size="sm" onClick={() => handleExport("csv")}>
+            <Button variant="outline" size="sm" onClick={() => handleExport("csv")} disabled={isExporting}>
+              {isExporting ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : null}
               CSV
             </Button>
           </div>

@@ -84,7 +84,7 @@ function ExportSection() {
                 p.sku,
                 formatCurrency(p.cost_price),
                 formatCurrency(p.selling_price),
-                String(p.stock_quantity),
+                String(p.stock_qty),
                 String(p.low_stock_threshold),
                 p.is_active ? "Yes" : "No",
               ]),
@@ -223,7 +223,7 @@ function ExportSection() {
                 p.sku,
                 formatCurrency(p.cost_price),
                 formatCurrency(p.selling_price),
-                String(p.stock_quantity),
+                String(p.stock_qty),
                 p.is_active ? "Yes" : "No",
               ]),
             });

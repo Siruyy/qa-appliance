@@ -2,10 +2,11 @@ import { useCallback } from "react";
 import { invoke } from "@/lib/invoke";
 import type { DashboardData } from "@/types/report";
 import { useSettingsStore } from "@/stores/settingsStore";
+import { parseSettings } from "@/types/settings";
 
 export function useDashboard() {
   const lowStockThreshold = useSettingsStore(
-    (s) => parseInt(s.settings.low_stock_threshold, 10) || 5
+    (s) => parseSettings(s.settings).low_stock_threshold
   );
 
   const fetchDashboard = useCallback((chartDays?: number): Promise<DashboardData> => {

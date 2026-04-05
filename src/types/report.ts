@@ -110,7 +110,7 @@ export interface InventoryRow {
   product_name: string;
   variant_name: string;
   sku: string;
-  stock_quantity: number;
+  stock_qty: number;
   cost_price: number;
   selling_price: number;
   cost_value: number;

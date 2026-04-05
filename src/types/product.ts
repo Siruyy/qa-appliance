@@ -18,11 +18,17 @@ export interface Product {
   variants?: ProductVariant[];
 }
 
+/** Known product attribute keys */
+export type ProductAttributeKey = 'color' | 'size' | 'model' | 'brand' | 'wattage' | 'capacity' | (string & {});
+
+/** Product variant attributes */
+export type ProductAttributes = Record<ProductAttributeKey, string>;
+
 export interface ProductVariant {
   id: number;
   product_id: number;
   sku: string | null;
-  attributes: Record<string, string> | null;
+  attributes: ProductAttributes | null;
   cost_price: number;
   selling_price: number;
   stock_qty: number;

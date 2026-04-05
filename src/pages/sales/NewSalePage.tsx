@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { ShoppingCart, User, Banknote, CreditCard } from "lucide-react";
+import { ShoppingCart, User, Banknote, CreditCard, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -30,10 +30,11 @@ import {
 import { toast } from "sonner";
 import { useCurrency } from "@/hooks/useCurrency";
 import { useSettingsStore } from "@/stores/settingsStore";
+import { parseSettings } from "@/types/settings";
 import { calculateAddOnInterest, generatePaymentSchedule } from "@/lib/interest";
 import type { CartItem, CreateInstallmentPayload, PaymentType } from "@/types/sale";
 import type { Customer } from "@/types/customer";
-import { useSaleStore } from "@/stores/saleStore";
+import { getErrorWithRecovery } from "@/lib/error";
 import { useCustomerStore } from "@/stores/customerStore";
 import { useProducts } from "@/hooks/useProducts";
 import { useCustomers } from "@/hooks/useCustomers";
@@ -51,15 +52,16 @@ export function NewSalePage() {
   const { fetchCustomers } = useCustomers();
   const customers = useCustomerStore((s) => s.customers);
   const settings = useSettingsStore((s) => s.settings);
+  const typed = useMemo(() => parseSettings(settings), [settings]);
 
   const defaultInstallment = useMemo<CreateInstallmentPayload>(() => ({
     down_payment: 0,
-    interest_rate: parseFloat(settings.default_interest_rate) || 0,
-    penalty_rate: parseFloat(settings.default_penalty_rate) || 0,
+    interest_rate: typed.default_interest_rate,
+    penalty_rate: typed.default_penalty_rate,
     has_schedule: true,
-    term_months: parseInt(settings.default_term_months, 10) || 12,
+    term_months: typed.default_installment_term,
     start_date: new Date().toISOString().split("T")[0],
-  }), [settings.default_interest_rate, settings.default_penalty_rate, settings.default_term_months]);
+  }), [typed.default_interest_rate, typed.default_penalty_rate, typed.default_installment_term]);
 
   const {
     cart,
@@ -170,6 +172,7 @@ export function NewSalePage() {
 
   // Submit sale
   const handleSubmit = async () => {
+    if (submitting) return;
     if (cart.items.length === 0) {
       toast.error("Add at least one item");
       return;
@@ -221,6 +224,8 @@ export function NewSalePage() {
         clearCart();
         navigate("/sales");
       }
+    } catch (err) {
+      toast.error(getErrorWithRecovery(err, "Failed to create sale"));
     } finally {
       setSubmitting(false);
     }
@@ -443,7 +448,11 @@ export function NewSalePage() {
                 onClick={handleSubmit}
                 disabled={submitting || cart.items.length === 0}
               >
-                {submitting ? "Processing..." : "Complete Sale"}
+                {submitting ? (
+                  <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Processing…</>
+                ) : (
+                  "Complete Sale"
+                )}
               </Button>
             </CardContent>
           </Card>

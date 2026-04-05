@@ -124,7 +124,7 @@ const ItemsTable = memo(function ItemsTable({ items, formatCurrency }: { items: 
                   <TableCell>{item.product_name}</TableCell>
                   <TableCell>{item.variant_name}</TableCell>
                   <TableCell className="font-mono text-xs">{item.sku}</TableCell>
-                  <TableCell className="text-right">{item.stock_quantity}</TableCell>
+                  <TableCell className="text-right">{item.stock_qty}</TableCell>
                   <TableCell className="text-right">{formatCurrency(item.cost_price)}</TableCell>
                   <TableCell className="text-right">{formatCurrency(item.selling_price)}</TableCell>
                   <TableCell className="text-right">{formatCurrency(item.cost_value)}</TableCell>
