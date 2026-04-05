@@ -33,7 +33,7 @@ export function KpiCard({ title, label, value, sub, description, type, alert }: 
         <CardTitle className="text-sm font-medium text-muted-foreground">{heading}</CardTitle>
       </CardHeader>
       <CardContent>
-        <p className="text-2xl font-bold tracking-tight">{display}</p>
+        <p className="text-2xl font-bold tracking-tight truncate" title={display}>{display}</p>
         {subText && <p className="text-xs text-muted-foreground mt-1">{subText}</p>}
       </CardContent>
     </Card>

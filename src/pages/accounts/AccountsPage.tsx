@@ -13,7 +13,7 @@ import {
 
 import { useAccounts } from "@/hooks/useAccounts";
 import { useAccountStore } from "@/stores/accountStore";
-import { formatDate } from "@/lib/formatters";
+import { formatDate, formatProductSummary } from "@/lib/formatters";
 import { useCurrency } from "@/hooks/useCurrency";
 
 import { Input } from "@/components/ui/input";
@@ -159,10 +159,11 @@ export function AccountsPage() {
               <TableHead className="w-12" />
             </TableRow>
           </TableHeader>
-          <TableBody>
-            {loading ? (
-              <TableSkeleton cols={7} rows={5} />
-            ) : accounts.length === 0 ? (
+          {loading ? (
+            <TableSkeleton cols={7} rows={5} />
+          ) : (
+            <TableBody>
+              {accounts.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
                   No accounts found
@@ -176,7 +177,7 @@ export function AccountsPage() {
                   onClick={() => navigate(`/accounts/${a.id}`)}
                 >
                   <TableCell className="font-medium">{a.customer_name}</TableCell>
-                  <TableCell className="max-w-[200px] truncate">{a.product_summary}</TableCell>
+                  <TableCell className="max-w-[200px] truncate">{formatProductSummary(a.product_summary)}</TableCell>
                   <TableCell className="text-right font-medium">
                     {formatCurrency(a.balance_remaining)}
                   </TableCell>
@@ -225,7 +226,8 @@ export function AccountsPage() {
                 </TableRow>
               ))
             )}
-          </TableBody>
+            </TableBody>
+          )}
         </Table>
       </div>
       <Pagination

@@ -18,8 +18,10 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { KpiCard } from "@/components/KpiCard";
+import { Pagination } from "@/components/Pagination";
 import { useReports } from "@/hooks/useReports";
 import { useReportStore } from "@/stores/reportStore";
+import { useClientPagination } from "@/hooks/useClientPagination";
 import { useCurrency } from "@/hooks/useCurrency";
 import type { InventoryReport } from "@/types/report";
 import { toast } from "sonner";
@@ -70,6 +72,16 @@ export function InventoryTab() {
       )}
 
       {/* Table */}
+      <ItemsTable items={data.items} formatCurrency={formatCurrency} />
+    </div>
+  );
+}
+
+function ItemsTable({ items, formatCurrency }: { items: InventoryReport["items"]; formatCurrency: (v: number) => string }) {
+  const { page, setPage, pageSize, total, paginatedItems } = useClientPagination(items);
+
+  return (
+    <>
       <div className="rounded-lg border">
         <Table>
           <TableHeader>
@@ -86,14 +98,14 @@ export function InventoryTab() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {data.items.length === 0 ? (
+            {items.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={9} className="text-center text-muted-foreground">
                   No inventory items found
                 </TableCell>
               </TableRow>
             ) : (
-              data.items.map((item, i) => (
+              paginatedItems.map((item, i) => (
                 <TableRow key={i}>
                   <TableCell>{item.product_name}</TableCell>
                   <TableCell>{item.variant_name}</TableCell>
@@ -118,6 +130,7 @@ export function InventoryTab() {
           </TableBody>
         </Table>
       </div>
-    </div>
+      <Pagination page={page} pageSize={pageSize} total={total} onPageChange={setPage} />
+    </>
   );
 }

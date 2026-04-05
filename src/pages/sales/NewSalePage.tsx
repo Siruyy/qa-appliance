@@ -277,12 +277,14 @@ export function NewSalePage() {
             </CardHeader>
             <CardContent>
               <Popover open={customerSearchOpen} onOpenChange={setCustomerSearchOpen}>
-                <PopoverTrigger className="w-full">
-                  <Button variant="outline" className="w-full justify-start text-left">
+                <PopoverTrigger
+                  render={
+                    <Button variant="outline" className="w-full justify-start text-left" />
+                  }
+                >
                     {cart.customerName || (
                       <span className="text-muted-foreground">Select customer (optional)...</span>
                     )}
-                  </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-[300px] p-0">
                   <Command>

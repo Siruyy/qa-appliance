@@ -16,9 +16,11 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { KpiCard } from "@/components/KpiCard";
+import { Pagination } from "@/components/Pagination";
 import { useReports } from "@/hooks/useReports";
 import { useReportStore } from "@/stores/reportStore";
-import { formatDate } from "@/lib/formatters";
+import { useClientPagination } from "@/hooks/useClientPagination";
+import { formatDate, formatProductSummary } from "@/lib/formatters";
 import { useCurrency } from "@/hooks/useCurrency";
 import type { CustomerHistoryReport } from "@/types/report";
 import type { Customer } from "@/types/customer";
@@ -108,84 +110,102 @@ export function CustomerHistoryTab() {
           </div>
 
           {/* Sales */}
-          <div>
-            <h3 className="mb-2 text-sm font-medium">Sales</h3>
-            <div className="rounded-lg border">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Date</TableHead>
-                    <TableHead>Items</TableHead>
-                    <TableHead className="text-right">Total</TableHead>
-                    <TableHead>Payment</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {data.sales.length === 0 ? (
-                    <TableRow>
-                      <TableCell colSpan={4} className="text-center text-muted-foreground">
-                        No sales
-                      </TableCell>
-                    </TableRow>
-                  ) : (
-                    data.sales.map((s) => (
-                      <TableRow key={s.id}>
-                        <TableCell>{formatDate(s.sale_date)}</TableCell>
-                        <TableCell className="max-w-[250px] truncate">{s.items_summary}</TableCell>
-                        <TableCell className="text-right">{formatCurrency(s.total)}</TableCell>
-                        <TableCell>
-                          <Badge variant={s.payment_type === "cash" ? "default" : "secondary"}>
-                            {s.payment_type}
-                          </Badge>
-                        </TableCell>
-                      </TableRow>
-                    ))
-                  )}
-                </TableBody>
-              </Table>
-            </div>
-          </div>
+          <SalesSection sales={data.sales} formatCurrency={formatCurrency} />
 
           {/* Payments */}
-          <div>
-            <h3 className="mb-2 text-sm font-medium">Payments</h3>
-            <div className="rounded-lg border">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Date</TableHead>
-                    <TableHead>Product</TableHead>
-                    <TableHead className="text-right">Amount</TableHead>
-                    <TableHead>Type</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {data.payments.length === 0 ? (
-                    <TableRow>
-                      <TableCell colSpan={4} className="text-center text-muted-foreground">
-                        No payments
-                      </TableCell>
-                    </TableRow>
-                  ) : (
-                    data.payments.map((p) => (
-                      <TableRow key={p.id}>
-                        <TableCell>{formatDate(p.payment_date)}</TableCell>
-                        <TableCell className="max-w-[250px] truncate">{p.product_summary}</TableCell>
-                        <TableCell className="text-right">{formatCurrency(p.amount)}</TableCell>
-                        <TableCell>
-                          <Badge variant={p.type === "regular" ? "default" : "secondary"}>
-                            {p.type}
-                          </Badge>
-                        </TableCell>
-                      </TableRow>
-                    ))
-                  )}
-                </TableBody>
-              </Table>
-            </div>
-          </div>
+          <PaymentsSection payments={data.payments} formatCurrency={formatCurrency} />
         </>
       )}
+    </div>
+  );
+}
+
+function SalesSection({ sales, formatCurrency }: { sales: CustomerHistoryReport["sales"]; formatCurrency: (v: number) => string }) {
+  const { page, setPage, pageSize, total, paginatedItems } = useClientPagination(sales);
+
+  return (
+    <div>
+      <h3 className="mb-2 text-sm font-medium">Sales</h3>
+      <div className="rounded-lg border">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Date</TableHead>
+              <TableHead>Items</TableHead>
+              <TableHead className="text-right">Total</TableHead>
+              <TableHead>Payment</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {sales.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={4} className="text-center text-muted-foreground">
+                  No sales
+                </TableCell>
+              </TableRow>
+            ) : (
+              paginatedItems.map((s) => (
+                <TableRow key={s.id}>
+                  <TableCell>{formatDate(s.sale_date)}</TableCell>
+                  <TableCell className="max-w-[250px] truncate">{s.items_summary}</TableCell>
+                  <TableCell className="text-right">{formatCurrency(s.total)}</TableCell>
+                  <TableCell>
+                    <Badge variant={s.payment_type === "cash" ? "default" : "secondary"}>
+                      {s.payment_type}
+                    </Badge>
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
+          </TableBody>
+        </Table>
+      </div>
+      <Pagination page={page} pageSize={pageSize} total={total} onPageChange={setPage} />
+    </div>
+  );
+}
+
+function PaymentsSection({ payments, formatCurrency }: { payments: CustomerHistoryReport["payments"]; formatCurrency: (v: number) => string }) {
+  const { page, setPage, pageSize, total, paginatedItems } = useClientPagination(payments);
+
+  return (
+    <div>
+      <h3 className="mb-2 text-sm font-medium">Payments</h3>
+      <div className="rounded-lg border">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Date</TableHead>
+              <TableHead>Product</TableHead>
+              <TableHead className="text-right">Amount</TableHead>
+              <TableHead>Type</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {payments.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={4} className="text-center text-muted-foreground">
+                  No payments
+                </TableCell>
+              </TableRow>
+            ) : (
+              paginatedItems.map((p) => (
+                <TableRow key={p.id}>
+                  <TableCell>{formatDate(p.payment_date)}</TableCell>
+                  <TableCell className="max-w-[250px] truncate">{formatProductSummary(p.product_summary)}</TableCell>
+                  <TableCell className="text-right">{formatCurrency(p.amount)}</TableCell>
+                  <TableCell>
+                    <Badge variant={p.type === "regular" ? "default" : "secondary"}>
+                      {p.type}
+                    </Badge>
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
+          </TableBody>
+        </Table>
+      </div>
+      <Pagination page={page} pageSize={pageSize} total={total} onPageChange={setPage} />
     </div>
   );
 }

@@ -5,7 +5,7 @@ import { toast } from "sonner";
 
 import { useAccounts } from "@/hooks/useAccounts";
 import type { AccountDetail } from "@/types/account";
-import { formatDate } from "@/lib/formatters";
+import { formatDate, formatProductSummary } from "@/lib/formatters";
 import { useCurrency } from "@/hooks/useCurrency";
 
 import { Button } from "@/components/ui/button";
@@ -135,7 +135,7 @@ export function AccountDetailPage() {
           </Button>
           <div>
             <h1 className="text-2xl font-bold tracking-tight">
-              {account.customer_name} — {account.product_summary}
+              {account.customer_name} — {formatProductSummary(account.product_summary)}
             </h1>
             <p className="text-sm text-muted-foreground">
               Account #{account.id} · Sale #{account.sale_id}
@@ -281,7 +281,7 @@ export function AccountDetailPage() {
           <AlertDialogHeader>
             <AlertDialogTitle>Mark Account as Defaulted?</AlertDialogTitle>
             <AlertDialogDescription>
-              This will mark the account for {account.customer_name} — {account.product_summary} as
+              This will mark the account for {account.customer_name} — {formatProductSummary(account.product_summary)} as
               defaulted. This action indicates the customer is unlikely to pay the remaining balance
               of {formatCurrency(account.balance_remaining)}.
             </AlertDialogDescription>

@@ -1,7 +1,7 @@
 import { useRef } from "react";
 import { Printer } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { formatDateTime } from "@/lib/formatters";
+import { formatDateTime, formatAttributes } from "@/lib/formatters";
 import { useCurrency } from "@/hooks/useCurrency";
 import type { SaleDetail } from "@/types/sale";
 
@@ -79,7 +79,7 @@ export function SaleReceipt({ detail, storeName = "Quality Appliance" }: SaleRec
               <tr key={item.id}>
                 <td>
                   {item.product_name}
-                  {item.variant_label ? ` (${item.variant_label})` : ""}
+                  {item.variant_label ? ` (${formatAttributes(item.variant_label)})` : ""}
                 </td>
                 <td style={{ textAlign: "center" }}>{item.quantity}</td>
                 <td style={{ textAlign: "right" }}>{formatCurrency(item.subtotal)}</td>

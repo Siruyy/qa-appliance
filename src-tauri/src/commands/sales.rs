@@ -151,7 +151,7 @@ pub fn get_sale_by_id(db: State<DbState>, id: i64) -> Result<SaleDetail, String>
     let mut items_stmt = conn
         .prepare(
             "SELECT si.id, si.sale_id, si.variant_id, si.quantity, si.unit_price, si.subtotal,
-                    si.cost_price_snapshot, si.created_at, p.name as product_name, pv.label as variant_label
+                    si.cost_price_snapshot, si.created_at, p.name as product_name, pv.attributes as variant_label
              FROM sale_items si
              LEFT JOIN product_variants pv ON si.variant_id = pv.id
              LEFT JOIN products p ON pv.product_id = p.id

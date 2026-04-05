@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
+import { DatePicker } from "@/components/DatePicker";
 import {
   Select,
   SelectContent,
@@ -99,20 +100,18 @@ export function SalesHistoryPage() {
 
         <div className="space-y-1">
           <Label className="text-xs text-muted-foreground">From</Label>
-          <Input
-            type="date"
+          <DatePicker
             value={filters.dateFrom}
-            onChange={(e) => setFilter("dateFrom", e.target.value)}
+            onChange={(v) => setFilter("dateFrom", v)}
             className="w-[150px]"
           />
         </div>
 
         <div className="space-y-1">
           <Label className="text-xs text-muted-foreground">To</Label>
-          <Input
-            type="date"
+          <DatePicker
             value={filters.dateTo}
-            onChange={(e) => setFilter("dateTo", e.target.value)}
+            onChange={(v) => setFilter("dateTo", v)}
             className="w-[150px]"
           />
         </div>

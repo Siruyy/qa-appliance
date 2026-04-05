@@ -99,7 +99,7 @@ fn migrate_v1(conn: &Connection) -> Result<()> {
             id              INTEGER PRIMARY KEY AUTOINCREMENT,
             customer_id     INTEGER REFERENCES customers(id) ON DELETE SET NULL,
             sale_date       TEXT NOT NULL DEFAULT (datetime('now')),
-            subtotal        REAL NOT NULL,
+            subtotal        REAL NOT NULL DEFAULT 0,
             discount        REAL NOT NULL DEFAULT 0,
             total           REAL NOT NULL,
             payment_type    TEXT NOT NULL CHECK(payment_type IN ('cash', 'installment')),
@@ -275,7 +275,7 @@ fn migrate_v4(conn: &Connection) -> Result<()> {
         ")?;
 
         // ── Products & Variants ───────────────────────────────────────────────
-        conn.execute_batch("
+        conn.execute_batch(r#"
             -- Air Conditioners (cat 1)
             INSERT INTO products (category_id, name, description) VALUES
                 (1, 'Carrier Air Conditioner', 'Window-type and split-type, energy-saving inverter technology'),
@@ -283,18 +283,18 @@ fn migrate_v4(conn: &Connection) -> Result<()> {
                 (1, 'Condura Air Conditioner', 'Split-type with turbo cool and dehumidify mode'),
                 (1, 'Panasonic Air Conditioner', 'Inverter split-type with nanoe-X air purification');
 
-            INSERT INTO product_variants (product_id, color, size, sku, cost_price, selling_price, stock, low_stock_threshold, is_active) VALUES
-                (1, 'White', '0.5 HP', 'AC-CAR-05HP', 9500, 13500, 8, 2, 1),
-                (1, 'White', '1.0 HP', 'AC-CAR-10HP', 14000, 19500, 12, 3, 1),
-                (1, 'White', '1.5 HP', 'AC-CAR-15HP', 18500, 25900, 10, 2, 1),
-                (1, 'White', '2.0 HP', 'AC-CAR-20HP', 24000, 33500, 6, 2, 1),
-                (2, 'White', '0.5 HP', 'AC-KOL-05HP', 7500, 10800, 10, 3, 1),
-                (2, 'White', '1.0 HP', 'AC-KOL-10HP', 11000, 15500, 15, 4, 1),
-                (2, 'White', '1.5 HP', 'AC-KOL-15HP', 14500, 20500, 8, 2, 1),
-                (3, 'White', '1.0 HP Split', 'AC-CON-10SP', 16000, 22500, 7, 2, 1),
-                (3, 'White', '1.5 HP Split', 'AC-CON-15SP', 21000, 29500, 5, 2, 1),
-                (4, 'White', '1.0 HP Inverter', 'AC-PAN-10INV', 19000, 26800, 6, 2, 1),
-                (4, 'White', '1.5 HP Inverter', 'AC-PAN-15INV', 24500, 34500, 5, 2, 1);
+            INSERT INTO product_variants (product_id, attributes, sku, cost_price, selling_price, stock_qty, low_stock_threshold, is_active) VALUES
+                (1, '{"color":"White","size":"0.5 HP"}', 'AC-CAR-05HP', 9500, 13500, 8, 2, 1),
+                (1, '{"color":"White","size":"1.0 HP"}', 'AC-CAR-10HP', 14000, 19500, 12, 3, 1),
+                (1, '{"color":"White","size":"1.5 HP"}', 'AC-CAR-15HP', 18500, 25900, 10, 2, 1),
+                (1, '{"color":"White","size":"2.0 HP"}', 'AC-CAR-20HP', 24000, 33500, 6, 2, 1),
+                (2, '{"color":"White","size":"0.5 HP"}', 'AC-KOL-05HP', 7500, 10800, 10, 3, 1),
+                (2, '{"color":"White","size":"1.0 HP"}', 'AC-KOL-10HP', 11000, 15500, 15, 4, 1),
+                (2, '{"color":"White","size":"1.5 HP"}', 'AC-KOL-15HP', 14500, 20500, 8, 2, 1),
+                (3, '{"color":"White","size":"1.0 HP Split"}', 'AC-CON-10SP', 16000, 22500, 7, 2, 1),
+                (3, '{"color":"White","size":"1.5 HP Split"}', 'AC-CON-15SP', 21000, 29500, 5, 2, 1),
+                (4, '{"color":"White","size":"1.0 HP Inverter"}', 'AC-PAN-10INV', 19000, 26800, 6, 2, 1),
+                (4, '{"color":"White","size":"1.5 HP Inverter"}', 'AC-PAN-15INV', 24500, 34500, 5, 2, 1);
 
             -- Refrigerators (cat 2)
             INSERT INTO products (category_id, name, description) VALUES
@@ -303,16 +303,16 @@ fn migrate_v4(conn: &Connection) -> Result<()> {
                 (2, 'Condura Refrigerator', 'Single-door, budget-friendly with adjustable shelves'),
                 (2, 'Panasonic Refrigerator', 'Econavi inverter with fresh-storage compartment');
 
-            INSERT INTO product_variants (product_id, color, size, sku, cost_price, selling_price, stock, low_stock_threshold, is_active) VALUES
-                (5, 'Silver', '6 cu ft', 'REF-SAM-6CU', 8500, 12000, 10, 3, 1),
-                (5, 'Black', '8 cu ft', 'REF-SAM-8CU', 11000, 15500, 8, 2, 1),
-                (5, 'Silver', '12 cu ft', 'REF-SAM-12CU', 16000, 22500, 6, 2, 1),
-                (6, 'Stainless', '8 cu ft', 'REF-LG-8CU', 12000, 16800, 7, 2, 1),
-                (6, 'Stainless', '14 cu ft', 'REF-LG-14CU', 19500, 27000, 5, 2, 1),
-                (7, 'White', '5 cu ft', 'REF-CON-5CU', 5500, 7900, 12, 4, 1),
-                (7, 'White', '7 cu ft', 'REF-CON-7CU', 7500, 10500, 10, 3, 1),
-                (8, 'Silver', '8 cu ft', 'REF-PAN-8CU', 11500, 16200, 6, 2, 1),
-                (8, 'Silver', '10 cu ft', 'REF-PAN-10CU', 14500, 20000, 5, 2, 1);
+            INSERT INTO product_variants (product_id, attributes, sku, cost_price, selling_price, stock_qty, low_stock_threshold, is_active) VALUES
+                (5, '{"color":"Silver","size":"6 cu ft"}', 'REF-SAM-6CU', 8500, 12000, 10, 3, 1),
+                (5, '{"color":"Black","size":"8 cu ft"}', 'REF-SAM-8CU', 11000, 15500, 8, 2, 1),
+                (5, '{"color":"Silver","size":"12 cu ft"}', 'REF-SAM-12CU', 16000, 22500, 6, 2, 1),
+                (6, '{"color":"Stainless","size":"8 cu ft"}', 'REF-LG-8CU', 12000, 16800, 7, 2, 1),
+                (6, '{"color":"Stainless","size":"14 cu ft"}', 'REF-LG-14CU', 19500, 27000, 5, 2, 1),
+                (7, '{"color":"White","size":"5 cu ft"}', 'REF-CON-5CU', 5500, 7900, 12, 4, 1),
+                (7, '{"color":"White","size":"7 cu ft"}', 'REF-CON-7CU', 7500, 10500, 10, 3, 1),
+                (8, '{"color":"Silver","size":"8 cu ft"}', 'REF-PAN-8CU', 11500, 16200, 6, 2, 1),
+                (8, '{"color":"Silver","size":"10 cu ft"}', 'REF-PAN-10CU', 14500, 20000, 5, 2, 1);
 
             -- Washing Machines (cat 3)
             INSERT INTO products (category_id, name, description) VALUES
@@ -321,14 +321,14 @@ fn migrate_v4(conn: &Connection) -> Result<()> {
                 (3, 'Condura Washing Machine', 'Twin-tub semi-automatic for budget buyers'),
                 (3, 'Whirlpool Washing Machine', 'Top-load with 6th sense technology');
 
-            INSERT INTO product_variants (product_id, color, size, sku, cost_price, selling_price, stock, low_stock_threshold, is_active) VALUES
-                (9, 'Silver', '7 kg Top-Load', 'WM-SAM-7TL', 12000, 16500, 8, 2, 1),
-                (9, 'Silver', '8 kg Front-Load', 'WM-SAM-8FL', 19500, 27000, 5, 2, 1),
-                (10, 'White', '8 kg Top-Load', 'WM-LG-8TL', 14000, 19500, 6, 2, 1),
-                (10, 'White', '9 kg Front-Load', 'WM-LG-9FL', 22000, 30500, 4, 2, 1),
-                (11, 'White', '6 kg Twin-Tub', 'WM-CON-6TT', 5500, 7800, 12, 3, 1),
-                (11, 'White', '7 kg Twin-Tub', 'WM-CON-7TT', 6500, 9200, 10, 3, 1),
-                (12, 'White', '7.5 kg Top-Load', 'WM-WP-75TL', 11000, 15500, 7, 2, 1);
+            INSERT INTO product_variants (product_id, attributes, sku, cost_price, selling_price, stock_qty, low_stock_threshold, is_active) VALUES
+                (9, '{"color":"Silver","size":"7 kg Top-Load"}', 'WM-SAM-7TL', 12000, 16500, 8, 2, 1),
+                (9, '{"color":"Silver","size":"8 kg Front-Load"}', 'WM-SAM-8FL', 19500, 27000, 5, 2, 1),
+                (10, '{"color":"White","size":"8 kg Top-Load"}', 'WM-LG-8TL', 14000, 19500, 6, 2, 1),
+                (10, '{"color":"White","size":"9 kg Front-Load"}', 'WM-LG-9FL', 22000, 30500, 4, 2, 1),
+                (11, '{"color":"White","size":"6 kg Twin-Tub"}', 'WM-CON-6TT', 5500, 7800, 12, 3, 1),
+                (11, '{"color":"White","size":"7 kg Twin-Tub"}', 'WM-CON-7TT', 6500, 9200, 10, 3, 1),
+                (12, '{"color":"White","size":"7.5 kg Top-Load"}', 'WM-WP-75TL', 11000, 15500, 7, 2, 1);
 
             -- Televisions (cat 4)
             INSERT INTO products (category_id, name, description) VALUES
@@ -337,17 +337,17 @@ fn migrate_v4(conn: &Connection) -> Result<()> {
                 (4, 'Sony Bravia', 'X-Reality PRO with Google TV'),
                 (4, 'Panasonic TV', 'IPS LED with built-in Netflix');
 
-            INSERT INTO product_variants (product_id, color, size, sku, cost_price, selling_price, stock, low_stock_threshold, is_active) VALUES
-                (13, 'Black', '32 inch', 'TV-SAM-32', 8500, 12000, 10, 3, 1),
-                (13, 'Black', '43 inch', 'TV-SAM-43', 14000, 19500, 8, 2, 1),
-                (13, 'Black', '55 inch', 'TV-SAM-55', 23000, 32000, 5, 2, 1),
-                (14, 'Black', '32 inch', 'TV-LG-32', 9000, 12800, 8, 2, 1),
-                (14, 'Black', '43 inch', 'TV-LG-43', 15000, 21000, 6, 2, 1),
-                (14, 'Black', '55 inch', 'TV-LG-55', 25000, 34500, 4, 2, 1),
-                (15, 'Black', '43 inch', 'TV-SON-43', 16500, 23000, 5, 2, 1),
-                (15, 'Black', '55 inch', 'TV-SON-55', 27000, 37500, 3, 2, 1),
-                (16, 'Black', '32 inch', 'TV-PAN-32', 8000, 11500, 8, 2, 1),
-                (16, 'Black', '43 inch', 'TV-PAN-43', 13500, 19000, 6, 2, 1);
+            INSERT INTO product_variants (product_id, attributes, sku, cost_price, selling_price, stock_qty, low_stock_threshold, is_active) VALUES
+                (13, '{"color":"Black","size":"32 inch"}', 'TV-SAM-32', 8500, 12000, 10, 3, 1),
+                (13, '{"color":"Black","size":"43 inch"}', 'TV-SAM-43', 14000, 19500, 8, 2, 1),
+                (13, '{"color":"Black","size":"55 inch"}', 'TV-SAM-55', 23000, 32000, 5, 2, 1),
+                (14, '{"color":"Black","size":"32 inch"}', 'TV-LG-32', 9000, 12800, 8, 2, 1),
+                (14, '{"color":"Black","size":"43 inch"}', 'TV-LG-43', 15000, 21000, 6, 2, 1),
+                (14, '{"color":"Black","size":"55 inch"}', 'TV-LG-55', 25000, 34500, 4, 2, 1),
+                (15, '{"color":"Black","size":"43 inch"}', 'TV-SON-43', 16500, 23000, 5, 2, 1),
+                (15, '{"color":"Black","size":"55 inch"}', 'TV-SON-55', 27000, 37500, 3, 2, 1),
+                (16, '{"color":"Black","size":"32 inch"}', 'TV-PAN-32', 8000, 11500, 8, 2, 1),
+                (16, '{"color":"Black","size":"43 inch"}', 'TV-PAN-43', 13500, 19000, 6, 2, 1);
 
             -- Kitchen Appliances (cat 5)
             INSERT INTO products (category_id, name, description) VALUES
@@ -356,16 +356,16 @@ fn migrate_v4(conn: &Connection) -> Result<()> {
                 (5, 'Blender', 'High-speed personal and heavy-duty blender'),
                 (5, 'Electric Stove', '2-burner induction and coil cooktop');
 
-            INSERT INTO product_variants (product_id, color, size, sku, cost_price, selling_price, stock, low_stock_threshold, is_active) VALUES
-                (17, 'White', '1.8L Basic', 'KIT-RC-18B', 1200, 1800, 20, 5, 1),
-                (17, 'White', '1.8L Fuzzy', 'KIT-RC-18F', 2800, 3900, 15, 4, 1),
-                (17, 'White', '3.0L Fuzzy', 'KIT-RC-30F', 3500, 4900, 12, 3, 1),
-                (18, 'Black', '20L', 'KIT-MW-20L', 3200, 4500, 12, 3, 1),
-                (18, 'Black', '25L', 'KIT-MW-25L', 4500, 6300, 10, 3, 1),
-                (19, 'Black', 'Personal 600ml', 'KIT-BL-600', 1500, 2200, 15, 5, 1),
-                (19, 'Black', 'Heavy-Duty 2L', 'KIT-BL-2L', 3800, 5400, 8, 2, 1),
-                (20, 'Black', '2-Burner Induction', 'KIT-ES-2IND', 4500, 6300, 8, 2, 1),
-                (20, 'Black', '2-Burner Coil', 'KIT-ES-2COI', 2800, 3900, 10, 3, 1);
+            INSERT INTO product_variants (product_id, attributes, sku, cost_price, selling_price, stock_qty, low_stock_threshold, is_active) VALUES
+                (17, '{"color":"White","size":"1.8L Basic"}', 'KIT-RC-18B', 1200, 1800, 20, 5, 1),
+                (17, '{"color":"White","size":"1.8L Fuzzy"}', 'KIT-RC-18F', 2800, 3900, 15, 4, 1),
+                (17, '{"color":"White","size":"3.0L Fuzzy"}', 'KIT-RC-30F', 3500, 4900, 12, 3, 1),
+                (18, '{"color":"Black","size":"20L"}', 'KIT-MW-20L', 3200, 4500, 12, 3, 1),
+                (18, '{"color":"Black","size":"25L"}', 'KIT-MW-25L', 4500, 6300, 10, 3, 1),
+                (19, '{"color":"Black","size":"Personal 600ml"}', 'KIT-BL-600', 1500, 2200, 15, 5, 1),
+                (19, '{"color":"Black","size":"Heavy-Duty 2L"}', 'KIT-BL-2L', 3800, 5400, 8, 2, 1),
+                (20, '{"color":"Black","size":"2-Burner Induction"}', 'KIT-ES-2IND', 4500, 6300, 8, 2, 1),
+                (20, '{"color":"Black","size":"2-Burner Coil"}', 'KIT-ES-2COI', 2800, 3900, 10, 3, 1);
 
             -- Water Heaters (cat 6)
             INSERT INTO products (category_id, name, description) VALUES
@@ -373,12 +373,12 @@ fn migrate_v4(conn: &Connection) -> Result<()> {
                 (6, 'Rheem Water Heater', 'Storage-type with rapid recovery'),
                 (6, 'Hanabishi Water Heater', 'Instant electric shower heater');
 
-            INSERT INTO product_variants (product_id, color, size, sku, cost_price, selling_price, stock, low_stock_threshold, is_active) VALUES
-                (21, 'White', '4L Instant', 'WH-ARI-4L', 3500, 4900, 10, 3, 1),
-                (21, 'White', '15L Storage', 'WH-ARI-15L', 6500, 9200, 7, 2, 1),
-                (22, 'White', '10L Storage', 'WH-RHE-10L', 5000, 7200, 8, 2, 1),
-                (22, 'White', '20L Storage', 'WH-RHE-20L', 8000, 11200, 5, 2, 1),
-                (23, 'White', 'Instant 3500W', 'WH-HAN-35W', 2800, 3900, 12, 4, 1);
+            INSERT INTO product_variants (product_id, attributes, sku, cost_price, selling_price, stock_qty, low_stock_threshold, is_active) VALUES
+                (21, '{"color":"White","size":"4L Instant"}', 'WH-ARI-4L', 3500, 4900, 10, 3, 1),
+                (21, '{"color":"White","size":"15L Storage"}', 'WH-ARI-15L', 6500, 9200, 7, 2, 1),
+                (22, '{"color":"White","size":"10L Storage"}', 'WH-RHE-10L', 5000, 7200, 8, 2, 1),
+                (22, '{"color":"White","size":"20L Storage"}', 'WH-RHE-20L', 8000, 11200, 5, 2, 1),
+                (23, '{"color":"White","size":"Instant 3500W"}', 'WH-HAN-35W', 2800, 3900, 12, 4, 1);
 
             -- Electric Fans (cat 7)
             INSERT INTO products (category_id, name, description) VALUES
@@ -386,12 +386,12 @@ fn migrate_v4(conn: &Connection) -> Result<()> {
                 (7, 'Tower Fan', 'Slim tower fan with remote control'),
                 (7, 'Ceiling Fan', '52-56 inch ceiling fan with light kit');
 
-            INSERT INTO product_variants (product_id, color, size, sku, cost_price, selling_price, stock, low_stock_threshold, is_active) VALUES
-                (24, 'White', '16 inch', 'FAN-STD-16', 1200, 1700, 20, 5, 1),
-                (24, 'White', '18 inch', 'FAN-STD-18', 1600, 2300, 15, 4, 1),
-                (25, 'Black', '30 inch Tower', 'FAN-TWR-30', 2800, 3900, 10, 3, 1),
-                (26, 'Bronze', '52 inch', 'FAN-CEI-52', 3200, 4500, 8, 2, 1),
-                (26, 'White', '56 inch w/ Light', 'FAN-CEI-56L', 4500, 6200, 6, 2, 1);
+            INSERT INTO product_variants (product_id, attributes, sku, cost_price, selling_price, stock_qty, low_stock_threshold, is_active) VALUES
+                (24, '{"color":"White","size":"16 inch"}', 'FAN-STD-16', 1200, 1700, 20, 5, 1),
+                (24, '{"color":"White","size":"18 inch"}', 'FAN-STD-18', 1600, 2300, 15, 4, 1),
+                (25, '{"color":"Black","size":"30 inch Tower"}', 'FAN-TWR-30', 2800, 3900, 10, 3, 1),
+                (26, '{"color":"Bronze","size":"52 inch"}', 'FAN-CEI-52', 3200, 4500, 8, 2, 1),
+                (26, '{"color":"White","size":"56 inch w/ Light"}', 'FAN-CEI-56L', 4500, 6200, 6, 2, 1);
 
             -- Small Appliances (cat 8)
             INSERT INTO products (category_id, name, description) VALUES
@@ -400,15 +400,15 @@ fn migrate_v4(conn: &Connection) -> Result<()> {
                 (8, 'Vacuum Cleaner', 'Bagless canister and stick vacuum'),
                 (8, 'Electric Kettle', '1.7L stainless steel cordless kettle');
 
-            INSERT INTO product_variants (product_id, color, size, sku, cost_price, selling_price, stock, low_stock_threshold, is_active) VALUES
-                (27, 'White', '1000W Dry', 'SM-IRN-1000D', 450, 650, 25, 8, 1),
-                (27, 'White', '2200W Steam', 'SM-IRN-2200S', 900, 1280, 20, 6, 1),
-                (28, 'Black', '1600W', 'SM-HD-1600', 800, 1150, 15, 5, 1),
-                (28, 'Black', '2000W Pro', 'SM-HD-2000P', 1500, 2100, 10, 3, 1),
-                (29, 'Red', '1600W Canister', 'SM-VAC-16C', 3500, 4900, 8, 2, 1),
-                (29, 'Black', '600W Stick', 'SM-VAC-06S', 2200, 3100, 10, 3, 1),
-                (30, 'Silver', '1.7L 2200W', 'SM-KET-17L', 850, 1200, 20, 6, 1);
-        ")?;
+            INSERT INTO product_variants (product_id, attributes, sku, cost_price, selling_price, stock_qty, low_stock_threshold, is_active) VALUES
+                (27, '{"color":"White","size":"1000W Dry"}', 'SM-IRN-1000D', 450, 650, 25, 8, 1),
+                (27, '{"color":"White","size":"2200W Steam"}', 'SM-IRN-2200S', 900, 1280, 20, 6, 1),
+                (28, '{"color":"Black","size":"1600W"}', 'SM-HD-1600', 800, 1150, 15, 5, 1),
+                (28, '{"color":"Black","size":"2000W Pro"}', 'SM-HD-2000P', 1500, 2100, 10, 3, 1),
+                (29, '{"color":"Red","size":"1600W Canister"}', 'SM-VAC-16C', 3500, 4900, 8, 2, 1),
+                (29, '{"color":"Black","size":"600W Stick"}', 'SM-VAC-06S', 2200, 3100, 10, 3, 1),
+                (30, '{"color":"Silver","size":"1.7L 2200W"}', 'SM-KET-17L', 850, 1200, 20, 6, 1);
+        "#)?;
 
         // ── Customers (60 Filipino customers) ────────────────────────────────
         conn.execute_batch("
@@ -479,7 +479,7 @@ fn migrate_v4(conn: &Connection) -> Result<()> {
         // Cash sales: product variants with short IDs
         conn.execute_batch("
             -- 2023 Q1 cash sales
-            INSERT INTO sales (customer_id, sale_date, payment_type, discount, notes, total_amount) VALUES
+            INSERT INTO sales (customer_id, sale_date, payment_type, discount, notes, total) VALUES
                 (1, '2023-01-05', 'cash', 0, NULL, 1700),
                 (2, '2023-01-08', 'cash', 500, NULL, 12000),
                 (3, '2023-01-12', 'cash', 0, NULL, 4900),
@@ -684,6 +684,8 @@ fn migrate_v4(conn: &Connection) -> Result<()> {
                 (8, '2024-12-18', 'cash', 0, NULL, 11200),
                 (9, '2024-12-22', 'cash', 1000, NULL, 29500),
                 (10, '2024-12-26', 'cash', 0, NULL, 4900);
+
+            UPDATE sales SET subtotal = total + discount WHERE subtotal = 0;
         ")?;
 
         // Sale items for cash sales (one item per sale, map sale_id 1..=N to variants)
@@ -898,7 +900,7 @@ fn migrate_v4(conn: &Connection) -> Result<()> {
         // ── Installment sales + accounts ──────────────────────────────────────
         // 2023 installment sales (IDs will be 190+)
         conn.execute_batch("
-            INSERT INTO sales (customer_id, sale_date, payment_type, discount, notes, total_amount) VALUES
+            INSERT INTO sales (customer_id, sale_date, payment_type, discount, notes, total) VALUES
                 (11, '2023-01-10', 'installment', 0, '6-month term', 19500),
                 (15, '2023-01-18', 'installment', 1000, '12-month term', 33500),
                 (21, '2023-02-05', 'installment', 0, '6-month term', 25900),
@@ -949,6 +951,8 @@ fn migrate_v4(conn: &Connection) -> Result<()> {
                 (43, '2024-11-25', 'installment', 0, '24-month term', 74000),
                 (49, '2024-12-09', 'installment', 2000, '12-month term', 22500),
                 (55, '2024-12-20', 'installment', 0, '6-month term', 17500);
+
+            UPDATE sales SET subtotal = total + discount WHERE subtotal = 0;
         ")?;
 
         // Sale items for installment sales
@@ -1009,7 +1013,7 @@ fn migrate_v4(conn: &Connection) -> Result<()> {
         // ── Installment Accounts ──────────────────────────────────────────────
         conn.execute_batch("
             -- Paid accounts (fully settled)
-            INSERT INTO installment_accounts (sale_id, customer_id, principal, down_payment, monthly_payment, months_term, balance_remaining, status, has_schedule, notes) VALUES
+            INSERT INTO installment_accounts (sale_id, customer_id, principal, down_payment, monthly_amount, term_months, balance_remaining, status, has_schedule, notes) VALUES
                 (190, 11, 19500, 3500, 2667, 6, 0, 'paid', 1, NULL),
                 (191, 15, 33500, 5500, 2333, 12, 0, 'paid', 1, NULL),
                 (192, 21, 25900, 4900, 3500, 6, 0, 'paid', 1, NULL),
@@ -1027,7 +1031,6 @@ fn migrate_v4(conn: &Connection) -> Result<()> {
                 (224, 35, 19500, 3500, 1333, 12, 0, 'paid', 1, NULL),
 
                 -- Active/open accounts (still paying)
-                (193, 28, 69000, 9000, 2500, 24, 45000, 'open', 1, NULL),
                 (195, 39, 34500, 5500, 1611, 18, 16110, 'open', 1, NULL),
                 (198, 55, 63000, 9000, 2250, 24, 36000, 'open', 1, NULL),
                 (200, 8, 29500, 5000, 1361, 18, 13610, 'open', 1, NULL),
@@ -1070,204 +1073,204 @@ fn migrate_v4(conn: &Connection) -> Result<()> {
         // ── Payment Schedules for paid accounts ───────────────────────────────
         conn.execute_batch("
             -- Account 1 (sale 190, 6 months, paid) — schedules
-            INSERT INTO payment_schedules (account_id, due_date, amount_due, status, paid_date, paid_amount) VALUES
-                (1, '2023-02-10', 2667, 'paid', '2023-02-09', 2667),
-                (1, '2023-03-10', 2667, 'paid', '2023-03-10', 2667),
-                (1, '2023-04-10', 2667, 'paid', '2023-04-10', 2667),
-                (1, '2023-05-10', 2667, 'paid', '2023-05-10', 2667),
-                (1, '2023-06-10', 2667, 'paid', '2023-06-11', 2667),
-                (1, '2023-07-10', 2666, 'paid', '2023-07-09', 2666);
+            INSERT INTO payment_schedules (account_id, due_date, amount_due, status, amount_paid) VALUES
+                (1, '2023-02-10', 2667, 'paid', 2667),
+                (1, '2023-03-10', 2667, 'paid', 2667),
+                (1, '2023-04-10', 2667, 'paid', 2667),
+                (1, '2023-05-10', 2667, 'paid', 2667),
+                (1, '2023-06-10', 2667, 'paid', 2667),
+                (1, '2023-07-10', 2666, 'paid', 2666);
 
             -- Account 2 (sale 191, 12 months, paid) — schedules
-            INSERT INTO payment_schedules (account_id, due_date, amount_due, status, paid_date, paid_amount) VALUES
-                (2, '2023-02-18', 2333, 'paid', '2023-02-18', 2333),
-                (2, '2023-03-18', 2333, 'paid', '2023-03-18', 2333),
-                (2, '2023-04-18', 2333, 'paid', '2023-04-18', 2333),
-                (2, '2023-05-18', 2333, 'paid', '2023-05-18', 2333),
-                (2, '2023-06-18', 2333, 'paid', '2023-06-18', 2333),
-                (2, '2023-07-18', 2333, 'paid', '2023-07-18', 2333),
-                (2, '2023-08-18', 2333, 'paid', '2023-08-18', 2333),
-                (2, '2023-09-18', 2333, 'paid', '2023-09-17', 2333),
-                (2, '2023-10-18', 2333, 'paid', '2023-10-18', 2333),
-                (2, '2023-11-18', 2333, 'paid', '2023-11-18', 2333),
-                (2, '2023-12-18', 2333, 'paid', '2023-12-18', 2333),
-                (2, '2024-01-18', 2337, 'paid', '2024-01-18', 2337);
+            INSERT INTO payment_schedules (account_id, due_date, amount_due, status, amount_paid) VALUES
+                (2, '2023-02-18', 2333, 'paid', 2333),
+                (2, '2023-03-18', 2333, 'paid', 2333),
+                (2, '2023-04-18', 2333, 'paid', 2333),
+                (2, '2023-05-18', 2333, 'paid', 2333),
+                (2, '2023-06-18', 2333, 'paid', 2333),
+                (2, '2023-07-18', 2333, 'paid', 2333),
+                (2, '2023-08-18', 2333, 'paid', 2333),
+                (2, '2023-09-18', 2333, 'paid', 2333),
+                (2, '2023-10-18', 2333, 'paid', 2333),
+                (2, '2023-11-18', 2333, 'paid', 2333),
+                (2, '2023-12-18', 2333, 'paid', 2333),
+                (2, '2024-01-18', 2337, 'paid', 2337);
 
             -- Account 3 (sale 192, 6 months, paid)
-            INSERT INTO payment_schedules (account_id, due_date, amount_due, status, paid_date, paid_amount) VALUES
-                (3, '2023-03-05', 3500, 'paid', '2023-03-05', 3500),
-                (3, '2023-04-05', 3500, 'paid', '2023-04-05', 3500),
-                (3, '2023-05-05', 3500, 'paid', '2023-05-05', 3500),
-                (3, '2023-06-05', 3500, 'paid', '2023-06-05', 3500),
-                (3, '2023-07-05', 3500, 'paid', '2023-07-05', 3500),
-                (3, '2023-08-05', 3500, 'paid', '2023-08-04', 3500);
+            INSERT INTO payment_schedules (account_id, due_date, amount_due, status, amount_paid) VALUES
+                (3, '2023-03-05', 3500, 'paid', 3500),
+                (3, '2023-04-05', 3500, 'paid', 3500),
+                (3, '2023-05-05', 3500, 'paid', 3500),
+                (3, '2023-06-05', 3500, 'paid', 3500),
+                (3, '2023-07-05', 3500, 'paid', 3500),
+                (3, '2023-08-05', 3500, 'paid', 3500);
 
             -- Account 5 (sale 194, 12 months, paid)
-            INSERT INTO payment_schedules (account_id, due_date, amount_due, status, paid_date, paid_amount) VALUES
-                (5, '2023-04-08', 1333, 'paid', '2023-04-08', 1333),
-                (5, '2023-05-08', 1333, 'paid', '2023-05-07', 1333),
-                (5, '2023-06-08', 1333, 'paid', '2023-06-08', 1333),
-                (5, '2023-07-08', 1333, 'paid', '2023-07-08', 1333),
-                (5, '2023-08-08', 1333, 'paid', '2023-08-08', 1333),
-                (5, '2023-09-08', 1333, 'paid', '2023-09-08', 1333),
-                (5, '2023-10-08', 1333, 'paid', '2023-10-08', 1333),
-                (5, '2023-11-08', 1333, 'paid', '2023-11-08', 1333),
-                (5, '2023-12-08', 1333, 'paid', '2023-12-08', 1333),
-                (5, '2024-01-08', 1333, 'paid', '2024-01-08', 1333),
-                (5, '2024-02-08', 1333, 'paid', '2024-02-08', 1333),
-                (5, '2024-03-08', 1337, 'paid', '2024-03-08', 1337);
+            INSERT INTO payment_schedules (account_id, due_date, amount_due, status, amount_paid) VALUES
+                (5, '2023-04-08', 1333, 'paid', 1333),
+                (5, '2023-05-08', 1333, 'paid', 1333),
+                (5, '2023-06-08', 1333, 'paid', 1333),
+                (5, '2023-07-08', 1333, 'paid', 1333),
+                (5, '2023-08-08', 1333, 'paid', 1333),
+                (5, '2023-09-08', 1333, 'paid', 1333),
+                (5, '2023-10-08', 1333, 'paid', 1333),
+                (5, '2023-11-08', 1333, 'paid', 1333),
+                (5, '2023-12-08', 1333, 'paid', 1333),
+                (5, '2024-01-08', 1333, 'paid', 1333),
+                (5, '2024-02-08', 1333, 'paid', 1333),
+                (5, '2024-03-08', 1337, 'paid', 1337);
         ")?;
 
         // Payment schedules for active accounts
         conn.execute_batch("
             -- Account 16 (sale 193, 24 months, open - 9 payments made)
-            INSERT INTO payment_schedules (account_id, due_date, amount_due, status, paid_date, paid_amount) VALUES
-                (16, '2023-03-28', 2500, 'paid', '2023-03-28', 2500),
-                (16, '2023-04-28', 2500, 'paid', '2023-04-28', 2500),
-                (16, '2023-05-28', 2500, 'paid', '2023-05-28', 2500),
-                (16, '2023-06-28', 2500, 'paid', '2023-06-28', 2500),
-                (16, '2023-07-28', 2500, 'paid', '2023-07-27', 2500),
-                (16, '2023-08-28', 2500, 'paid', '2023-08-28', 2500),
-                (16, '2023-09-28', 2500, 'paid', '2023-09-28', 2500),
-                (16, '2023-10-28', 2500, 'paid', '2023-10-28', 2500),
-                (16, '2023-11-28', 2500, 'paid', '2023-11-28', 2500),
-                (16, '2023-12-28', 2500, 'pending', NULL, NULL),
-                (16, '2024-01-28', 2500, 'pending', NULL, NULL),
-                (16, '2024-02-28', 2500, 'pending', NULL, NULL),
-                (16, '2024-03-28', 2500, 'pending', NULL, NULL),
-                (16, '2024-04-28', 2500, 'pending', NULL, NULL),
-                (16, '2024-05-28', 2500, 'pending', NULL, NULL),
-                (16, '2024-06-28', 2500, 'pending', NULL, NULL),
-                (16, '2024-07-28', 2500, 'pending', NULL, NULL),
-                (16, '2024-08-28', 2500, 'pending', NULL, NULL),
-                (16, '2024-09-28', 2500, 'pending', NULL, NULL),
-                (16, '2024-10-28', 2500, 'pending', NULL, NULL),
-                (16, '2024-11-28', 2500, 'pending', NULL, NULL),
-                (16, '2024-12-28', 2500, 'pending', NULL, NULL),
-                (16, '2025-01-28', 2500, 'pending', NULL, NULL);
+            INSERT INTO payment_schedules (account_id, due_date, amount_due, status, amount_paid) VALUES
+                (16, '2023-03-28', 2500, 'paid', 2500),
+                (16, '2023-04-28', 2500, 'paid', 2500),
+                (16, '2023-05-28', 2500, 'paid', 2500),
+                (16, '2023-06-28', 2500, 'paid', 2500),
+                (16, '2023-07-28', 2500, 'paid', 2500),
+                (16, '2023-08-28', 2500, 'paid', 2500),
+                (16, '2023-09-28', 2500, 'paid', 2500),
+                (16, '2023-10-28', 2500, 'paid', 2500),
+                (16, '2023-11-28', 2500, 'paid', 2500),
+                (16, '2023-12-28', 2500, 'pending', 0),
+                (16, '2024-01-28', 2500, 'pending', 0),
+                (16, '2024-02-28', 2500, 'pending', 0),
+                (16, '2024-03-28', 2500, 'pending', 0),
+                (16, '2024-04-28', 2500, 'pending', 0),
+                (16, '2024-05-28', 2500, 'pending', 0),
+                (16, '2024-06-28', 2500, 'pending', 0),
+                (16, '2024-07-28', 2500, 'pending', 0),
+                (16, '2024-08-28', 2500, 'pending', 0),
+                (16, '2024-09-28', 2500, 'pending', 0),
+                (16, '2024-10-28', 2500, 'pending', 0),
+                (16, '2024-11-28', 2500, 'pending', 0),
+                (16, '2024-12-28', 2500, 'pending', 0),
+                (16, '2025-01-28', 2500, 'pending', 0);
 
             -- Account 17 (sale 195, 18 months, open - 11 paid, 7 pending)
-            INSERT INTO payment_schedules (account_id, due_date, amount_due, status, paid_date, paid_amount) VALUES
-                (17, '2023-04-22', 1611, 'paid', '2023-04-22', 1611),
-                (17, '2023-05-22', 1611, 'paid', '2023-05-22', 1611),
-                (17, '2023-06-22', 1611, 'paid', '2023-06-21', 1611),
-                (17, '2023-07-22', 1611, 'paid', '2023-07-22', 1611),
-                (17, '2023-08-22', 1611, 'paid', '2023-08-22', 1611),
-                (17, '2023-09-22', 1611, 'paid', '2023-09-22', 1611),
-                (17, '2023-10-22', 1611, 'paid', '2023-10-22', 1611),
-                (17, '2023-11-22', 1611, 'paid', '2023-11-22', 1611),
-                (17, '2023-12-22', 1611, 'paid', '2023-12-21', 1611),
-                (17, '2024-01-22', 1611, 'paid', '2024-01-22', 1611),
-                (17, '2024-02-22', 1611, 'paid', '2024-02-22', 1611),
-                (17, '2024-03-22', 1611, 'pending', NULL, NULL),
-                (17, '2024-04-22', 1611, 'pending', NULL, NULL),
-                (17, '2024-05-22', 1611, 'pending', NULL, NULL),
-                (17, '2024-06-22', 1611, 'pending', NULL, NULL),
-                (17, '2024-07-22', 1611, 'pending', NULL, NULL),
-                (17, '2024-08-22', 1611, 'pending', NULL, NULL),
-                (17, '2024-09-22', 1622, 'pending', NULL, NULL);
+            INSERT INTO payment_schedules (account_id, due_date, amount_due, status, amount_paid) VALUES
+                (17, '2023-04-22', 1611, 'paid', 1611),
+                (17, '2023-05-22', 1611, 'paid', 1611),
+                (17, '2023-06-22', 1611, 'paid', 1611),
+                (17, '2023-07-22', 1611, 'paid', 1611),
+                (17, '2023-08-22', 1611, 'paid', 1611),
+                (17, '2023-09-22', 1611, 'paid', 1611),
+                (17, '2023-10-22', 1611, 'paid', 1611),
+                (17, '2023-11-22', 1611, 'paid', 1611),
+                (17, '2023-12-22', 1611, 'paid', 1611),
+                (17, '2024-01-22', 1611, 'paid', 1611),
+                (17, '2024-02-22', 1611, 'paid', 1611),
+                (17, '2024-03-22', 1611, 'pending', 0),
+                (17, '2024-04-22', 1611, 'pending', 0),
+                (17, '2024-05-22', 1611, 'pending', 0),
+                (17, '2024-06-22', 1611, 'pending', 0),
+                (17, '2024-07-22', 1611, 'pending', 0),
+                (17, '2024-08-22', 1611, 'pending', 0),
+                (17, '2024-09-22', 1622, 'pending', 0);
 
             -- Account 20 (sale 202, 12 months, open - 7 paid, 5 pending)
-            INSERT INTO payment_schedules (account_id, due_date, amount_due, status, paid_date, paid_amount) VALUES
-                (20, '2023-07-05', 1833, 'paid', '2023-07-05', 1833),
-                (20, '2023-08-05', 1833, 'paid', '2023-08-05', 1833),
-                (20, '2023-09-05', 1833, 'paid', '2023-09-05', 1833),
-                (20, '2023-10-05', 1833, 'paid', '2023-10-04', 1833),
-                (20, '2023-11-05', 1833, 'paid', '2023-11-05', 1833),
-                (20, '2023-12-05', 1833, 'paid', '2023-12-05', 1833),
-                (20, '2024-01-05', 1833, 'paid', '2024-01-05', 1833),
-                (20, '2024-02-05', 1833, 'pending', NULL, NULL),
-                (20, '2024-03-05', 1833, 'pending', NULL, NULL),
-                (20, '2024-04-05', 1833, 'pending', NULL, NULL),
-                (20, '2024-05-05', 1833, 'pending', NULL, NULL),
-                (20, '2024-06-05', 1837, 'pending', NULL, NULL);
+            INSERT INTO payment_schedules (account_id, due_date, amount_due, status, amount_paid) VALUES
+                (20, '2023-07-05', 1833, 'paid', 1833),
+                (20, '2023-08-05', 1833, 'paid', 1833),
+                (20, '2023-09-05', 1833, 'paid', 1833),
+                (20, '2023-10-05', 1833, 'paid', 1833),
+                (20, '2023-11-05', 1833, 'paid', 1833),
+                (20, '2023-12-05', 1833, 'paid', 1833),
+                (20, '2024-01-05', 1833, 'paid', 1833),
+                (20, '2024-02-05', 1833, 'pending', 0),
+                (20, '2024-03-05', 1833, 'pending', 0),
+                (20, '2024-04-05', 1833, 'pending', 0),
+                (20, '2024-05-05', 1833, 'pending', 0),
+                (20, '2024-06-05', 1837, 'pending', 0);
         ")?;
 
         // ── Payments (actual payment records for paid accounts) ───────────────
         conn.execute_batch("
             -- Payments for account 1 (paid)
-            INSERT INTO payments (account_id, payment_date, amount, payment_method, notes) VALUES
-                (1, '2023-02-09', 2667, 'cash', NULL),
-                (1, '2023-03-10', 2667, 'cash', NULL),
-                (1, '2023-04-10', 2667, 'cash', NULL),
-                (1, '2023-05-10', 2667, 'cash', NULL),
-                (1, '2023-06-11', 2667, 'cash', NULL),
-                (1, '2023-07-09', 2666, 'cash', NULL);
+            INSERT INTO payments (account_id, payment_date, amount, type, notes) VALUES
+                (1, '2023-02-09', 2667, 'payment', NULL),
+                (1, '2023-03-10', 2667, 'payment', NULL),
+                (1, '2023-04-10', 2667, 'payment', NULL),
+                (1, '2023-05-10', 2667, 'payment', NULL),
+                (1, '2023-06-11', 2667, 'payment', NULL),
+                (1, '2023-07-09', 2666, 'payment', NULL);
 
             -- Payments for account 2 (paid)
-            INSERT INTO payments (account_id, payment_date, amount, payment_method, notes) VALUES
-                (2, '2023-02-18', 2333, 'gcash', NULL),
-                (2, '2023-03-18', 2333, 'gcash', NULL),
-                (2, '2023-04-18', 2333, 'cash', NULL),
-                (2, '2023-05-18', 2333, 'gcash', NULL),
-                (2, '2023-06-18', 2333, 'cash', NULL),
-                (2, '2023-07-18', 2333, 'cash', NULL),
-                (2, '2023-08-18', 2333, 'gcash', NULL),
-                (2, '2023-09-17', 2333, 'cash', NULL),
-                (2, '2023-10-18', 2333, 'cash', NULL),
-                (2, '2023-11-18', 2333, 'gcash', NULL),
-                (2, '2023-12-18', 2333, 'cash', NULL),
-                (2, '2024-01-18', 2337, 'cash', NULL);
+            INSERT INTO payments (account_id, payment_date, amount, type, notes) VALUES
+                (2, '2023-02-18', 2333, 'payment', NULL),
+                (2, '2023-03-18', 2333, 'payment', NULL),
+                (2, '2023-04-18', 2333, 'payment', NULL),
+                (2, '2023-05-18', 2333, 'payment', NULL),
+                (2, '2023-06-18', 2333, 'payment', NULL),
+                (2, '2023-07-18', 2333, 'payment', NULL),
+                (2, '2023-08-18', 2333, 'payment', NULL),
+                (2, '2023-09-17', 2333, 'payment', NULL),
+                (2, '2023-10-18', 2333, 'payment', NULL),
+                (2, '2023-11-18', 2333, 'payment', NULL),
+                (2, '2023-12-18', 2333, 'payment', NULL),
+                (2, '2024-01-18', 2337, 'payment', NULL);
 
             -- Payments for account 3 (paid)
-            INSERT INTO payments (account_id, payment_date, amount, payment_method, notes) VALUES
-                (3, '2023-03-05', 3500, 'cash', NULL),
-                (3, '2023-04-05', 3500, 'cash', NULL),
-                (3, '2023-05-05', 3500, 'cash', NULL),
-                (3, '2023-06-05', 3500, 'cash', NULL),
-                (3, '2023-07-05', 3500, 'cash', NULL),
-                (3, '2023-08-04', 3500, 'cash', NULL);
+            INSERT INTO payments (account_id, payment_date, amount, type, notes) VALUES
+                (3, '2023-03-05', 3500, 'payment', NULL),
+                (3, '2023-04-05', 3500, 'payment', NULL),
+                (3, '2023-05-05', 3500, 'payment', NULL),
+                (3, '2023-06-05', 3500, 'payment', NULL),
+                (3, '2023-07-05', 3500, 'payment', NULL),
+                (3, '2023-08-04', 3500, 'payment', NULL);
 
             -- Payments for account 5 (paid)
-            INSERT INTO payments (account_id, payment_date, amount, payment_method, notes) VALUES
-                (5, '2023-04-08', 1333, 'cash', NULL),
-                (5, '2023-05-07', 1333, 'cash', NULL),
-                (5, '2023-06-08', 1333, 'cash', NULL),
-                (5, '2023-07-08', 1333, 'cash', NULL),
-                (5, '2023-08-08', 1333, 'cash', NULL),
-                (5, '2023-09-08', 1333, 'cash', NULL),
-                (5, '2023-10-08', 1333, 'cash', NULL),
-                (5, '2023-11-08', 1333, 'cash', NULL),
-                (5, '2023-12-08', 1333, 'cash', NULL),
-                (5, '2024-01-08', 1333, 'cash', NULL),
-                (5, '2024-02-08', 1333, 'cash', NULL),
-                (5, '2024-03-08', 1337, 'cash', NULL);
+            INSERT INTO payments (account_id, payment_date, amount, type, notes) VALUES
+                (5, '2023-04-08', 1333, 'payment', NULL),
+                (5, '2023-05-07', 1333, 'payment', NULL),
+                (5, '2023-06-08', 1333, 'payment', NULL),
+                (5, '2023-07-08', 1333, 'payment', NULL),
+                (5, '2023-08-08', 1333, 'payment', NULL),
+                (5, '2023-09-08', 1333, 'payment', NULL),
+                (5, '2023-10-08', 1333, 'payment', NULL),
+                (5, '2023-11-08', 1333, 'payment', NULL),
+                (5, '2023-12-08', 1333, 'payment', NULL),
+                (5, '2024-01-08', 1333, 'payment', NULL),
+                (5, '2024-02-08', 1333, 'payment', NULL),
+                (5, '2024-03-08', 1337, 'payment', NULL);
 
             -- Payments for account 16 (open — 9 payments)
-            INSERT INTO payments (account_id, payment_date, amount, payment_method, notes) VALUES
-                (16, '2023-03-28', 2500, 'cash', NULL),
-                (16, '2023-04-28', 2500, 'gcash', NULL),
-                (16, '2023-05-28', 2500, 'cash', NULL),
-                (16, '2023-06-28', 2500, 'cash', NULL),
-                (16, '2023-07-27', 2500, 'gcash', NULL),
-                (16, '2023-08-28', 2500, 'cash', NULL),
-                (16, '2023-09-28', 2500, 'cash', NULL),
-                (16, '2023-10-28', 2500, 'gcash', NULL),
-                (16, '2023-11-28', 2500, 'cash', NULL);
+            INSERT INTO payments (account_id, payment_date, amount, type, notes) VALUES
+                (16, '2023-03-28', 2500, 'payment', NULL),
+                (16, '2023-04-28', 2500, 'payment', NULL),
+                (16, '2023-05-28', 2500, 'payment', NULL),
+                (16, '2023-06-28', 2500, 'payment', NULL),
+                (16, '2023-07-27', 2500, 'payment', NULL),
+                (16, '2023-08-28', 2500, 'payment', NULL),
+                (16, '2023-09-28', 2500, 'payment', NULL),
+                (16, '2023-10-28', 2500, 'payment', NULL),
+                (16, '2023-11-28', 2500, 'payment', NULL);
 
             -- Payments for account 17 (open — 11 payments)
-            INSERT INTO payments (account_id, payment_date, amount, payment_method, notes) VALUES
-                (17, '2023-04-22', 1611, 'cash', NULL),
-                (17, '2023-05-22', 1611, 'cash', NULL),
-                (17, '2023-06-21', 1611, 'cash', NULL),
-                (17, '2023-07-22', 1611, 'gcash', NULL),
-                (17, '2023-08-22', 1611, 'cash', NULL),
-                (17, '2023-09-22', 1611, 'cash', NULL),
-                (17, '2023-10-22', 1611, 'gcash', NULL),
-                (17, '2023-11-22', 1611, 'cash', NULL),
-                (17, '2023-12-21', 1611, 'cash', NULL),
-                (17, '2024-01-22', 1611, 'gcash', NULL),
-                (17, '2024-02-22', 1611, 'cash', NULL);
+            INSERT INTO payments (account_id, payment_date, amount, type, notes) VALUES
+                (17, '2023-04-22', 1611, 'payment', NULL),
+                (17, '2023-05-22', 1611, 'payment', NULL),
+                (17, '2023-06-21', 1611, 'payment', NULL),
+                (17, '2023-07-22', 1611, 'payment', NULL),
+                (17, '2023-08-22', 1611, 'payment', NULL),
+                (17, '2023-09-22', 1611, 'payment', NULL),
+                (17, '2023-10-22', 1611, 'payment', NULL),
+                (17, '2023-11-22', 1611, 'payment', NULL),
+                (17, '2023-12-21', 1611, 'payment', NULL),
+                (17, '2024-01-22', 1611, 'payment', NULL),
+                (17, '2024-02-22', 1611, 'payment', NULL);
 
             -- Payments for account 20 (open — 7 payments)
-            INSERT INTO payments (account_id, payment_date, amount, payment_method, notes) VALUES
-                (20, '2023-07-05', 1833, 'cash', NULL),
-                (20, '2023-08-05', 1833, 'cash', NULL),
-                (20, '2023-09-05', 1833, 'gcash', NULL),
-                (20, '2023-10-04', 1833, 'cash', NULL),
-                (20, '2023-11-05', 1833, 'cash', NULL),
-                (20, '2023-12-05', 1833, 'gcash', NULL),
-                (20, '2024-01-05', 1833, 'cash', NULL);
+            INSERT INTO payments (account_id, payment_date, amount, type, notes) VALUES
+                (20, '2023-07-05', 1833, 'payment', NULL),
+                (20, '2023-08-05', 1833, 'payment', NULL),
+                (20, '2023-09-05', 1833, 'payment', NULL),
+                (20, '2023-10-04', 1833, 'payment', NULL),
+                (20, '2023-11-05', 1833, 'payment', NULL),
+                (20, '2023-12-05', 1833, 'payment', NULL),
+                (20, '2024-01-05', 1833, 'payment', NULL);
         ")?;
     }
 

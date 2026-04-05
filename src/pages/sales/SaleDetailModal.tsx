@@ -8,7 +8,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { formatDateTime } from "@/lib/formatters";
+import { formatDateTime, formatAttributes } from "@/lib/formatters";
 import { useCurrency } from "@/hooks/useCurrency";
 import type { SaleDetail } from "@/types/sale";
 import { useSales } from "@/hooks/useSales";
@@ -116,7 +116,7 @@ export function SaleDetailModal({ open, onOpenChange, saleId, onVoided }: SaleDe
                       <td className="py-1.5">
                         {item.product_name}
                         {item.variant_label && (
-                          <span className="text-muted-foreground ml-1">({item.variant_label})</span>
+                          <span className="text-muted-foreground ml-1">({formatAttributes(item.variant_label)})</span>
                         )}
                       </td>
                       <td className="text-right py-1.5">{formatCurrency(item.unit_price)}</td>

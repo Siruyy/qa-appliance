@@ -26,3 +26,38 @@ export function formatDateTime(iso: string): string {
 export function formatPercent(value: number): string {
   return `${(value * 100).toFixed(2)}%`;
 }
+
+/**
+ * Format a product summary that may contain raw JSON attributes.
+ * e.g. 'Condura Refrigerator {"color":"White","size":"5 cu ft"}'
+ *   → 'Condura Refrigerator — White, 5 cu ft'
+ */
+export function formatProductSummary(summary: string): string {
+  const jsonStart = summary.indexOf("{");
+  if (jsonStart === -1) return summary;
+
+  const name = summary.slice(0, jsonStart).trim();
+  const jsonStr = summary.slice(jsonStart);
+
+  try {
+    const attrs = JSON.parse(jsonStr) as Record<string, string>;
+    const values = Object.values(attrs).filter(Boolean).join(", ");
+    return values ? `${name} — ${values}` : name;
+  } catch {
+    return summary;
+  }
+}
+
+/**
+ * Format a JSON attributes string into a readable label.
+ * e.g. '{"color":"White","size":"5 cu ft"}' → 'White, 5 cu ft'
+ */
+export function formatAttributes(json: string | null | undefined): string {
+  if (!json) return "";
+  try {
+    const attrs = JSON.parse(json) as Record<string, string>;
+    return Object.values(attrs).filter(Boolean).join(", ");
+  } catch {
+    return json;
+  }
+}

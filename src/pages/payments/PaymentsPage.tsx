@@ -5,8 +5,9 @@ import { CreditCard, Search } from "lucide-react";
 import { usePayments } from "@/hooks/usePayments";
 import { usePaymentStore } from "@/stores/paymentStore";
 import { Pagination } from "@/components/Pagination";
-import { formatDate } from "@/lib/formatters";
+import { formatDate, formatProductSummary } from "@/lib/formatters";
 import { useCurrency } from "@/hooks/useCurrency";
+import { DatePicker } from "@/components/DatePicker";
 
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -80,19 +81,17 @@ export function PaymentsPage() {
         </div>
         <div className="flex items-center gap-2">
           <label className="text-sm text-muted-foreground">From</label>
-          <Input
-            type="date"
+          <DatePicker
             value={dateFrom}
-            onChange={(e) => setDateFrom(e.target.value)}
+            onChange={(v) => setDateFrom(v)}
             className="w-[160px]"
           />
         </div>
         <div className="flex items-center gap-2">
           <label className="text-sm text-muted-foreground">To</label>
-          <Input
-            type="date"
+          <DatePicker
             value={dateTo}
-            onChange={(e) => setDateTo(e.target.value)}
+            onChange={(v) => setDateTo(v)}
             className="w-[160px]"
           />
         </div>
@@ -141,7 +140,7 @@ export function PaymentsPage() {
                 >
                   <TableCell className="whitespace-nowrap">{formatDate(p.payment_date)}</TableCell>
                   <TableCell>{p.customer_name}</TableCell>
-                  <TableCell className="max-w-[180px] truncate">{p.product_summary}</TableCell>
+                  <TableCell className="max-w-[180px] truncate">{formatProductSummary(p.product_summary)}</TableCell>
                   <TableCell>
                     <Badge variant="outline" className={typeColor[p.type] ?? ""}>
                       {p.type.replace("_", " ")}

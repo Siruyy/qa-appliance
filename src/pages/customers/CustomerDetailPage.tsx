@@ -42,6 +42,7 @@ export function CustomerDetailPage() {
   const [detail, setDetail] = useState<CustomerDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(false);
+  const { format: formatCurrency } = useCurrency();
 
   const fetchDetail = useCallback(async () => {
     if (!id) return;
@@ -100,7 +101,6 @@ export function CustomerDetailPage() {
 
   const openAccounts = accounts.filter((a) => a.status === "open");
 
-  const { format: formatCurrency } = useCurrency();
   return (
     <div className="space-y-6">
       {/* Header */}

@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, Fragment } from "react";
 import { PageHeader } from "@/components/PageHeader";
 import { EmptyState } from "@/components/EmptyState";
 import { TableSkeleton } from "@/components/TableSkeleton";
@@ -222,10 +222,9 @@ export function InventoryPage() {
                 const hasOutOfStock = variants.some((v) => v.is_active && v.stock_qty === 0);
 
                 return (
-                  <>
+                  <Fragment key={product.id}>
                     {/* Product Row */}
                     <TableRow
-                      key={`p-${product.id}`}
                       className="cursor-pointer hover:bg-muted/50"
                       onClick={() => toggleExpanded(product.id)}
                     >
@@ -315,7 +314,7 @@ export function InventoryPage() {
                           onArchive={() => handleArchiveVariant(variant)}
                         />
                       ))}
-                  </>
+                  </Fragment>
                 );
               })}
             </TableBody>

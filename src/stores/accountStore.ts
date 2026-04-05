@@ -32,7 +32,7 @@ export const useAccountStore = create<AccountState>((set, get) => ({
   statusFilter: "all",
   typeFilter: "all",
   page: 1,
-  pageSize: 50,
+  pageSize: 15,
   totalCount: 0,
   setAccounts: (accounts) => set({ accounts }),
   setLoading: (loading) => set({ loading }),

@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { usePayments } from "@/hooks/usePayments";
 import { recordPaymentSchema, type RecordPaymentValues } from "@/lib/validations/payment";
 import { useCurrency } from "@/hooks/useCurrency";
+import { formatProductSummary } from "@/lib/formatters";
 import type { AccountDetail, PaymentScheduleEntry } from "@/types/account";
 
 import {
@@ -124,7 +125,7 @@ export function RecordPaymentModal({
 
         <div className="rounded-lg border p-3 bg-muted/30 text-sm">
           <p className="font-medium">
-            {account.customer_name} — {account.product_summary}
+            {account.customer_name} — {formatProductSummary(account.product_summary)}
           </p>
           <p className="text-muted-foreground">
             Balance: {formatCurrency(account.balance_remaining)}

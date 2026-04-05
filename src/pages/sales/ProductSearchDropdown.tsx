@@ -63,12 +63,12 @@ export function ProductSearchDropdown({ onSelect, excludeVariantIds = [] }: Prod
   const { format: formatCurrency } = useCurrency();
   return (
     <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger>
-        <Button variant="outline" className="w-full justify-between gap-2">
+      <PopoverTrigger
+        render={<Button variant="outline" className="w-full justify-between gap-2" />}
+      >
           <Search className="h-4 w-4 text-muted-foreground" />
           <span className="text-muted-foreground">Search products...</span>
           <ChevronsUpDown className="ml-auto h-4 w-4 shrink-0 opacity-50" />
-        </Button>
       </PopoverTrigger>
       <PopoverContent className="w-[460px] p-0">
         <Command>

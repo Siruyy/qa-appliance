@@ -44,6 +44,7 @@ import {
 } from "@/hooks/useImportExport";
 import { toExcel } from "@/lib/export";
 import { useCurrency } from "@/hooks/useCurrency";
+import { formatProductSummary } from "@/lib/formatters";
 import type { ImportPreview } from "@/types/import-export";
 
 // ── Export Section ───────────────────────────────────
@@ -158,7 +159,7 @@ function ExportSection() {
               rows: data.map((a) => [
                 String(a.id),
                 a.customer_name,
-                a.product_summary,
+                formatProductSummary(a.product_summary),
                 formatCurrency(a.principal),
                 formatCurrency(a.balance_remaining),
                 `${a.interest_rate}%`,
@@ -181,7 +182,7 @@ function ExportSection() {
                 String(p.id),
                 p.payment_date,
                 p.customer_name,
-                p.product_summary,
+                formatProductSummary(p.product_summary),
                 formatCurrency(p.amount),
                 p.payment_type,
                 p.notes ?? "",

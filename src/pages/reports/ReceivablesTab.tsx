@@ -17,9 +17,12 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { KpiCard } from "@/components/KpiCard";
+import { Pagination } from "@/components/Pagination";
 import { useReports } from "@/hooks/useReports";
 import { useReportStore } from "@/stores/reportStore";
+import { useClientPagination } from "@/hooks/useClientPagination";
 import { useCurrency } from "@/hooks/useCurrency";
+import { formatProductSummary } from "@/lib/formatters";
 import type { ReceivablesReport } from "@/types/report";
 import { toast } from "sonner";
 
@@ -79,6 +82,16 @@ export function ReceivablesTab() {
       )}
 
       {/* Table */}
+      <AccountsTable accounts={data.accounts} formatCurrency={formatCurrency} />
+    </div>
+  );
+}
+
+function AccountsTable({ accounts, formatCurrency }: { accounts: ReceivablesReport["accounts"]; formatCurrency: (v: number) => string }) {
+  const { page, setPage, pageSize, total, paginatedItems } = useClientPagination(accounts);
+
+  return (
+    <>
       <div className="rounded-lg border">
         <Table>
           <TableHeader>
@@ -91,17 +104,17 @@ export function ReceivablesTab() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {data.accounts.length === 0 ? (
+            {accounts.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={5} className="text-center text-muted-foreground">
                   No accounts found
                 </TableCell>
               </TableRow>
             ) : (
-              data.accounts.map((a) => (
+              paginatedItems.map((a) => (
                 <TableRow key={a.id}>
                   <TableCell>{a.customer_name}</TableCell>
-                  <TableCell className="max-w-[200px] truncate">{a.product_summary}</TableCell>
+                  <TableCell className="max-w-[200px] truncate">{formatProductSummary(a.product_summary)}</TableCell>
                   <TableCell className="text-right">{formatCurrency(a.balance_remaining)}</TableCell>
                   <TableCell>
                     <Badge
@@ -121,6 +134,7 @@ export function ReceivablesTab() {
           </TableBody>
         </Table>
       </div>
-    </div>
+      <Pagination page={page} pageSize={pageSize} total={total} onPageChange={setPage} />
+    </>
   );
 }

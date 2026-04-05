@@ -18,8 +18,10 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { KpiCard } from "@/components/KpiCard";
+import { Pagination } from "@/components/Pagination";
 import { useReports } from "@/hooks/useReports";
 import { useReportStore } from "@/stores/reportStore";
+import { useClientPagination } from "@/hooks/useClientPagination";
 import { formatDate } from "@/lib/formatters";
 import { useCurrency } from "@/hooks/useCurrency";
 import type { SalesSummaryReport } from "@/types/report";
@@ -70,6 +72,16 @@ export function SalesSummaryTab() {
       )}
 
       {/* Table */}
+      <SalesTable sales={data.sales} formatCurrency={formatCurrency} />
+    </div>
+  );
+}
+
+function SalesTable({ sales, formatCurrency }: { sales: SalesSummaryReport["sales"]; formatCurrency: (v: number) => string }) {
+  const { page, setPage, pageSize, total, paginatedItems } = useClientPagination(sales);
+
+  return (
+    <>
       <div className="rounded-lg border">
         <Table>
           <TableHeader>
@@ -83,14 +95,14 @@ export function SalesSummaryTab() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {data.sales.length === 0 ? (
+            {sales.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={6} className="text-center text-muted-foreground">
                   No sales found for this period
                 </TableCell>
               </TableRow>
             ) : (
-              data.sales.map((s) => (
+              paginatedItems.map((s) => (
                 <TableRow key={s.id}>
                   <TableCell>{formatDate(s.sale_date)}</TableCell>
                   <TableCell>{s.customer_name}</TableCell>
@@ -112,6 +124,7 @@ export function SalesSummaryTab() {
           </TableBody>
         </Table>
       </div>
-    </div>
+      <Pagination page={page} pageSize={pageSize} total={total} onPageChange={setPage} />
+    </>
   );
 }

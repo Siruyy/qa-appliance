@@ -1,7 +1,6 @@
 import { useCallback } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
@@ -12,6 +11,7 @@ import {
 import { useReportStore, type ReportTab } from "@/stores/reportStore";
 import { useReports } from "@/hooks/useReports";
 import { toExcel, toPdf, toCsv } from "@/lib/export";
+import { formatProductSummary } from "@/lib/formatters";
 import { useCurrency } from "@/hooks/useCurrency";
 import { toast } from "sonner";
 
@@ -22,6 +22,7 @@ import { CollectionsTab } from "./CollectionsTab";
 import { CustomerHistoryTab } from "./CustomerHistoryTab";
 import { ProfitLossTab } from "./ProfitLossTab";
 import { PageHeader } from "@/components/PageHeader";
+import { DatePicker } from "@/components/DatePicker";
 
 const TAB_CONFIG: { value: ReportTab; label: string }[] = [
   { value: "sales", label: "Sales Summary" },
@@ -94,7 +95,7 @@ export function ReportsPage() {
           const headers = ["Customer", "Product", "Balance", "Status", "Days Overdue"];
           const rows = report.accounts.map((a) => [
             a.customer_name,
-            a.product_summary,
+            formatProductSummary(a.product_summary),
             a.balance_remaining,
             a.status,
             a.days_overdue,
@@ -130,7 +131,7 @@ export function ReportsPage() {
           const rows = report.payments.map((p) => [
             p.payment_date,
             p.customer_name,
-            p.product_summary,
+            formatProductSummary(p.product_summary),
             p.amount,
             p.type,
           ]);
@@ -144,7 +145,7 @@ export function ReportsPage() {
           ];
           const headers = ["Date", "Items/Product", "Amount", "Type"];
           const salesRows = report.sales.map((s) => [s.sale_date, s.items_summary, s.total, s.payment_type]);
-          const paymentRows = report.payments.map((p) => [p.payment_date, p.product_summary, p.amount, p.type]);
+          const paymentRows = report.payments.map((p) => [p.payment_date, formatProductSummary(p.product_summary), p.amount, p.type]);
           const rows = [...salesRows, ["---", "--- Payments ---", "---", "---"], ...paymentRows];
           doExport(format, `customer-${report.customer_name}`, tabLabel, dateRange, kpis, headers, rows);
         } else if (activeTab === "profit-loss") {
@@ -200,20 +201,16 @@ export function ReportsPage() {
           <>
             <div className="flex items-center gap-2">
               <label className="text-xs text-muted-foreground">From</label>
-              <Input
-                type="date"
+              <DatePicker
                 value={dateFrom}
-                onChange={(e) => setDateFrom(e.target.value)}
-                className="h-8 w-[150px]"
+                onChange={setDateFrom}
               />
             </div>
             <div className="flex items-center gap-2">
               <label className="text-xs text-muted-foreground">To</label>
-              <Input
-                type="date"
+              <DatePicker
                 value={dateTo}
-                onChange={(e) => setDateTo(e.target.value)}
-                className="h-8 w-[150px]"
+                onChange={setDateTo}
               />
             </div>
           </>

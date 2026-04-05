@@ -18,9 +18,11 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { KpiCard } from "@/components/KpiCard";
+import { Pagination } from "@/components/Pagination";
 import { useReports } from "@/hooks/useReports";
 import { useReportStore } from "@/stores/reportStore";
-import { formatDate } from "@/lib/formatters";
+import { useClientPagination } from "@/hooks/useClientPagination";
+import { formatDate, formatProductSummary } from "@/lib/formatters";
 import { useCurrency } from "@/hooks/useCurrency";
 import type { CollectionsReport } from "@/types/report";
 import { toast } from "sonner";
@@ -69,6 +71,16 @@ export function CollectionsTab() {
       )}
 
       {/* Table */}
+      <PaymentsTable payments={data.payments} formatCurrency={formatCurrency} />
+    </div>
+  );
+}
+
+function PaymentsTable({ payments, formatCurrency }: { payments: CollectionsReport["payments"]; formatCurrency: (v: number) => string }) {
+  const { page, setPage, pageSize, total, paginatedItems } = useClientPagination(payments);
+
+  return (
+    <>
       <div className="rounded-lg border">
         <Table>
           <TableHeader>
@@ -81,18 +93,18 @@ export function CollectionsTab() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {data.payments.length === 0 ? (
+            {payments.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={5} className="text-center text-muted-foreground">
                   No collections found for this period
                 </TableCell>
               </TableRow>
             ) : (
-              data.payments.map((p) => (
+              paginatedItems.map((p) => (
                 <TableRow key={p.id}>
                   <TableCell>{formatDate(p.payment_date)}</TableCell>
                   <TableCell>{p.customer_name}</TableCell>
-                  <TableCell className="max-w-[200px] truncate">{p.product_summary}</TableCell>
+                  <TableCell className="max-w-[200px] truncate">{formatProductSummary(p.product_summary)}</TableCell>
                   <TableCell className="text-right">{formatCurrency(p.amount)}</TableCell>
                   <TableCell>
                     <Badge variant={p.type === "regular" ? "default" : "secondary"}>
@@ -105,6 +117,7 @@ export function CollectionsTab() {
           </TableBody>
         </Table>
       </div>
-    </div>
+      <Pagination page={page} pageSize={pageSize} total={total} onPageChange={setPage} />
+    </>
   );
 }
