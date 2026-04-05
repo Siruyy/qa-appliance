@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import {
   ArrowLeft,
@@ -103,6 +103,12 @@ export function CustomerDetailPage() {
 
   const openAccounts = accounts.filter((a) => a.status === "open");
   const closedAccounts = accounts.filter((a) => a.status !== "open");
+
+  const ITEMS_PER_PAGE = 10;
+  const [salesPage, setSalesPage] = useState(1);
+  const [paymentsPage, setPaymentsPage] = useState(1);
+  const paginatedSales = useMemo(() => sales.slice(0, salesPage * ITEMS_PER_PAGE), [sales, salesPage]);
+  const paginatedPayments = useMemo(() => payments.slice(0, paymentsPage * ITEMS_PER_PAGE), [payments, paymentsPage]);
 
   return (
     <div className="space-y-6">
@@ -226,6 +232,7 @@ export function CustomerDetailPage() {
         {sales.length === 0 ? (
           <p className="text-sm text-muted-foreground">No sales recorded.</p>
         ) : (
+          <>
           <Table>
             <TableHeader>
               <TableRow>
@@ -237,7 +244,7 @@ export function CustomerDetailPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {sales.map((s) => (
+              {paginatedSales.map((s) => (
                 <TableRow key={s.id}>
                   <TableCell>{formatDate(s.sale_date)}</TableCell>
                   <TableCell className="max-w-[200px] truncate">
@@ -262,12 +269,19 @@ export function CustomerDetailPage() {
               ))}
             </TableBody>
           </Table>
+          {paginatedSales.length < sales.length && (
+            <div className="mt-2 text-center">
+              <Button variant="ghost" size="sm" onClick={() => setSalesPage((p) => p + 1)}>
+                Show more ({sales.length - paginatedSales.length} remaining)
+              </Button>
+            </div>
+          )}
+          </>
         )}
       </section>
 
       <Separator />
 
-      {/* Payment History */}
       <section>
         <h2 className="mb-3 flex items-center gap-2 text-lg font-semibold">
           <Banknote className="h-5 w-5" />
@@ -276,6 +290,7 @@ export function CustomerDetailPage() {
         {payments.length === 0 ? (
           <p className="text-sm text-muted-foreground">No payments recorded.</p>
         ) : (
+          <>
           <Table>
             <TableHeader>
               <TableRow>
@@ -287,7 +302,7 @@ export function CustomerDetailPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {payments.map((p) => (
+              {paginatedPayments.map((p) => (
                 <TableRow key={p.id}>
                   <TableCell>{formatDate(p.payment_date)}</TableCell>
                   <TableCell className="text-right tabular-nums">
@@ -306,6 +321,14 @@ export function CustomerDetailPage() {
               ))}
             </TableBody>
           </Table>
+          {paginatedPayments.length < payments.length && (
+            <div className="mt-2 text-center">
+              <Button variant="ghost" size="sm" onClick={() => setPaymentsPage((p) => p + 1)}>
+                Show more ({payments.length - paginatedPayments.length} remaining)
+              </Button>
+            </div>
+          )}
+          </>
         )}
       </section>
 
