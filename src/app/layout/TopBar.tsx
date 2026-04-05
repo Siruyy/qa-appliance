@@ -2,7 +2,7 @@ import { useLocation, Link } from "react-router-dom";
 import { Settings as SettingsIcon, Sun, Moon, Monitor } from "lucide-react";
 import { NotificationBell } from "@/components/NotificationBell";
 import { format } from "date-fns";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useUIStore } from "@/stores/uiStore";
 import {
   DropdownMenu,
@@ -40,6 +40,11 @@ export function TopBar() {
     return () => clearInterval(id);
   }, []);
 
+  const formattedDate = useMemo(
+    () => format(now, "EEEE, MMMM d, yyyy · h:mm a"),
+    [now]
+  );
+
   return (
     <header className="flex h-[var(--topbar-height)] shrink-0 items-center justify-between border-b border-border bg-background px-6">
       <h1 className="text-lg font-semibold text-foreground" style={{ fontFamily: "var(--font-heading)" }}>
@@ -47,7 +52,7 @@ export function TopBar() {
       </h1>
       <div className="flex items-center gap-2">
         <span className="text-sm text-muted-foreground">
-          {format(now, "EEEE, MMMM d, yyyy · h:mm a")}
+          {formattedDate}
         </span>
         <NotificationBell />
         <DropdownMenu>

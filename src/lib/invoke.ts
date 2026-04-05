@@ -3,24 +3,29 @@ import { invoke as tauriInvoke } from "@tauri-apps/api/core";
 /** Known Tauri command names — keeps invoke calls type-safe at runtime */
 const ALLOWED_COMMANDS = new Set([
   // Products & Inventory
-  "get_products", "get_product_by_id", "create_product", "update_product",
-  "delete_product", "create_variant", "update_variant", "delete_variant",
   "get_categories", "create_category", "update_category", "delete_category",
+  "create_product", "update_product", "archive_product", "restore_product",
+  "create_variant", "update_variant", "archive_variant", "adjust_stock",
   // Sales
-  "get_sales", "get_sale_by_id", "create_sale", "void_sale",
+  "get_sales_summary", "get_sale_by_id", "create_sale", "void_sale",
   // Accounts
-  "get_accounts", "get_account_by_id", "record_payment", "update_account_notes",
-  "recalculate_balance", "apply_penalties",
+  "get_account_by_id", "get_overdue_accounts", "get_payments_for_account",
+  "record_payment", "update_account_notes", "recalculate_balance",
+  "run_penalty_check", "mark_account_paid", "mark_account_defaulted",
   // Customers
-  "get_customers", "get_customer_by_id", "create_customer", "update_customer", "delete_customer",
+  "get_customer_by_id", "create_customer", "update_customer",
+  "archive_customer", "restore_customer",
   // Settings & Dashboard
-  "get_settings", "update_settings", "get_dashboard_data",
+  "get_dashboard_data", "get_database_path",
   // Reports
-  "get_sales_report", "get_inventory_report", "get_receivables_report",
-  // Audit
-  "get_audit_logs",
-  // Import/Export
-  "export_all_data", "import_all_data",
+  "get_receivables_report", "get_inventory_valuation_report",
+  "get_collections_report", "get_customer_history_report",
+  "get_profit_loss_report", "get_aging_report",
+  // Import/Export & Backup
+  "export_all_data", "export_products_data", "export_sales_data",
+  "export_accounts_data", "export_customers_data", "export_payments_data",
+  "preview_import", "confirm_import", "list_import_logs",
+  "backup_database", "restore_database",
 ] as const);
 
 /**

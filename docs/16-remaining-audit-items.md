@@ -28,14 +28,14 @@
 
 ## Phase 9: Critical Business Logic & Security
 
-- [ ] **BIZ-R01:** Fix `useMemo` stale closure in `NewSalePage.tsx` — `schedulePreview` has missing dependencies
-- [ ] **BIZ-R02:** Validate `unit_price` server-side in `sales.rs` — prevent client-side price manipulation
-- [ ] **BIZ-R03:** Void sale should verify payment balance integrity before voiding
-- [ ] **BIZ-R04:** Add `min="0"` enforcement on interest/penalty rate inputs in Settings
-- [ ] **BIZ-R05:** Handle deleted customer in cart — `saleStore.customerId` could reference archived customer
-- [ ] **SEC-R01:** Add Tauri command allowlist validation in `invoke.ts`
-- [ ] **SEC-R02:** Sanitize error logging — ensure full error objects don't leak in production builds
-- [ ] **SEC-R03:** Add SQLite date format validation via application-level checks on date fields
+- [x] **BIZ-R01:** Fix `useMemo` stale closure in `NewSalePage.tsx` — `schedulePreview` has missing dependencies
+- [x] **BIZ-R02:** Validate `unit_price` server-side in `sales.rs` — prevent client-side price manipulation
+- [x] **BIZ-R03:** Void sale should verify payment balance integrity before voiding
+- [x] **BIZ-R04:** Add `min="0"` enforcement on interest/penalty rate inputs in Settings
+- [x] **BIZ-R05:** Handle deleted customer in cart — `saleStore.customerId` could reference archived customer
+- [x] **SEC-R01:** Add Tauri command allowlist validation in `invoke.ts`
+- [x] **SEC-R02:** Sanitize error logging — ensure full error objects don't leak in production builds
+- [x] **SEC-R03:** Add SQLite date format validation via application-level checks on date fields
 
 ---
 

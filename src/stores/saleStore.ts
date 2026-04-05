@@ -170,6 +170,9 @@ export const useSaleStore = create<SaleState>((set, get) => ({
     set((state) => ({ cart: { ...state.cart, installment: config } })),
 
   cartSubtotal: () => get().cart.items.reduce((sum, i) => sum + i.subtotal, 0),
-  cartTotal: () => get().cartSubtotal() - get().cart.discount,
+  cartTotal: () => {
+    const subtotal = get().cart.items.reduce((sum, i) => sum + i.subtotal, 0);
+    return subtotal - get().cart.discount;
+  },
 }));
 

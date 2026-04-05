@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use rusqlite::params;
 use tauri::State;
 
@@ -230,12 +232,15 @@ pub fn get_products(
             result
         };
 
+        // Group variants by product_id in O(N) using a HashMap
+        let mut variant_map: HashMap<i64, Vec<ProductVariant>> = HashMap::new();
+        for v in variants {
+            variant_map.entry(v.product_id).or_default().push(v);
+        }
         for product in &mut products {
-            product.variants = variants
-                .iter()
-                .filter(|v| v.product_id == product.id)
-                .cloned()
-                .collect();
+            if let Some(pvs) = variant_map.remove(&product.id) {
+                product.variants = pvs;
+            }
         }
     }
 
