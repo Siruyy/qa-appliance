@@ -39,7 +39,7 @@ export function ProfitLossTab() {
       .then(setData)
       .catch((e) => toast.error(String(e)))
       .finally(() => setLoading(false));
-  }, [dateFrom, dateTo]);
+  }, [dateFrom, dateTo, getProfitLossReport]);
 
   if (loading) return <Table><TableSkeleton cols={4} /></Table>;
   if (!data) return null;

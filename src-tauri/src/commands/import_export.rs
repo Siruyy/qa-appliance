@@ -23,12 +23,9 @@ fn parse_attr(attributes: &Option<String>) -> (Option<String>, Option<String>) {
     }
 }
 
-// ── Export Commands ───────────────────────────────────
+// ── Export Helpers (take &Connection for reuse) ──────
 
-#[tauri::command]
-pub fn export_products_data(state: State<'_, DbState>) -> Result<Vec<ExportProduct>, String> {
-    let db = state.0.lock().map_err(|e| e.to_string())?;
-
+fn query_products(db: &rusqlite::Connection) -> Result<Vec<ExportProduct>, String> {
     let mut stmt = db.prepare(
         "SELECT c.name AS category, p.name AS product_name, pv.attributes,
                 pv.sku, pv.cost_price, pv.selling_price, pv.stock_qty,
@@ -57,17 +54,24 @@ pub fn export_products_data(state: State<'_, DbState>) -> Result<Vec<ExportProdu
         })
     }).map_err(|e| e.to_string())?;
 
-    let mut result = Vec::new();
-    for row in rows {
-        result.push(row.map_err(|e| e.to_string())?);
-    }
-    Ok(result)
+    rows.collect::<Result<Vec<_>, _>>().map_err(|e| e.to_string())
 }
 
-#[tauri::command]
-pub fn export_customers_data(state: State<'_, DbState>) -> Result<Vec<ExportCustomer>, String> {
-    let db = state.0.lock().map_err(|e| e.to_string())?;
+fn query_categories(db: &rusqlite::Connection) -> Result<Vec<ExportCategory>, String> {
+    let mut stmt = db.prepare(
+        "SELECT id, name, description FROM categories ORDER BY name"
+    ).map_err(|e| e.to_string())?;
+    let rows = stmt.query_map(params![], |row| {
+        Ok(ExportCategory {
+            id: row.get(0)?,
+            name: row.get(1)?,
+            description: row.get(2)?,
+        })
+    }).map_err(|e| e.to_string())?;
+    rows.collect::<Result<Vec<_>, _>>().map_err(|e| e.to_string())
+}
 
+fn query_customers(db: &rusqlite::Connection) -> Result<Vec<ExportCustomer>, String> {
     let mut stmt = db.prepare(
         "SELECT id, name, phone, address, notes, is_active, created_at
          FROM customers ORDER BY name"
@@ -86,17 +90,10 @@ pub fn export_customers_data(state: State<'_, DbState>) -> Result<Vec<ExportCust
         })
     }).map_err(|e| e.to_string())?;
 
-    let mut result = Vec::new();
-    for row in rows {
-        result.push(row.map_err(|e| e.to_string())?);
-    }
-    Ok(result)
+    rows.collect::<Result<Vec<_>, _>>().map_err(|e| e.to_string())
 }
 
-#[tauri::command]
-pub fn export_sales_data(state: State<'_, DbState>) -> Result<Vec<ExportSale>, String> {
-    let db = state.0.lock().map_err(|e| e.to_string())?;
-
+fn query_sales(db: &rusqlite::Connection) -> Result<Vec<ExportSale>, String> {
     let mut stmt = db.prepare(
         "SELECT s.id, s.sale_date,
                 COALESCE(cu.name, 'Walk-in') AS customer_name,
@@ -126,17 +123,10 @@ pub fn export_sales_data(state: State<'_, DbState>) -> Result<Vec<ExportSale>, S
         })
     }).map_err(|e| e.to_string())?;
 
-    let mut result = Vec::new();
-    for row in rows {
-        result.push(row.map_err(|e| e.to_string())?);
-    }
-    Ok(result)
+    rows.collect::<Result<Vec<_>, _>>().map_err(|e| e.to_string())
 }
 
-#[tauri::command]
-pub fn export_accounts_data(state: State<'_, DbState>) -> Result<Vec<ExportAccount>, String> {
-    let db = state.0.lock().map_err(|e| e.to_string())?;
-
+fn query_accounts(db: &rusqlite::Connection) -> Result<Vec<ExportAccount>, String> {
     let mut stmt = db.prepare(
         "SELECT ia.id, cu.name AS customer_name,
                 GROUP_CONCAT(p.name || ' - ' || COALESCE(pv.sku, 'N/A'), ', ') AS product_summary,
@@ -169,21 +159,14 @@ pub fn export_accounts_data(state: State<'_, DbState>) -> Result<Vec<ExportAccou
         })
     }).map_err(|e| e.to_string())?;
 
-    let mut result = Vec::new();
-    for row in rows {
-        result.push(row.map_err(|e| e.to_string())?);
-    }
-    Ok(result)
+    rows.collect::<Result<Vec<_>, _>>().map_err(|e| e.to_string())
 }
 
-#[tauri::command]
-pub fn export_payments_data(
-    state: State<'_, DbState>,
-    from_date: Option<String>,
-    to_date: Option<String>,
+fn query_payments(
+    db: &rusqlite::Connection,
+    from_date: Option<&str>,
+    to_date: Option<&str>,
 ) -> Result<Vec<ExportPayment>, String> {
-    let db = state.0.lock().map_err(|e| e.to_string())?;
-
     let mut sql = String::from(
         "SELECT py.id, py.payment_date, cu.name AS customer_name,
                 GROUP_CONCAT(p.name || ' - ' || COALESCE(pv.sku, 'N/A'), ', ') AS product_summary,
@@ -200,11 +183,11 @@ pub fn export_payments_data(
 
     let mut params: Vec<Box<dyn rusqlite::types::ToSql>> = Vec::new();
 
-    if let Some(ref fd) = from_date {
+    if let Some(fd) = from_date {
         sql.push_str(" AND py.payment_date >= ?");
-        params.push(Box::new(fd.clone()));
+        params.push(Box::new(fd.to_string()));
     }
-    if let Some(ref td) = to_date {
+    if let Some(td) = to_date {
         sql.push_str(" AND py.payment_date <= ?");
         params.push(Box::new(format!("{}T23:59:59", td)));
     }
@@ -226,45 +209,55 @@ pub fn export_payments_data(
         })
     }).map_err(|e| e.to_string())?;
 
-    let mut result = Vec::new();
-    for row in rows {
-        result.push(row.map_err(|e| e.to_string())?);
-    }
-    Ok(result)
+    rows.collect::<Result<Vec<_>, _>>().map_err(|e| e.to_string())
+}
+
+// ── Export Commands (delegate to helpers) ─────────────
+
+#[tauri::command]
+pub fn export_products_data(state: State<'_, DbState>) -> Result<Vec<ExportProduct>, String> {
+    let db = state.0.lock().map_err(|e| e.to_string())?;
+    query_products(&db)
+}
+
+#[tauri::command]
+pub fn export_customers_data(state: State<'_, DbState>) -> Result<Vec<ExportCustomer>, String> {
+    let db = state.0.lock().map_err(|e| e.to_string())?;
+    query_customers(&db)
+}
+
+#[tauri::command]
+pub fn export_sales_data(state: State<'_, DbState>) -> Result<Vec<ExportSale>, String> {
+    let db = state.0.lock().map_err(|e| e.to_string())?;
+    query_sales(&db)
+}
+
+#[tauri::command]
+pub fn export_accounts_data(state: State<'_, DbState>) -> Result<Vec<ExportAccount>, String> {
+    let db = state.0.lock().map_err(|e| e.to_string())?;
+    query_accounts(&db)
+}
+
+#[tauri::command]
+pub fn export_payments_data(
+    state: State<'_, DbState>,
+    from_date: Option<String>,
+    to_date: Option<String>,
+) -> Result<Vec<ExportPayment>, String> {
+    let db = state.0.lock().map_err(|e| e.to_string())?;
+    query_payments(&db, from_date.as_deref(), to_date.as_deref())
 }
 
 #[tauri::command]
 pub fn export_all_data(state: State<'_, DbState>) -> Result<ExportAllData, String> {
     let db = state.0.lock().map_err(|e| e.to_string())?;
 
-    // Categories
-    let categories = {
-        let mut stmt = db.prepare(
-            "SELECT id, name, description FROM categories ORDER BY name"
-        ).map_err(|e| e.to_string())?;
-        let rows = stmt.query_map(params![], |row| {
-            Ok(ExportCategory {
-                id: row.get(0)?,
-                name: row.get(1)?,
-                description: row.get(2)?,
-            })
-        }).map_err(|e| e.to_string())?;
-        let mut result = Vec::new();
-        for row in rows {
-            result.push(row.map_err(|e| e.to_string())?);
-        }
-        result
-    };
-
-    // We need to drop the lock and re-acquire to call the other functions
-    // Instead, query everything inline
-    drop(db);
-
-    let products = export_products_data(state.clone())?;
-    let customers = export_customers_data(state.clone())?;
-    let sales = export_sales_data(state.clone())?;
-    let accounts = export_accounts_data(state.clone())?;
-    let payments = export_payments_data(state.clone(), None, None)?;
+    let categories = query_categories(&db)?;
+    let products = query_products(&db)?;
+    let customers = query_customers(&db)?;
+    let sales = query_sales(&db)?;
+    let accounts = query_accounts(&db)?;
+    let payments = query_payments(&db, None, None)?;
 
     Ok(ExportAllData {
         products,

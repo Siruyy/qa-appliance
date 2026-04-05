@@ -43,7 +43,7 @@ export function SalesSummaryTab() {
       .then(setData)
       .catch((e) => toast.error(String(e)))
       .finally(() => setLoading(false));
-  }, [dateFrom, dateTo]);
+  }, [dateFrom, dateTo, getSalesSummary]);
 
   if (loading) return <Table><TableSkeleton cols={6} /></Table>;
   if (!data) return null;

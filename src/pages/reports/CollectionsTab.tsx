@@ -43,7 +43,7 @@ export function CollectionsTab() {
       .then(setData)
       .catch((e) => toast.error(String(e)))
       .finally(() => setLoading(false));
-  }, [dateFrom, dateTo]);
+  }, [dateFrom, dateTo, getCollectionsReport]);
 
   if (loading) return <Table><TableSkeleton cols={5} /></Table>;
   if (!data) return null;

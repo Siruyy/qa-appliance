@@ -68,7 +68,7 @@ export function CustomerHistoryTab() {
       .then(setData)
       .catch((e) => toast.error(String(e)))
       .finally(() => setLoading(false));
-  }, [selectedCustomerId, dateFrom, dateTo]);
+  }, [selectedCustomerId, dateFrom, dateTo, getCustomerHistoryReport]);
 
   return (
     <div className="space-y-6">

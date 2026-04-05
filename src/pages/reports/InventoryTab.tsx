@@ -42,7 +42,7 @@ export function InventoryTab() {
       .then(setData)
       .catch((e) => toast.error(String(e)))
       .finally(() => setLoading(false));
-  }, [categoryId]);
+  }, [categoryId, getInventoryValuationReport]);
 
   if (loading) return <Table><TableSkeleton cols={7} /></Table>;
   if (!data) return null;
