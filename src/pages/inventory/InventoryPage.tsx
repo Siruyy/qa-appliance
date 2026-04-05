@@ -1,4 +1,4 @@
-import { useState, useMemo, Fragment } from "react";
+import { useState, useMemo, Fragment, useCallback } from "react";
 import { PageHeader } from "@/components/PageHeader";
 import { EmptyState } from "@/components/EmptyState";
 import { TableSkeleton } from "@/components/TableSkeleton";
@@ -28,6 +28,7 @@ import type { Product, ProductVariant } from "@/types/product";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -84,6 +85,45 @@ export function InventoryPage() {
   const [expandedIds, setExpandedIds] = useState<Set<number>>(new Set());
   const [modal, setModal] = useState<ModalState>({ type: "none" });
   const [archiveTarget, setArchiveTarget] = useState<Product | null>(null);
+  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
+  const [bulkArchiveOpen, setBulkArchiveOpen] = useState(false);
+
+  const activeProducts = useMemo(() => products.filter((p) => p.is_active), [products]);
+  const allActiveSelected = activeProducts.length > 0 && activeProducts.every((p) => selectedIds.has(p.id));
+
+  const toggleSelect = useCallback((id: number) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }, []);
+
+  const toggleSelectAll = useCallback(() => {
+    setSelectedIds((prev) => {
+      if (activeProducts.every((p) => prev.has(p.id))) {
+        return new Set();
+      }
+      return new Set(activeProducts.map((p) => p.id));
+    });
+  }, [activeProducts]);
+
+  const handleBulkArchive = async () => {
+    const ids = Array.from(selectedIds);
+    let archived = 0;
+    for (const id of ids) {
+      try {
+        await archiveProduct(id);
+        archived++;
+      } catch {
+        // continue with remaining
+      }
+    }
+    toast.success(`Archived ${archived} product(s)`);
+    setSelectedIds(new Set());
+    setBulkArchiveOpen(false);
+  };
 
   const toggleExpanded = (id: number) => {
     setExpandedIds((prev) => {
@@ -195,12 +235,27 @@ export function InventoryPage() {
         </Select>
       </div>
 
+      {/* Bulk Action Bar */}
+      {selectedIds.size > 0 && (
+        <div className="flex items-center gap-3 rounded-md border bg-muted/50 p-2">
+          <span className="text-sm font-medium">{selectedIds.size} selected</span>
+          <Button variant="destructive" size="sm" onClick={() => setBulkArchiveOpen(true)}>
+            <Archive className="mr-1 h-4 w-4" />
+            Archive Selected
+          </Button>
+          <Button variant="ghost" size="sm" onClick={() => setSelectedIds(new Set())}>
+            Clear
+          </Button>
+        </div>
+      )}
+
       {/* Table */}
       {loading ? (
         <div className="rounded-md border">
           <Table>
             <TableHeader>
               <TableRow>
+                <TableHead className="w-10" />
                 <TableHead className="w-10" />
                 <TableHead>Product</TableHead>
                 <TableHead>Category</TableHead>
@@ -210,7 +265,7 @@ export function InventoryPage() {
                 <TableHead className="w-10" />
               </TableRow>
             </TableHeader>
-            <TableSkeleton cols={7} rows={5} />
+            <TableSkeleton cols={8} rows={5} />
           </Table>
         </div>
       ) : products.length === 0 ? (
@@ -224,6 +279,13 @@ export function InventoryPage() {
           <Table>
             <TableHeader>
               <TableRow>
+                <TableHead className="w-10">
+                  <Checkbox
+                    checked={allActiveSelected}
+                    onCheckedChange={toggleSelectAll}
+                    aria-label="Select all products"
+                  />
+                </TableHead>
                 <TableHead className="w-10" />
                 <TableHead>Product</TableHead>
                 <TableHead>Category</TableHead>
@@ -250,6 +312,15 @@ export function InventoryPage() {
                       className="cursor-pointer hover:bg-muted/50"
                       onClick={() => toggleExpanded(product.id)}
                     >
+                      <TableCell onClick={(e) => e.stopPropagation()}>
+                        {product.is_active && (
+                          <Checkbox
+                            checked={selectedIds.has(product.id)}
+                            onCheckedChange={() => toggleSelect(product.id)}
+                            aria-label={`Select ${product.name}`}
+                          />
+                        )}
+                      </TableCell>
                       <TableCell>
                         {variants.length > 0 &&
                           (isExpanded ? (
@@ -385,6 +456,23 @@ export function InventoryPage() {
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction onClick={confirmArchiveProduct}>
               Archive
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={bulkArchiveOpen} onOpenChange={setBulkArchiveOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Archive {selectedIds.size} product(s)?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Selected products and their variants will be hidden from active lists. You can restore them later.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleBulkArchive}>
+              Archive All
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
