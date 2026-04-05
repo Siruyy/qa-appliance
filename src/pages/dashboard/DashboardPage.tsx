@@ -37,19 +37,20 @@ export function DashboardPage() {
   const navigate = useNavigate();
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [chartDays, setChartDays] = useState(30);
   const { format: formatCurrency } = useCurrency();
 
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const d = await fetchDashboard();
+      const d = await fetchDashboard(chartDays);
       setData(d);
     } catch (err) {
       toast.error("Failed to load dashboard: " + String(err));
     } finally {
       setLoading(false);
     }
-  }, [fetchDashboard]);
+  }, [fetchDashboard, chartDays]);
 
   useEffect(() => {
     load();
@@ -141,10 +142,26 @@ export function DashboardPage() {
       </div>
 
       {/* Charts */}
+      <div className="flex items-center justify-between">
+        <h2 className="text-sm font-semibold">Charts</h2>
+        <div className="flex gap-1">
+          {[7, 30, 60, 90].map((d) => (
+            <Button
+              key={d}
+              variant={chartDays === d ? "default" : "outline"}
+              size="sm"
+              className="h-7 px-2 text-xs"
+              onClick={() => setChartDays(d)}
+            >
+              {d}d
+            </Button>
+          ))}
+        </div>
+      </div>
       <div className="grid md:grid-cols-2 gap-4">
         <Card>
           <CardHeader>
-            <CardTitle className="text-sm" style={{ fontFamily: "var(--font-heading)" }}>Sales (Last 30 Days)</CardTitle>
+            <CardTitle className="text-sm" style={{ fontFamily: "var(--font-heading)" }}>Sales (Last {chartDays} Days)</CardTitle>
             <p className="text-xs text-muted-foreground">Daily revenue trend</p>
           </CardHeader>
           <CardContent>
@@ -153,7 +170,7 @@ export function DashboardPage() {
                 No sales data yet
               </p>
             ) : (
-              <div role="img" aria-label="Sales trend chart for the last 30 days">
+              <div role="img" aria-label={`Sales trend chart for the last ${chartDays} days`}>
               <ResponsiveContainer width="100%" height={240}>
                 <AreaChart data={data.sales_last_30_days} {...animationProps}>
                   <defs>
@@ -205,7 +222,7 @@ export function DashboardPage() {
         <Card>
           <CardHeader>
             <CardTitle className="text-sm" style={{ fontFamily: "var(--font-heading)" }}>
-              Collections (Last 30 Days)
+              Collections (Last {chartDays} Days)
             </CardTitle>
             <p className="text-xs text-muted-foreground">Daily payment collections</p>
           </CardHeader>
@@ -215,7 +232,7 @@ export function DashboardPage() {
                 No collection data yet
               </p>
             ) : (
-                            <div role="img" aria-label="Collections chart for the last 30 days">
+                            <div role="img" aria-label={`Collections chart for the last ${chartDays} days`}>
               <ResponsiveContainer width="100%" height={240}>
                 <BarChart data={data.collections_last_30_days} {...animationProps}>
                   <defs>

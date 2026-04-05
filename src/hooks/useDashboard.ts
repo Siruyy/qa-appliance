@@ -8,9 +8,10 @@ export function useDashboard() {
     (s) => parseInt(s.settings.low_stock_threshold, 10) || 5
   );
 
-  const fetchDashboard = useCallback((): Promise<DashboardData> => {
+  const fetchDashboard = useCallback((chartDays?: number): Promise<DashboardData> => {
     return invoke<DashboardData>("get_dashboard_data", {
       lowStockThreshold,
+      chartDays: chartDays ?? 30,
     });
   }, [lowStockThreshold]);
 

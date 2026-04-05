@@ -407,7 +407,7 @@ The Quality Appliance codebase is a functional Philippine appliance installment/
 - [ ] **FEAT-05:** Add date range selector to dashboard
 - [x] **FEAT-06:** Add "New Sale for customer" link on `CustomerDetailPage`
 - [x] **FEAT-07:** Show all accounts (including closed/defaulted) on customer detail — Grouped by open vs closed/paid/defaulted.
-- [ ] **FEAT-08:** Add pagination to sales/payment tables on customer detail
+- [x] **FEAT-08:** Add pagination to sales/payment tables on customer detail
 - [x] **FEAT-09:** Add payment type filter on Payments page — Filter by payment/down_payment/penalty/interest_adjustment.
 - [x] **FEAT-10:** Add product attribute search in New Sale product search — Category name added to search matching.
 - [x] **FEAT-11:** Prevent duplicate variants in cart (merge quantities instead) — Already implemented in `addToCart`.

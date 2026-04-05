@@ -10,12 +10,14 @@ use tauri::State;
 pub fn get_dashboard_data(
     state: State<'_, DbState>,
     low_stock_threshold: Option<i64>,
+    chart_days: Option<i64>,
 ) -> Result<DashboardData, String> {
     let db = state.0.lock().map_err(|e| e.to_string())?;
     let today = today_iso();
     let month_start = first_of_month(&today);
     let (prev_start, prev_end) = prev_month_range(&today);
-    let thirty_ago = days_ago_iso(30);
+    let days = chart_days.unwrap_or(30).max(1) as u64;
+    let chart_start = days_ago_iso(days);
     let threshold = low_stock_threshold.unwrap_or(5);
 
     // Today's sales
@@ -92,7 +94,7 @@ pub fn get_dashboard_data(
         )
         .map_err(|e| e.to_string())?;
     let sales_30 = stmt
-        .query_map(params![thirty_ago], |row| {
+        .query_map(params![chart_start], |row| {
             Ok(DailySales {
                 date: row.get(0)?,
                 total: row.get(1)?,
@@ -114,7 +116,7 @@ pub fn get_dashboard_data(
         )
         .map_err(|e| e.to_string())?;
     let coll_30 = stmt2
-        .query_map(params![thirty_ago], |row| {
+        .query_map(params![chart_start], |row| {
             Ok(DailyCollection {
                 date: row.get(0)?,
                 total: row.get(1)?,
