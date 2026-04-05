@@ -2,6 +2,7 @@ import { useCallback } from "react";
 import { invoke } from "@/lib/invoke";
 import { usePaymentStore } from "@/stores/paymentStore";
 import { toast } from "sonner";
+import { extractErrorMessage } from "@/lib/error";
 import type { Payment, RecordPaymentPayload } from "@/types/payment";
 import type { PaginatedResult } from "@/types/shared";
 
@@ -28,7 +29,7 @@ export function usePayments() {
       store.setTotalCount(result.total);
       return result.items;
     } catch (e) {
-      toast.error(`Failed to load payments: ${e}`);
+      toast.error(`Failed to load payments: ${extractErrorMessage(e)}`);
       return [];
     } finally {
       store.setLoading(false);

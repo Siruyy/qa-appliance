@@ -1,3 +1,4 @@
+import { extractErrorMessage } from "@/lib/error";
 import { memo, useEffect, useState } from "react";
 import {
   Table,
@@ -44,7 +45,7 @@ export const AgingTab = memo(function AgingTab() {
     setLoading(true);
     invoke<AgingReport>("get_aging_report")
       .then(setReport)
-      .catch((e) => toast.error(`Failed to load aging report: ${e}`))
+      .catch((e) => toast.error(`Failed to load aging report: ${extractErrorMessage(e)}`))
       .finally(() => setLoading(false));
   }, []);
 

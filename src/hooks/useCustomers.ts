@@ -1,3 +1,4 @@
+import { extractErrorMessage } from "@/lib/error";
 import { useCallback, useEffect } from "react";
 import { invoke } from "@/lib/invoke";
 import { useCustomerStore } from "@/stores/customerStore";
@@ -29,7 +30,7 @@ export function useCustomers() {
       setCustomers(items);
       setTotalCount(total);
     } catch (e) {
-      toast.error(`Failed to load customers: ${e}`);
+      toast.error(`Failed to load customers: ${extractErrorMessage(e)}`);
     } finally {
       setLoading(false);
     }

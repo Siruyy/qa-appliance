@@ -1,3 +1,4 @@
+import { extractErrorMessage } from "@/lib/error";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -106,7 +107,7 @@ export function RecordPaymentModal({
       setApplyMode("auto");
       onSuccess();
     } catch (err) {
-      toast.error(String(err));
+      toast.error(extractErrorMessage(err));
     } finally {
       setSubmitting(false);
     }

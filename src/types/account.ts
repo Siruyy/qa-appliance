@@ -1,4 +1,4 @@
-import type { PaymentRecordType } from "./payment";
+import type { PaymentRecordType, ScheduleStatus } from "./payment";
 
 export type AccountStatus = "open" | "paid" | "defaulted";
 
@@ -8,7 +8,7 @@ export interface PaymentScheduleEntry {
   due_date: string;
   amount_due: number;
   amount_paid: number;
-  status: "pending" | "paid" | "overdue" | "partial";
+  status: ScheduleStatus;
 }
 
 export interface InstallmentAccount {

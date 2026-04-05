@@ -1,3 +1,4 @@
+import { extractErrorMessage } from "@/lib/error";
 import { useCallback, useEffect } from "react";
 import { invoke } from "@/lib/invoke";
 import { useProductStore } from "@/stores/productStore";
@@ -12,7 +13,7 @@ export function useCategories() {
       const data = await invoke<Category[]>("get_categories");
       setCategories(data);
     } catch (e) {
-      toast.error(`Failed to load categories: ${e}`);
+      toast.error(`Failed to load categories: ${extractErrorMessage(e)}`);
     }
   }, [setCategories]);
 

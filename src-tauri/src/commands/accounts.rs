@@ -67,14 +67,14 @@ pub fn get_accounts(
          {}",
         where_clause
     );
-    let count_params: Vec<Box<dyn rusqlite::types::ToSql>> = string_params
+    let filter_params: Vec<Box<dyn rusqlite::types::ToSql>> = string_params
         .iter()
         .map(|v| Box::new(v.clone()) as Box<dyn rusqlite::types::ToSql>)
         .collect();
-    let count_refs: Vec<&dyn rusqlite::types::ToSql> =
-        count_params.iter().map(|p| p.as_ref()).collect();
+    let filter_values: Vec<&dyn rusqlite::types::ToSql> =
+        filter_params.iter().map(|p| p.as_ref()).collect();
     let total: u64 = conn
-        .query_row(&count_sql, count_refs.as_slice(), |row| row.get(0))
+        .query_row(&count_sql, filter_values.as_slice(), |row| row.get(0))
         .unwrap_or(0);
 
     let pagination = match limit {
@@ -113,16 +113,16 @@ pub fn get_accounts(
         where_clause, pagination
     );
 
-    let data_params: Vec<Box<dyn rusqlite::types::ToSql>> = string_params
+    let query_params: Vec<Box<dyn rusqlite::types::ToSql>> = string_params
         .iter()
         .map(|v| Box::new(v.clone()) as Box<dyn rusqlite::types::ToSql>)
         .collect();
     let mut stmt = conn.prepare(&sql).map_err(|e| e.to_string())?;
-    let param_refs: Vec<&dyn rusqlite::types::ToSql> =
-        data_params.iter().map(|p| p.as_ref()).collect();
+    let query_values: Vec<&dyn rusqlite::types::ToSql> =
+        query_params.iter().map(|p| p.as_ref()).collect();
 
     let rows = stmt
-        .query_map(param_refs.as_slice(), |row| {
+        .query_map(query_values.as_slice(), |row| {
             Ok(InstallmentAccount {
                 id: row.get(0)?,
                 sale_id: row.get(1)?,
@@ -149,7 +149,7 @@ pub fn get_accounts(
         })
         .map_err(|e| e.to_string())?;
 
-    let accounts: Vec<InstallmentAccount> = rows.filter_map(|r| r.ok()).collect();
+    let accounts: Vec<InstallmentAccount> = rows.collect::<Result<Vec<_>, _>>().map_err(|e| format!("Row read error: {}", e))?;
     Ok(PaginatedResult { items: accounts, total })
 }
 
@@ -234,8 +234,8 @@ pub fn get_account_by_id(db: State<DbState>, id: i64) -> Result<AccountDetail, S
             })
         })
         .map_err(|e| e.to_string())?
-        .filter_map(|r| r.ok())
-        .collect();
+        .collect::<Result<Vec<_>, _>>()
+        .map_err(|e| format!("Row read error: {}", e))?;
 
     // Fetch payments
     let mut payment_stmt = conn
@@ -258,8 +258,8 @@ pub fn get_account_by_id(db: State<DbState>, id: i64) -> Result<AccountDetail, S
             })
         })
         .map_err(|e| e.to_string())?
-        .filter_map(|r| r.ok())
-        .collect();
+        .collect::<Result<Vec<_>, _>>()
+        .map_err(|e| format!("Row read error: {}", e))?;
 
     Ok(AccountDetail {
         id: account.0,

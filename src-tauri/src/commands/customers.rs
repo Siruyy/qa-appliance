@@ -99,8 +99,8 @@ pub fn get_customers(
         .map_err(|e| e.to_string())?;
 
     let customers: Vec<Customer> = rows
-        .filter_map(|r| r.ok())
-        .collect();
+        .collect::<Result<Vec<_>, _>>()
+        .map_err(|e| format!("Row read error: {}", e))?;
 
     Ok(PaginatedResult { items: customers, total })
 }

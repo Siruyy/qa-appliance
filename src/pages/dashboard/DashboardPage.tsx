@@ -1,3 +1,4 @@
+import { extractErrorMessage } from "@/lib/error";
 import { useEffect, useState, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -46,7 +47,7 @@ export function DashboardPage() {
       const d = await fetchDashboard(chartDays);
       setData(d);
     } catch (err) {
-      toast.error("Failed to load dashboard: " + String(err));
+      toast.error("Failed to load dashboard: " + extractErrorMessage(err));
     } finally {
       setLoading(false);
     }

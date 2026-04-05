@@ -59,14 +59,14 @@ pub fn get_sales(
         "SELECT COUNT(*) FROM sales s LEFT JOIN customers c ON s.customer_id = c.id {}",
         where_clause
     );
-    let count_params: Vec<Box<dyn rusqlite::types::ToSql>> = filter_vals
+    let filter_params: Vec<Box<dyn rusqlite::types::ToSql>> = filter_vals
         .iter()
         .map(|v| Box::new(v.clone()) as Box<dyn rusqlite::types::ToSql>)
         .collect();
-    let count_refs: Vec<&dyn rusqlite::types::ToSql> =
-        count_params.iter().map(|p| p.as_ref()).collect();
+    let filter_values: Vec<&dyn rusqlite::types::ToSql> =
+        filter_params.iter().map(|p| p.as_ref()).collect();
     let total: u64 = conn
-        .query_row(&count_sql, count_refs.as_slice(), |row| row.get(0))
+        .query_row(&count_sql, filter_values.as_slice(), |row| row.get(0))
         .unwrap_or(0);
 
     // Pagination clause
@@ -85,16 +85,16 @@ pub fn get_sales(
         where_clause, pagination
     );
 
-    let data_params: Vec<Box<dyn rusqlite::types::ToSql>> = filter_vals
+    let query_params: Vec<Box<dyn rusqlite::types::ToSql>> = filter_vals
         .iter()
         .map(|v| Box::new(v.clone()) as Box<dyn rusqlite::types::ToSql>)
         .collect();
-    let param_refs: Vec<&dyn rusqlite::types::ToSql> =
-        data_params.iter().map(|p| p.as_ref()).collect();
+    let query_values: Vec<&dyn rusqlite::types::ToSql> =
+        query_params.iter().map(|p| p.as_ref()).collect();
     let mut stmt = conn.prepare(&sql).map_err(|e| e.to_string())?;
 
     let rows = stmt
-        .query_map(param_refs.as_slice(), |row| {
+        .query_map(query_values.as_slice(), |row| {
             Ok(Sale {
                 id: row.get(0)?,
                 customer_id: row.get(1)?,
@@ -111,7 +111,7 @@ pub fn get_sales(
         })
         .map_err(|e| e.to_string())?;
 
-    let sales: Vec<Sale> = rows.filter_map(|r| r.ok()).collect();
+    let sales: Vec<Sale> = rows.collect::<Result<Vec<_>, _>>().map_err(|e| format!("Row read error: {}", e))?;
     Ok(PaginatedResult { items: sales, total })
 }
 
@@ -176,8 +176,8 @@ pub fn get_sale_by_id(db: State<DbState>, id: i64) -> Result<SaleDetail, String>
             })
         })
         .map_err(|e| e.to_string())?
-        .filter_map(|r| r.ok())
-        .collect();
+        .collect::<Result<Vec<_>, _>>()
+        .map_err(|e| format!("Row read error: {}", e))?;
 
     // Get installment account if exists
     let account = conn

@@ -1,3 +1,4 @@
+import { extractErrorMessage } from "@/lib/error";
 import { useCallback, useEffect } from "react";
 import { invoke } from "@/lib/invoke";
 import { useProductStore } from "@/stores/productStore";
@@ -24,7 +25,7 @@ export function useProducts() {
       });
       setProducts(items);
     } catch (e) {
-      toast.error(`Failed to load products: ${e}`);
+      toast.error(`Failed to load products: ${extractErrorMessage(e)}`);
     } finally {
       setLoading(false);
     }

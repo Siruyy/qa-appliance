@@ -1,3 +1,4 @@
+import { extractErrorMessage } from "@/lib/error";
 import { useState, useEffect, useCallback } from "react";
 import { open } from "@tauri-apps/plugin-dialog";
 import { Button } from "@/components/ui/button";
@@ -231,7 +232,7 @@ function ExportSection() {
           }
         }
       } catch (err) {
-        toast.error(`Export failed: ${err}`);
+        toast.error(`Export failed: ${extractErrorMessage(err)}`);
       } finally {
         setExportLoading(false);
       }
@@ -315,7 +316,7 @@ function ImportSection() {
       setPreview(result);
       setPreviewOpen(true);
     } catch (err) {
-      toast.error(`Preview failed: ${err}`);
+      toast.error(`Preview failed: ${extractErrorMessage(err)}`);
     }
   }, [importType, selectedFile, setPreview]);
 
@@ -330,7 +331,7 @@ function ImportSection() {
       setPreviewOpen(false);
       resetImport();
     } catch (err) {
-      toast.error(`Import failed: ${err}`);
+      toast.error(`Import failed: ${extractErrorMessage(err)}`);
     } finally {
       setImporting(false);
     }

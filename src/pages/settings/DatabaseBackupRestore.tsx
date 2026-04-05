@@ -1,3 +1,4 @@
+import { extractErrorMessage } from "@/lib/error";
 import { useState, useEffect } from "react";
 import { save, open } from "@tauri-apps/plugin-dialog";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -38,7 +39,7 @@ export function DatabaseBackupRestore() {
       await invoke<string>("backup_database", { destPath: dest });
       toast.success("Database backed up successfully");
     } catch (err) {
-      toast.error("Backup failed: " + String(err));
+      toast.error("Backup failed: " + extractErrorMessage(err));
     } finally {
       setBacking(false);
     }
@@ -60,7 +61,7 @@ export function DatabaseBackupRestore() {
       const msg = await invoke<string>("restore_database", { srcPath: restoreFile });
       toast.success(msg);
     } catch (err) {
-      toast.error("Restore failed: " + String(err));
+      toast.error("Restore failed: " + extractErrorMessage(err));
     } finally {
       setRestoreFile(null);
     }

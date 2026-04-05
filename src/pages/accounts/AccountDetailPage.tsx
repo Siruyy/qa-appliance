@@ -1,3 +1,4 @@
+import { extractErrorMessage } from "@/lib/error";
 import { useEffect, useState, useCallback } from "react";
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { ArrowLeft, CreditCard, XCircle, NotebookPen, RefreshCw } from "lucide-react";
@@ -52,7 +53,7 @@ export function AccountDetailPage() {
       setAccount(detail);
       setNotes(detail.notes ?? "");
     } catch (err) {
-      toast.error(String(err));
+      toast.error(extractErrorMessage(err));
     } finally {
       setLoading(false);
     }
@@ -79,7 +80,7 @@ export function AccountDetailPage() {
       toast.success(`Balance recalculated: ${newBalance.toFixed(2)}`);
       await loadAccount();
     } catch (err) {
-      toast.error(`Recalculate failed: ${String(err)}`);
+      toast.error(`Recalculate failed: ${extractErrorMessage(err)}`);
     } finally {
       setRecalculating(false);
     }
@@ -92,7 +93,7 @@ export function AccountDetailPage() {
       toast.success("Account marked as defaulted");
       await loadAccount();
     } catch (err) {
-      toast.error(String(err));
+      toast.error(extractErrorMessage(err));
     }
     setShowDefaultConfirm(false);
   };
@@ -105,7 +106,7 @@ export function AccountDetailPage() {
       setEditingNotes(false);
       await loadAccount();
     } catch (err) {
-      toast.error(String(err));
+      toast.error(extractErrorMessage(err));
     }
   };
 

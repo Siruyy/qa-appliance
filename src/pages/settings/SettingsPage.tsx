@@ -1,3 +1,4 @@
+import { extractErrorMessage } from "@/lib/error";
 import { useEffect, useState, useMemo, useRef, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -40,7 +41,7 @@ export function SettingsPage() {
       setSaveStatus("saved");
       setTimeout(() => setSaveStatus("idle"), 2000);
     } catch (err) {
-      toast.error("Failed to save: " + String(err));
+      toast.error("Failed to save: " + extractErrorMessage(err));
       setSaveStatus("idle");
     }
   }, [updateSettingsBatch]);

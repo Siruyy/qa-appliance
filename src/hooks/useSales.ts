@@ -1,6 +1,7 @@
 import { useCallback, useEffect } from "react";
 import { invoke } from "@/lib/invoke";
 import { toast } from "sonner";
+import { extractErrorMessage } from "@/lib/error";
 import type { Sale, SaleDetail, CreateSalePayload } from "@/types/sale";
 import type { PaginatedResult } from "@/types/shared";
 import { useSaleStore } from "@/stores/saleStore";
@@ -24,7 +25,7 @@ export function useSales() {
       setSales(result.items);
       setTotalCount(result.total);
     } catch (err) {
-      toast.error(String(err));
+      toast.error(extractErrorMessage(err));
     } finally {
       setLoading(false);
     }
@@ -49,7 +50,7 @@ export function useSales() {
     try {
       return await invoke<SaleDetail>("get_sale_by_id", { id });
     } catch (err) {
-      toast.error(String(err));
+      toast.error(extractErrorMessage(err));
       return null;
     }
   }, []);
@@ -61,7 +62,7 @@ export function useSales() {
       await fetchSales();
       return id;
     } catch (err) {
-      toast.error(String(err));
+      toast.error(extractErrorMessage(err));
       return null;
     }
   }, [fetchSales]);
@@ -73,7 +74,7 @@ export function useSales() {
       await fetchSales();
       return true;
     } catch (err) {
-      toast.error(String(err));
+      toast.error(extractErrorMessage(err));
       return false;
     }
   }, [fetchSales]);

@@ -41,12 +41,12 @@
 
 ## Phase 10: Performance Optimization
 
-- [ ] **PERF-R01:** Fix N+1 queries in `get_products` — use JOINs with `GROUP_CONCAT`/`JSON_GROUP_ARRAY`
-- [ ] **PERF-R02:** Fix N+1 patterns in `get_accounts`, `get_customer_by_id`, `get_sale_by_id`
-- [ ] **PERF-R03:** Memoize `TopBar.tsx` date formatting with `useMemo`
-- [ ] **PERF-R04:** Cache `saleStore.cartSubtotal()` result to avoid double calculation in `cartTotal()`
-- [ ] **PERF-R05:** Add report caching layer — same parameters shouldn't re-fetch
-- [ ] **PERF-R06:** Add progress tracking to `exportAllData()`
+- [x] **PERF-R01:** Fix N+1 queries in `get_products` — use JOINs with `GROUP_CONCAT`/`JSON_GROUP_ARRAY`
+- [x] **PERF-R02:** Fix N+1 patterns in `get_accounts`, `get_customer_by_id`, `get_sale_by_id`
+- [x] **PERF-R03:** Memoize `TopBar.tsx` date formatting with `useMemo`
+- [x] **PERF-R04:** Cache `saleStore.cartSubtotal()` result to avoid double calculation in `cartTotal()`
+- [x] **PERF-R05:** Add report caching layer — same parameters shouldn't re-fetch
+- [x] **PERF-R06:** Add progress tracking to `exportAllData()`
 
 ---
 

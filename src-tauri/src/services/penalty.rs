@@ -66,7 +66,7 @@ pub fn check_and_apply_penalties(conn: &Connection) -> Result<Vec<PenaltyApplied
         })
         .map_err(|e| format!("Failed to read penalty candidates: {}", e))?;
 
-    let candidates: Vec<_> = rows.filter_map(|r| r.ok()).collect();
+    let candidates: Vec<_> = rows.collect::<Result<Vec<_>, _>>().map_err(|e| format!("Row read error: {}", e))?;
 
     for (account_id, balance, penalty_rate, last_penalty_date, customer_name, product_summary) in candidates {
         // All accounts have schedules — check for overdue entries + cooldown

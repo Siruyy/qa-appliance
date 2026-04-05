@@ -1,3 +1,4 @@
+import { extractErrorMessage } from "@/lib/error";
 import { useCallback, useState } from "react";
 import { invoke } from "@/lib/invoke";
 import type { PaginatedResult } from "@/types/shared";
@@ -35,7 +36,7 @@ export function useAuditLog() {
         setEntries(result.items);
         setTotal(result.total);
       } catch (e) {
-        toast.error(`Failed to load audit log: ${e}`);
+        toast.error(`Failed to load audit log: ${extractErrorMessage(e)}`);
       } finally {
         setLoading(false);
       }

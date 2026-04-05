@@ -1,3 +1,4 @@
+import { extractErrorMessage } from "@/lib/error";
 import { useCallback } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
@@ -170,7 +171,7 @@ export function ReportsPage() {
         }
         toast.success(`Exported as ${format.toUpperCase()}`);
       } catch (e) {
-        toast.error(`Export failed: ${e}`);
+        toast.error(`Export failed: ${extractErrorMessage(e)}`);
       }
     },
     [activeTab, dateFrom, dateTo, statusFilter, selectedCustomerId]

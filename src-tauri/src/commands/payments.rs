@@ -72,10 +72,10 @@ pub fn get_payments(
          {}",
         where_clause
     );
-    let count_p = make_params();
-    let count_refs: Vec<&dyn rusqlite::types::ToSql> = count_p.iter().map(|p| p.as_ref()).collect();
+    let filter_params = make_params();
+    let filter_values: Vec<&dyn rusqlite::types::ToSql> = filter_params.iter().map(|p| p.as_ref()).collect();
     let total: u64 = conn
-        .query_row(&count_sql, count_refs.as_slice(), |row| row.get(0))
+        .query_row(&count_sql, filter_values.as_slice(), |row| row.get(0))
         .unwrap_or(0);
 
     let pagination = match limit {
@@ -103,12 +103,12 @@ pub fn get_payments(
         where_clause, pagination
     );
 
-    let data_p = make_params();
+    let query_params = make_params();
     let mut stmt = conn.prepare(&sql).map_err(|e| e.to_string())?;
-    let param_refs: Vec<&dyn rusqlite::types::ToSql> = data_p.iter().map(|p| p.as_ref()).collect();
+    let query_values: Vec<&dyn rusqlite::types::ToSql> = query_params.iter().map(|p| p.as_ref()).collect();
 
     let rows = stmt
-        .query_map(param_refs.as_slice(), |row| {
+        .query_map(query_values.as_slice(), |row| {
             Ok(Payment {
                 id: row.get(0)?,
                 account_id: row.get(1)?,
@@ -124,7 +124,7 @@ pub fn get_payments(
         })
         .map_err(|e| e.to_string())?;
 
-    let payments: Vec<Payment> = rows.filter_map(|r| r.ok()).collect();
+    let payments: Vec<Payment> = rows.collect::<Result<Vec<_>, _>>().map_err(|e| format!("Row read error: {}", e))?;
     Ok(PaginatedResult { items: payments, total })
 }
 
@@ -173,7 +173,7 @@ pub fn get_payments_for_account(
         })
         .map_err(|e| e.to_string())?;
 
-    let payments: Vec<Payment> = rows.filter_map(|r| r.ok()).collect();
+    let payments: Vec<Payment> = rows.collect::<Result<Vec<_>, _>>().map_err(|e| format!("Row read error: {}", e))?;
     Ok(payments)
 }
 
@@ -387,8 +387,8 @@ fn auto_apply_to_schedule(
             Ok((row.get(0)?, row.get(1)?, row.get(2)?))
         })
         .map_err(|e| e.to_string())?
-        .filter_map(|r| r.ok())
-        .collect();
+        .collect::<Result<Vec<_>, _>>()
+        .map_err(|e| format!("Row read error: {}", e))?;
 
     for (entry_id, amount_due, amount_paid) in entries {
         if remaining_amount <= CENTAVO_TOLERANCE {
