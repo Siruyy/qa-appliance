@@ -10,11 +10,13 @@ interface ProductFilters {
 interface ProductState {
   products: Product[];
   categories: Category[];
+  totalCount: number;
   loading: boolean;
   filters: ProductFilters;
   page: number;
   pageSize: number;
   setProducts: (products: Product[]) => void;
+  setTotalCount: (count: number) => void;
   setCategories: (categories: Category[]) => void;
   setLoading: (loading: boolean) => void;
   setFilter: <K extends keyof ProductFilters>(key: K, value: ProductFilters[K]) => void;
@@ -34,11 +36,13 @@ const defaultFilters: ProductFilters = {
 export const useProductStore = create<ProductState>((set, get) => ({
   products: [],
   categories: [],
+  totalCount: 0,
   loading: false,
   filters: { ...defaultFilters },
   page: 1,
   pageSize: 50,
   setProducts: (products) => set({ products }),
+  setTotalCount: (totalCount) => set({ totalCount }),
   setCategories: (categories) => set({ categories }),
   setLoading: (loading) => set({ loading }),
   /** Update a single filter field and reset to page 1. */

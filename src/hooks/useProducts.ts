@@ -15,23 +15,24 @@ import type { PaginatedResult } from "@/types/shared";
 
 /** Hook for product and variant CRUD operations with auto-fetch on mount. */
 export function useProducts() {
-  const { setProducts, setLoading } = useProductStore();
+  const { setProducts, setTotalCount, setLoading } = useProductStore();
 
   /** Fetch all products from the backend and update the store. */
   const fetchProducts = useCallback(async () => {
     setLoading(true);
     try {
-      const { items } = await invoke<PaginatedResult<Product>>("get_products", {
+      const { items, total } = await invoke<PaginatedResult<Product>>("get_products", {
         limit: null,
         offset: null,
       });
       setProducts(items);
+      setTotalCount(total);
     } catch (e) {
       toast.error(`Failed to load products: ${extractErrorMessage(e)}`);
     } finally {
       setLoading(false);
     }
-  }, [setProducts, setLoading]);
+  }, [setProducts, setTotalCount, setLoading]);
 
   useEffect(() => {
     fetchProducts();

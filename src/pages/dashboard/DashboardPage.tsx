@@ -60,6 +60,18 @@ export function DashboardPage() {
     load();
   }, [load]);
 
+  // Keyboard shortcut: F5 or Ctrl+R to refresh dashboard
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "F5" || (e.ctrlKey && e.key === "r")) {
+        e.preventDefault();
+        load();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [load]);
+
   if (loading || !data) {
     return (
       <div className="space-y-6 p-6">

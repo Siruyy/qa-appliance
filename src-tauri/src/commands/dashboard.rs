@@ -20,33 +20,19 @@ pub fn get_dashboard_data(
     let chart_start = days_ago_iso(days);
     let threshold = low_stock_threshold.unwrap_or(5);
 
-    // Today's sales
-    let (today_sales_total, today_sales_count): (f64, i64) = db
+    // Sales KPIs — combine today, this-month, and last-month into one query
+    let (today_sales_total, today_sales_count, month_sales_total, month_sales_count, last_month_sales_total): (f64, i64, f64, i64, f64) = db
         .query_row(
-            "SELECT COALESCE(SUM(total), 0), COUNT(*)
-             FROM sales WHERE DATE(sale_date) = ?1 AND status != 'voided'",
-            params![today],
-            |row| Ok((row.get(0)?, row.get(1)?)),
-        )
-        .map_err(|e| e.to_string())?;
-
-    // This month's sales
-    let (month_sales_total, month_sales_count): (f64, i64) = db
-        .query_row(
-            "SELECT COALESCE(SUM(total), 0), COUNT(*)
-             FROM sales WHERE DATE(sale_date) BETWEEN ?1 AND ?2 AND status != 'voided'",
-            params![month_start, today],
-            |row| Ok((row.get(0)?, row.get(1)?)),
-        )
-        .map_err(|e| e.to_string())?;
-
-    // Last month's sales
-    let last_month_sales_total: f64 = db
-        .query_row(
-            "SELECT COALESCE(SUM(total), 0)
-             FROM sales WHERE DATE(sale_date) BETWEEN ?1 AND ?2 AND status != 'voided'",
-            params![prev_start, prev_end],
-            |row| row.get(0),
+            "SELECT
+               COALESCE(SUM(CASE WHEN DATE(sale_date) = ?1 THEN total ELSE 0 END), 0),
+               COALESCE(SUM(CASE WHEN DATE(sale_date) = ?1 THEN 1 ELSE 0 END), 0),
+               COALESCE(SUM(CASE WHEN DATE(sale_date) BETWEEN ?2 AND ?1 THEN total ELSE 0 END), 0),
+               COALESCE(SUM(CASE WHEN DATE(sale_date) BETWEEN ?2 AND ?1 THEN 1 ELSE 0 END), 0),
+               COALESCE(SUM(CASE WHEN DATE(sale_date) BETWEEN ?3 AND ?4 THEN total ELSE 0 END), 0)
+             FROM sales WHERE status != 'voided'
+               AND DATE(sale_date) >= ?3",
+            params![today, month_start, prev_start, prev_end],
+            |row| Ok((row.get(0)?, row.get(1)?, row.get(2)?, row.get(3)?, row.get(4)?)),
         )
         .map_err(|e| e.to_string())?;
 

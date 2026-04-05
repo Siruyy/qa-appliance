@@ -51,6 +51,7 @@ function NavItem({
     <NavLink
       to={to}
       end={end}
+      aria-label={label}
       title={collapsed ? label : undefined}
       className={({ isActive }) =>
         cn(
@@ -74,6 +75,8 @@ export function Sidebar() {
 
   return (
     <aside
+      role="navigation"
+      aria-label="Main navigation"
       className={cn(
         "flex h-full shrink-0 flex-col bg-[var(--sidebar)] text-[var(--sidebar-foreground)] transition-all duration-200",
         sidebarCollapsed ? "w-[var(--sidebar-width-collapsed)]" : "w-[var(--sidebar-width)]"
@@ -123,6 +126,7 @@ export function Sidebar() {
       <div className="border-t border-[var(--sidebar-border)] p-2">
         <button
           onClick={toggleSidebar}
+          aria-label={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
           title={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
           className={cn(
             "flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm text-[var(--sidebar-foreground)]/60 transition-colors hover:bg-[var(--sidebar-accent)] hover:text-[var(--sidebar-accent-foreground)]",

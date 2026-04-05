@@ -110,6 +110,7 @@ pub struct ExportAccount {
     pub created_at: String,
 }
 
+/// Payment record for export. `payment_type` is one of: "payment", "down_payment", "penalty".
 #[derive(Debug, Serialize)]
 pub struct ExportPayment {
     pub id: i64,
