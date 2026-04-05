@@ -59,7 +59,6 @@ export function NewSalePage() {
     down_payment: 0,
     interest_rate: typed.default_interest_rate,
     penalty_rate: typed.default_penalty_rate,
-    has_schedule: true,
     term_months: typed.default_installment_term,
     start_date: new Date().toISOString().split("T")[0],
   }), [typed.default_interest_rate, typed.default_penalty_rate, typed.default_installment_term]);

@@ -53,7 +53,7 @@ export interface ExportProduct {
   sku: string;
   cost_price: number;
   selling_price: number;
-  stock_qty: number;
+  stock_quantity: number;
   low_stock_threshold: number;
   is_active: boolean;
 }

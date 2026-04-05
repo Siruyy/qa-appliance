@@ -50,7 +50,6 @@ export interface CreateInstallmentPayload {
   down_payment: number;
   interest_rate: number;
   penalty_rate: number;
-  has_schedule: boolean;
   term_months: number | null;
   start_date: string | null;
 }

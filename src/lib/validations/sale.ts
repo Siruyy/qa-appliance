@@ -10,7 +10,6 @@ export const installmentSchema = z.object({
   down_payment: z.number().min(0, { error: "Down payment cannot be negative" }),
   interest_rate: z.number().min(0).max(100, { error: "Interest rate must be 0-100%" }),
   penalty_rate: z.number().min(0).max(100, { error: "Penalty rate must be 0-100%" }),
-  has_schedule: z.boolean(),
   term_months: z.number().int().min(1).max(60).nullable(),
   start_date: z
     .string()

@@ -121,7 +121,7 @@ export function ReportsPage() {
             i.product_name,
             i.variant_name,
             i.sku,
-            i.stock_qty,
+            i.stock_quantity,
             i.cost_price,
             i.selling_price,
             i.cost_value,
