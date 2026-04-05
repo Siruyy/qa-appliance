@@ -323,7 +323,7 @@ A comprehensive **13-phase audit** was conducted across two audit documents. **1
 - [x] **BIZ-07:** Add date range validation in `reportStore` — Ensure `dateFrom <= dateTo`
 - [x] **BIZ-08:** Fix `recordPayment` to refetch payment list after success
 - [x] **BIZ-09:** Reset page to 1 after archive/restore operations that change the total count
-- [ ] **BIZ-10:** Generate default payment schedule for open-ended installments (deferred to Phase 7)
+- [x] **BIZ-10:** Generate default payment schedule for open-ended installments (deferred to Phase 7) *(Resolved — utang/open-ended removed in Phase 8)*
 - [x] **BIZ-11:** Validate `selling_price >= cost_price` in variant schema (or show warning)
 - [x] **BIZ-12:** Add `start_date` ISO format validation in `createSaleSchema`
 
@@ -332,7 +332,7 @@ A comprehensive **13-phase audit** was conducted across two audit documents. **1
 > Remove bottlenecks that will cause issues at scale.
 
 - [x] **PERF-01:** ~~Replace single Mutex with `r2d2` connection pool~~ — *Deferred: single-user desktop app with WAL mode; Mutex<Connection> is adequate*
-- [ ] **PERF-02:** Fix N+1 queries — Use JOINs with `GROUP_CONCAT` or `JSON_GROUP_ARRAY` in `get_products`, `get_accounts`, `get_customer_by_id`, `get_sale_by_id`
+- [x] **PERF-02:** Fix N+1 queries — Use JOINs with `GROUP_CONCAT` or `JSON_GROUP_ARRAY` in `get_products`, `get_accounts`, `get_customer_by_id`, `get_sale_by_id` *(Done — Phase 10 PERF-R01/R02)*
 - [x] **PERF-03:** Add missing database indexes on frequently-filtered columns
 - [x] **PERF-04:** ~~Implement memoized selectors in Zustand stores~~ — *Already done: useMemo at component level effectively memoizes derived state*
 - [x] **PERF-05:** ~~Replace full-refetch pattern with optimistic updates~~ — *Deferred: architectural change with diminishing returns for desktop app*
@@ -353,7 +353,7 @@ A comprehensive **13-phase audit** was conducted across two audit documents. **1
 - [ ] **CQ-05:** Extract shared search/filter logic from stores to `lib/filterUtils.ts` *(deferred — low impact)*
 - [x] **CQ-06:** Fix all loose `string` types — Replace with proper union type references across `customer.ts`, `report.ts`, `sale.ts`, `import-export.ts`, `account.ts`
 - [ ] **CQ-07:** Retype `AppSettings` — *(deferred — entire flow uses string key-value pairs from SQLite; consumers parse where needed)*
-- [ ] **CQ-08:** Wrap all hook mutation functions in `useCallback` *(deferred — low impact for desktop app; mutations called in event handlers)*
+- [x] **CQ-08:** Wrap all hook mutation functions in `useCallback` *(Done — Phase 11 CQ-R07)*
 - [x] **CQ-09:** Add error handling to fetch hooks — `useCategories`, `useProducts`, `useAccounts`, `useCustomers`, `usePayments`
 - [ ] **CQ-10:** Convert `useImportExport` to proper React hook *(deferred — functions are stateless, hook pattern would add complexity)*
 - [ ] **CQ-11:** Split `saleStore` into `saleListStore` and `cartStore` *(deferred — large refactor)*
@@ -389,11 +389,11 @@ A comprehensive **13-phase audit** was conducted across two audit documents. **1
 - [x] **UX-03:** Add `role="navigation"` and `aria-label` to `Pagination` component
 - [x] **UX-04:** Add `aria-busy` to `TableSkeleton`
 - [x] **UX-05:** Add text alternatives for all charts (either `aria-label` or companion data table) — Added `role="img"` and `aria-label` to dashboard chart containers.
-- [ ] ~~**UX-06:** Standardize loading states~~ — Deferred (many inline loading states; existing pattern is adequate)
+- [x] ~~**UX-06:** Standardize loading states~~ *(Done — Phase 13 UX-R01: TableSkeleton everywhere)*
 - [x] **UX-07:** Add loading indicators for mutations — Already implemented (submitting/saving state in NewSale, Settings, RecordPayment, StockAdjust).
 - [ ] ~~**UX-08:** Add progress feedback for export operations~~ — Deferred (export is fast enough for desktop app)
-- [ ] ~~**UX-09:** Improve error messages~~ — Deferred (would need per-error-type mapping)
-- [ ] ~~**UX-10:** Use `EmptyState` component consistently in all tables~~ — Deferred (large scope, existing inline messages adequate)
+- [x] ~~**UX-09:** Improve error messages~~ *(Done — Phase 11/13: extractErrorMessage utility)*
+- [x] ~~**UX-10:** Use `EmptyState` component consistently in all tables~~ *(Done — Phase 13 UX-R04: EmptyState in all tables)*
 - [x] **UX-11:** Add breadcrumbs to detail pages (`CustomerDetailPage`, `AccountDetailPage`)
 - [x] **UX-12:** Add "unsaved changes" warning on Settings page — `isDirty` detection, `beforeunload` guard, visual indicator, disabled save when clean.
 - [x] **UX-13:** Add 404 catch-all route with proper "Page Not Found" UI
