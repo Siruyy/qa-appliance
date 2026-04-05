@@ -1,6 +1,7 @@
 import { useCallback, useEffect } from "react";
 import { invoke } from "@/lib/invoke";
 import { useCustomerStore } from "@/stores/customerStore";
+import { toast } from "sonner";
 import type {
   Customer,
   CustomerDetail,
@@ -27,6 +28,8 @@ export function useCustomers() {
       );
       setCustomers(items);
       setTotalCount(total);
+    } catch (e) {
+      toast.error(`Failed to load customers: ${e}`);
     } finally {
       setLoading(false);
     }

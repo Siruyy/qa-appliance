@@ -1,6 +1,7 @@
 import { useCallback } from "react";
 import { invoke } from "@/lib/invoke";
 import { useAccountStore } from "@/stores/accountStore";
+import { toast } from "sonner";
 import type { AccountDetail, InstallmentAccount, PenaltyApplied } from "@/types/account";
 import type { PaginatedResult } from "@/types/shared";
 
@@ -27,6 +28,9 @@ export function useAccounts() {
       store.setAccounts(result.items);
       store.setTotalCount(result.total);
       return result.items;
+    } catch (e) {
+      toast.error(`Failed to load accounts: ${e}`);
+      return [];
     } finally {
       store.setLoading(false);
     }

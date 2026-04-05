@@ -2,13 +2,18 @@ import { useCallback, useEffect } from "react";
 import { invoke } from "@/lib/invoke";
 import { useProductStore } from "@/stores/productStore";
 import type { Category } from "@/types/product";
+import { toast } from "sonner";
 
 export function useCategories() {
   const { setCategories } = useProductStore();
 
   const fetchCategories = useCallback(async () => {
-    const data = await invoke<Category[]>("get_categories");
-    setCategories(data);
+    try {
+      const data = await invoke<Category[]>("get_categories");
+      setCategories(data);
+    } catch (e) {
+      toast.error(`Failed to load categories: ${e}`);
+    }
   }, [setCategories]);
 
   useEffect(() => {

@@ -1,6 +1,7 @@
 import { useCallback, useEffect } from "react";
 import { invoke } from "@/lib/invoke";
 import { useProductStore } from "@/stores/productStore";
+import { toast } from "sonner";
 import type {
   Product,
   CreateProductPayload,
@@ -22,6 +23,8 @@ export function useProducts() {
         offset: null,
       });
       setProducts(items);
+    } catch (e) {
+      toast.error(`Failed to load products: ${e}`);
     } finally {
       setLoading(false);
     }
