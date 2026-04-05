@@ -403,7 +403,7 @@ The Quality Appliance codebase is a functional Philippine appliance installment/
 - [x] **FEAT-01:** Add global search — Searchable command palette (Ctrl+K) for customers, products, navigation.
 - [x] **FEAT-02:** Add bulk operations — Bulk archive products, bulk void sales
 - [x] **FEAT-03:** Add PDF/CSV export for all data types (not just reports)
-- [ ] **FEAT-04:** Add notification center — Persistent alerts for overdue accounts, low stock
+- [x] **FEAT-04:** Add notification center — Persistent alerts for overdue accounts, low stock
 - [x] **FEAT-05:** Add date range selector to dashboard
 - [x] **FEAT-06:** Add "New Sale for customer" link on `CustomerDetailPage`
 - [x] **FEAT-07:** Show all accounts (including closed/defaulted) on customer detail — Grouped by open vs closed/paid/defaulted.
@@ -411,11 +411,11 @@ The Quality Appliance codebase is a functional Philippine appliance installment/
 - [x] **FEAT-09:** Add payment type filter on Payments page — Filter by payment/down_payment/penalty/interest_adjustment.
 - [x] **FEAT-10:** Add product attribute search in New Sale product search — Category name added to search matching.
 - [x] **FEAT-11:** Prevent duplicate variants in cart (merge quantities instead) — Already implemented in `addToCart`.
-- [ ] **FEAT-12:** Add customer aging report (30/60/90 day buckets)
+- [x] **FEAT-12:** Add customer aging report (30/60/90 day buckets)
 - [x] **FEAT-13:** Add database backup/restore feature in Settings — Backup (WAL checkpoint + file copy), Restore (validates SQLite, AlertDialog confirmation), shows DB path.
-- [ ] **FEAT-14:** Add audit logging for financial operations (payments, sales, voids, penalties)
+- [x] **FEAT-14:** Add audit logging for financial operations (payments, sales, voids, penalties)
 - [x] **FEAT-15:** Add "Recent selections" / favorites in product search
-- [ ] **FEAT-16:** Auto-save or individual field save for Settings
+- [x] **FEAT-16:** Auto-save or individual field save for Settings
 - [x] **FEAT-17:** Real-time TopBar clock — Updates every 60s, shows date + time.
 - [x] **FEAT-18:** Sync `KeyboardShortcutsModal` with actual implemented shortcuts — Already in sync; added Ctrl+K entry.
 
