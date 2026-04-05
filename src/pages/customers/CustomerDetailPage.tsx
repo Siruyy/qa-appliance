@@ -18,6 +18,7 @@ import { useCustomers } from "@/hooks/useCustomers";
 import { formatDate } from "@/lib/formatters";
 import { useCurrency } from "@/hooks/useCurrency";
 import { saleStatusVariant, paymentTypeVariant } from "@/lib/badgeVariants";
+import { Breadcrumbs } from "@/components/Breadcrumbs";
 import type { CustomerDetail } from "@/types/customer";
 
 import { Button } from "@/components/ui/button";
@@ -104,6 +105,12 @@ export function CustomerDetailPage() {
 
   return (
     <div className="space-y-6">
+      {/* Breadcrumbs */}
+      <Breadcrumbs items={[
+        { label: "Customers", to: "/customers" },
+        { label: customer.name },
+      ]} />
+
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">

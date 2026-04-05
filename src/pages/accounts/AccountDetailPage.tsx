@@ -8,6 +8,7 @@ import type { AccountDetail } from "@/types/account";
 import { formatDate, formatProductSummary } from "@/lib/formatters";
 import { useCurrency } from "@/hooks/useCurrency";
 import { accountStatusVariant } from "@/lib/badgeVariants";
+import { Breadcrumbs } from "@/components/Breadcrumbs";
 
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -122,6 +123,12 @@ export function AccountDetailPage() {
 
   return (
     <div className="space-y-6">
+      {/* Breadcrumbs */}
+      <Breadcrumbs items={[
+        { label: "Accounts", to: "/accounts" },
+        { label: `Account #${account.id}` },
+      ]} />
+
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
