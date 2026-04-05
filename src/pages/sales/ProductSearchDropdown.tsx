@@ -1,5 +1,5 @@
-import { useState, useMemo } from "react";
-import { ChevronsUpDown, Search } from "lucide-react";
+import { useState, useMemo, useCallback } from "react";
+import { ChevronsUpDown, Search, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Popover,
@@ -39,9 +39,27 @@ function variantLabel(product: Product, variant: ProductVariant): string {
   return attrs ? `${product.name} — ${attrs}` : product.name;
 }
 
+const RECENT_KEY = "qa-recent-products";
+const MAX_RECENT = 5;
+
+function getRecentVariantIds(): number[] {
+  try {
+    return JSON.parse(localStorage.getItem(RECENT_KEY) ?? "[]");
+  } catch {
+    return [];
+  }
+}
+
+function addRecentVariantId(id: number) {
+  const ids = getRecentVariantIds().filter((v) => v !== id);
+  ids.unshift(id);
+  localStorage.setItem(RECENT_KEY, JSON.stringify(ids.slice(0, MAX_RECENT)));
+}
+
 export function ProductSearchDropdown({ onSelect, excludeVariantIds = [] }: ProductSearchDropdownProps) {
   const [open, setOpen] = useState(false);
   const products = useProductStore((s) => s.products);
+  const [recentIds, setRecentIds] = useState(getRecentVariantIds);
 
   const options = useMemo(() => {
     const result: VariantOption[] = [];
@@ -60,6 +78,19 @@ export function ProductSearchDropdown({ onSelect, excludeVariantIds = [] }: Prod
     return result;
   }, [products, excludeVariantIds]);
 
+  const recentOptions = useMemo(() => {
+    return recentIds
+      .map((id) => options.find((o) => o.variant.id === id))
+      .filter((o): o is VariantOption => !!o);
+  }, [recentIds, options]);
+
+  const handleSelect = useCallback((opt: VariantOption) => {
+    addRecentVariantId(opt.variant.id);
+    setRecentIds(getRecentVariantIds());
+    onSelect(opt);
+    setOpen(false);
+  }, [onSelect]);
+
   const { format: formatCurrency } = useCurrency();
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -75,15 +106,33 @@ export function ProductSearchDropdown({ onSelect, excludeVariantIds = [] }: Prod
           <CommandInput placeholder="Type product name or SKU..." />
           <CommandList>
             <CommandEmpty>No products found.</CommandEmpty>
-            <CommandGroup>
+            {recentOptions.length > 0 && (
+              <CommandGroup heading="Recently selected">
+                {recentOptions.map((opt) => (
+                  <CommandItem
+                    key={`recent-${opt.variant.id}`}
+                    value={`recent ${opt.label} ${opt.variant.sku ?? ""}`}
+                    onSelect={() => handleSelect(opt)}
+                  >
+                    <div className="flex w-full items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Clock className="h-3.5 w-3.5 text-muted-foreground" />
+                        <span className="font-medium">{opt.label}</span>
+                      </div>
+                      <span className="font-medium text-sm">
+                        {formatCurrency(opt.variant.selling_price)}
+                      </span>
+                    </div>
+                  </CommandItem>
+                ))}
+              </CommandGroup>
+            )}
+            <CommandGroup heading={recentOptions.length > 0 ? "All products" : undefined}>
               {options.map((opt) => (
                 <CommandItem
                   key={opt.variant.id}
                   value={`${opt.label} ${opt.variant.sku ?? ""} ${opt.product.category_name ?? ""}`}
-                  onSelect={() => {
-                    onSelect(opt);
-                    setOpen(false);
-                  }}
+                  onSelect={() => handleSelect(opt)}
                 >
                   <div className="flex w-full items-center justify-between">
                     <div className="flex flex-col">
