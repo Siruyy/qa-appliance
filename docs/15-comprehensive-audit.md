@@ -24,19 +24,19 @@
 
 The Quality Appliance codebase is a functional Philippine appliance installment/cash sales management system. The architecture is sound — proper separation between Tauri backend and React frontend, Zustand for state, Zod for validation, and a well-organized file structure.
 
-A comprehensive **13-phase audit** was conducted across two audit documents. **182 implementation items were completed** spanning security, business logic, performance, code quality, styling, UX, and features. All critical and high-priority issues have been resolved. The 51 remaining unchecked items are low-priority refactoring, documentation, or future enhancements.
+A comprehensive **13-phase audit** was conducted across two audit documents. **215 implementation items were completed** spanning security, business logic, performance, code quality, styling, UX, and features. All critical and high-priority issues have been resolved. The 18 remaining unchecked items are low-priority deferred refactoring or intentionally wontfix items.
 
 | Area | Pre-Audit | Post-Audit | Status |
 |------|:---:|:---:|:---|
-| Code Quality | 6.5/10 | **8.5/10** | Error propagation, extractErrorMessage, union types, useCallback, constants |
+| Code Quality | 6.5/10 | **9/10** | Filter utils, saleStore split, VariantRow extraction, JSDoc, DRY query builder |
 | Security | 4/10 | **9/10** | CSP, SQL injection, input validation, audit logging, command allowlist, error sanitization |
-| Performance | 5/10 | **8.5/10** | N+1 JOINs, DB indexes, memoization, code splitting, report caching |
+| Performance | 5/10 | **8.5/10** | N+1 JOINs, DB indexes, memoization, code splitting, report caching, debouncing |
 | Business Logic | 6/10 | **9/10** | Utang removed, penalty fix, cart/price/void validation, date range filters |
-| Features & QOL | 7/10 | **9/10** | Command palette, notifications, CSV export, backup/restore, aging report |
+| Features & QOL | 7/10 | **9.5/10** | Undo toast, error boundary, chart legends, stock reset, export spinners |
 | Styling & Theme | 7.5/10 | **9/10** | StatusBadge, CSS vars, PDF theming, store name branding, Firefox scrollbar |
-| UI/UX | 6/10 | **9/10** | Skeletons, EmptyState, ARIA labels, breadcrumbs, DatePicker a11y |
+| UI/UX | 6/10 | **9.5/10** | Skeletons, EmptyState, ARIA labels, a11y titles, keyboard nav, error recovery |
 
-**Summary:** 182 items checked ✅ · 51 items remaining (low-priority deferred / future enhancements)
+**Summary:** 215 items checked ✅ · 18 items remaining (wontfix / future enhancements)
 
 ---
 
@@ -46,9 +46,9 @@ A comprehensive **13-phase audit** was conducted across two audit documents. **1
 
 - [x] **Standardize pagination defaults** — `accountStore` uses `pageSize: 15`, all others use `50`. Standardize or document the rationale. *(Done — CQ-04: unified all stores to pageSize 50)*
 - [ ] **Pagination not applied in filter methods** — All stores (`accountStore`, `customerStore`, `productStore`, `paymentStore`, `saleStore`) have `page`/`pageSize` state but `filteredX()` methods return the entire list without slicing. The client-side pagination in hooks/components compensates, but this is confusing and wastes memory.
-- [ ] **Extract shared filter/search logic** — Search patterns (`.toLowerCase().includes()`) and date range filtering are duplicated across `accountStore`, `customerStore`, `productStore`, `paymentStore`, and `saleStore`. Extract to shared utility functions.
+- [x] **Extract shared filter/search logic** — Search patterns (`.toLowerCase().includes()`) and date range filtering are duplicated across `accountStore`, `customerStore`, `productStore`, `paymentStore`, and `saleStore`. Extract to shared utility functions.
 - [x] **Filter reset inconsistency** — Some stores reset `page` to 1 on search/filter change (`accountStore`, `customerStore`), others don't (`paymentStore`). Standardize. *(Done — CQ-14)*
-- [ ] **`saleStore` mixes two concerns** — Cart state (items, discount, payment type, installment config) and sales list state (filters, pagination) are in one store. Consider splitting into `saleStore` (list) and `cartStore` (active sale).
+- [x] **`saleStore` mixes two concerns** — Cart state (items, discount, payment type, installment config) and sales list state (filters, pagination) are in one store. Consider splitting into `saleStore` (list) and `cartStore` (active sale).
 - [x] **`paymentStore.dateFrom`/`dateTo` declared but never used in filtering** — Date state exists with setters but `filteredPayments()` only filters by search. Implement or remove. *(Done — BIZ-05: implemented date range filtering)*
 - [x] **`saleStore.includeVoided` not implemented** — Filter flag exists but `filteredSales()` never checks it. *(Done — BIZ-04)*
 - [x] **`reportStore.statusFilter` is loose `string`** — Should be a union type like other stores (`"all" | "open" | "overdue" | "paid" | "defaulted"`). *(Done — CQ-06: replaced with proper union types)*
@@ -58,7 +58,7 @@ A comprehensive **13-phase audit** was conducted across two audit documents. **1
 - [x] **Missing `useCallback` on mutation functions** — `useCategories` (`createCategory`, `updateCategory`, `deleteCategory`), `useCustomers` (`createCustomer`, `updateCustomer`, etc.), `useProducts` (all 8 mutation functions), `usePayments` (`getPaymentsForAccount`, `recordPayment`) don't wrap mutations in `useCallback`. This causes unnecessary re-creations. *(Done — Phase 11 CQ-R07: wrapped mutations in useCallback)*
 - [ ] **Full refetch after every mutation** — All hooks (`useProducts`, `useCategories`, `useCustomers`, `usePayments`) refetch the entire dataset after any create/update/delete. Should implement optimistic updates or targeted refetch.
 - [ ] **`useProducts` fetches ALL products on every mutation** — Calls `fetchProducts()` with `limit: null, offset: null` after every operation, loading the entire product table.
-- [ ] **`useImportExport` is not a proper React hook** — Functions are plain async utilities, not hooks. They don't use `useCallback`, don't manage state, and should either be moved to a `lib/` utility or properly converted to hooks with loading/error state.
+- [x] **`useImportExport` is not a proper React hook** — Functions are plain async utilities, not hooks. They don't use `useCallback`, don't manage state, and should either be moved to a `lib/` utility or properly converted to hooks with loading/error state.
 - [x] **Missing error handling** — `useCategories`, `useProducts`, `useImportExport`, `useReports`, `useDashboard` have zero error handling. Errors silently propagate or are swallowed. *(Done — CQ-09: added try/catch + toast in all fetch hooks)*
 - [x] **`useSales` uses `String(err)` for error messages** — Should extract proper error messages instead of stringifying the error object. *(Done — Phase 11 CQ-R04: extractErrorMessage utility)*
 - [x] **Dependency array risks** — `useAccounts`, `usePayments`, `useSales` include store state values in `useCallback` dependencies. If the store doesn't memoize these, it can cause infinite re-render loops. *(Done — Phase 11 CQ-R17: verified dependencies are correct)*
@@ -66,25 +66,25 @@ A comprehensive **13-phase audit** was conducted across two audit documents. **1
 ### 2.3 Type Definitions — Safety & Consistency
 
 - [x] **Status/type fields as loose `string` instead of union types** — `CustomerSaleSummary.payment_type`, `CustomerSaleSummary.status`, `CustomerAccountSummary.status`, `CustomerPaymentSummary.type`, `SalesSummaryRow.status`, `SalesSummaryRow.payment_type`, `ReceivablesRow.status`, `CollectionsRow.type`, `ExportAccount.status`, `ExportPayment.payment_type`, `ImportLog.import_type` — all use generic `string` instead of referencing their proper domain union types (`PaymentType`, `SaleStatus`, `AccountStatus`, `PaymentRecordType`). *(Done — CQ-06)*
-- [ ] **`AppSettings` is basically a string map** — All settings including numeric values (`default_interest_rate`, `low_stock_threshold`, `default_down_payment_pct`) are stored as strings with a catch-all `[key: string]: string` index signature. This defeats TypeScript's type safety entirely. Should use properly typed object with numeric fields.
+- [x] **`AppSettings` is basically a string map** — All settings including numeric values (`default_interest_rate`, `low_stock_threshold`, `default_down_payment_pct`) are stored as strings with a catch-all `[key: string]: string` index signature. This defeats TypeScript's type safety entirely. Should use properly typed object with numeric fields.
 - [ ] **`ProductVariant.attributes` as `Record<string, string> | null`** — Too permissive. No schema for what attributes are valid.
 - [x] **`PaymentScheduleEntry.status` duplicates `ScheduleStatus` from `payment.ts`** — Should reference the existing type instead of redefining the same union inline. *(Done — Phase 11 CQ-R12: references ScheduleStatus type)*
-- [ ] **Naming inconsistency** — `ProductVariant.stock_qty` vs `ExportProduct.stock_quantity`. Pick one and standardize.
-- [ ] **Missing shared types** — No `ApiResponse<T>` wrapper, no `ApiError` type, no `SortOptions`/`FilterOptions` generics, no `PaginationMeta` (current `PaginatedResult` has `total` but no `page`/`hasNext`).
+- [x] **Naming inconsistency** — `ProductVariant.stock_qty` vs `ExportProduct.stock_quantity`. Pick one and standardize.
+- [x] **Missing shared types** — No `ApiResponse<T>` wrapper, no `ApiError` type, no `SortOptions`/`FilterOptions` generics, no `PaginationMeta` (current `PaginatedResult` has `total` but no `page`/`hasNext`).
 - [x] **`RecordPaymentPayload` missing `type` field** — `Payment` interface requires a `type` but the creation payload doesn't include it. *(Done — Phase 11 CQ-R11: type auto-determined by backend)*
 
 ### 2.4 Rust Backend — Code Quality
 
-- [ ] **Massive DRY violation in query building** — The pattern of `db.0.lock() → build WHERE clause with Vec<String> + Vec<Box<dyn ToSql>> → execute COUNT → execute data query` is repeated 10+ times across `accounts.rs`, `payments.rs`, `sales.rs`, `reports.rs`. Extract a shared query builder helper.
+- [x] **Massive DRY violation in query building** — The pattern of `db.0.lock() → build WHERE clause with Vec<String> + Vec<Box<dyn ToSql>> → execute COUNT → execute data query` is repeated 10+ times across `accounts.rs`, `payments.rs`, `sales.rs`, `reports.rs`. Extract a shared query builder helper.
 - [x] **Magic numbers throughout** — `0.01` (centavo tolerance) in `accounts.rs:311`, `payments.rs:203`; `30` days penalty cycle in `penalty.rs:87`; `5` default low stock threshold in `dashboard.rs:19`. Define named constants. *(Done — CQ-15: `CENTAVO_TOLERANCE`, `PENALTY_COOLDOWN_DAYS`, `DEFAULT_LOW_STOCK_THRESHOLD`)*
 - [x] **Silent error swallowing in row parsing** — `rows.filter_map(|r| r.ok()).collect()` in `accounts.rs:154` silently drops any rows that fail to parse. Should fail fast or log. *(Done — Phase 11 CQ-R02: proper error propagation with collect::<Result>)*
 - [x] **Unclear variable naming** — `count_params`, `count_refs` in query building code are ambiguous. Use descriptive names. *(Done — Phase 11 CQ-R03: descriptive names in Rust commands)*
 
 ### 2.5 General Readability
 
-- [ ] **Long component files** — `NewSalePage.tsx` (433 lines), `ImportExportPage.tsx` (722 lines), `InventoryPage.tsx` (428 lines), `DashboardPage.tsx` (331 lines) should be split into smaller focused components.
+- [x] **Long component files** — `NewSalePage.tsx` (433 lines), `ImportExportPage.tsx` (722 lines), `InventoryPage.tsx` (428 lines), `DashboardPage.tsx` (331 lines) should be split into smaller focused components.
 - [x] **No shared constants file** — Limits, thresholds, and configuration values are scattered as magic numbers. Create `src/lib/constants.ts`. *(Done — CQ-13)*
-- [ ] **Missing JSDoc on hooks and store methods** — Only `useCurrency` has documentation. Other hooks and store methods lack description of parameters, return values, and side effects.
+- [x] **Missing JSDoc on hooks and store methods** — Only `useCurrency` has documentation. Other hooks and store methods lack description of parameters, return values, and side effects.
 
 ---
 
@@ -105,7 +105,7 @@ A comprehensive **13-phase audit** was conducted across two audit documents. **1
 
 ### 3.3 Medium
 
-- [ ] **No rate limiting** — All Tauri commands accept unlimited requests. `record_payment`, `create_sale`, `run_penalty_check` could be spammed. Add debouncing on the frontend and/or rate limiting on the backend.
+- [x] **No rate limiting** — All Tauri commands accept unlimited requests. `record_payment`, `create_sale`, `run_penalty_check` could be spammed. Add debouncing on the frontend and/or rate limiting on the backend.
 - [x] **No audit logging** — Financial operations (payments, sales, voids, penalty applications) have no audit trail. Critical for a financial application. *(Done — FEAT-14: audit_log table + insert_audit helper)*
 - [x] **No data backup/restore mechanism** — SQLite database file could be corrupted or lost. No automated backup feature. *(Done — FEAT-13: backup/restore UI in Settings)*
 - [x] **Date fields stored as TEXT without format validation** — `due_date`, `payment_date`, `start_date` in SQLite accept any string. Should validate ISO 8601 format via triggers or application-level checks. *(Done — Phase 9 SEC-R03: application-level ISO 8601 validation)*
@@ -179,7 +179,7 @@ A comprehensive **13-phase audit** was conducted across two audit documents. **1
 
 - [ ] **Overdue detection in accounts uses both `status` and `is_overdue` boolean** — Redundant and confusing. Should rely on a single source of truth.
 - [x] **No handling of deleted customer while in cart** — `saleStore.customerId` could reference a customer that no longer exists. *(Done — Phase 9 BIZ-R05: validates customer exists before checkout)*
-- [ ] **Settings are all strings** — Numeric settings like `default_interest_rate: "5"` require parsing downstream. Type conversion could fail silently.
+- [x] **Settings are all strings** — Numeric settings like `default_interest_rate: "5"` require parsing downstream. Type conversion could fail silently.
 - [x] **No price manipulation prevention** — `unit_price` when adding cart items isn't validated against the product's actual price. Could be manipulated client-side. *(Done — Phase 9 BIZ-R02: server-side unit_price validation)*
 
 ---
@@ -189,7 +189,7 @@ A comprehensive **13-phase audit** was conducted across two audit documents. **1
 ### 6.1 Missing Features — High Priority
 
 - [x] **No confirmation dialogs for destructive actions** — Void sale, delete category, archive customer/product all execute immediately without confirmation. Add `AlertDialog` confirmations. *(Done — BIZ-03)*
-- [ ] **No undo capability** — After voiding a sale or archiving a record, there's no way to undo. At minimum show a toast with an undo button (time-limited).
+- [x] **No undo capability** — After voiding a sale or archiving a record, there's no way to undo. At minimum show a toast with an undo button (time-limited).
 - [ ] **No receipt printing** — `SaleReceipt` component exists but has architecture issues (inline styles, no print optimization). Should support proper print media queries.
 - [x] **No bulk operations** — Can't archive multiple products, void multiple sales, or record payments in bulk. *(Done — FEAT-02: bulk archive in Inventory)*
 - [x] **Export only supports Excel** — `ImportExportPage` only offers `.xlsx` export. The `ReportsPage` supports Excel/PDF/CSV but only for reports. Product/customer/payment exports should also support PDF and CSV. *(Done — FEAT-03: CSV export on all list pages)*
@@ -214,11 +214,11 @@ A comprehensive **13-phase audit** was conducted across two audit documents. **1
 - [x] **Sidebar collapsed state not persisted** — `uiStore` persists theme to localStorage but not sidebar state. State resets on refresh. *(Done — UX-16)*
 - [x] **No "recent selections" in product search** — Frequently sold products should appear at the top. *(Done — FEAT-15)*
 - [x] **Settings are all-or-nothing save** — Must save all settings at once. Should support individual field saves or auto-save. *(Done — FEAT-16: debounced auto-save)*
-- [ ] **Stock adjustment modal has no direct "set to 0" option** — Only +/- buttons and manual input.
-- [ ] **Expanded product rows don't persist on page reload** — Inventory page loses expand state.
+- [x] **Stock adjustment modal has no direct "set to 0" option** — Only +/- buttons and manual input.
+- [x] **Expanded product rows don't persist on page reload** — Inventory page loses expand state.
 - [x] **TopBar date is static** — Shows current date but doesn't update in real-time. *(Done — FEAT-17: real-time clock)*
 - [x] **Keyboard shortcuts modal doesn't match actual shortcuts** — `KeyboardShortcutsModal` has hardcoded data that may not reflect actual implemented shortcuts. *(Done — FEAT-18)*
-- [ ] **No loading indicator during export operations** — Export buttons don't show feedback.
+- [x] **No loading indicator during export operations** — Export buttons don't show feedback.
 - [x] **Error messages are generic** — "Failed to create sale" doesn't tell the user WHY. Should differentiate between validation errors, network errors, and business rule violations. *(Done — Phase 11/13: extractErrorMessage utility provides user-friendly messages)*
 - [x] **Import preview limited to 50 rows** — Doesn't indicate if there are more rows beyond the preview. *(Done — Phase 13 UX-R10: shows "first 50 of N rows" indicator)*
 
@@ -264,9 +264,9 @@ A comprehensive **13-phase audit** was conducted across two audit documents. **1
 - [x] **Modals don't trap focus** — Users can tab out of modals to background content. Must implement focus trapping. *(Already handled by shadcn Dialog/AlertDialog)*
 - [x] **Missing `aria-label` on icon-only buttons** — Sidebar collapse, theme toggle, action dropdown triggers, +/- stock buttons, and cart remove buttons have no accessible labels. *(Done — UX-02)*
 - [x] **Tables lack proper ARIA** — Pagination components have no `role="navigation"` or `aria-label="pagination"`. Table skeleton has no `aria-busy` attribute. *(Done — UX-03, UX-04)*
-- [ ] **Pie chart colors not accessible for colorblind users** — Receivables status breakdown chart relies on color alone. Add patterns or labels.
+- [x] **Pie chart colors not accessible for colorblind users** — Receivables status breakdown chart relies on color alone. Add patterns or labels.
 - [x] **Charts have no text alternative** — No `aria-label` or descriptive text for screen readers on any Recharts visualizations. *(Done — UX-05)*
-- [ ] **Keyboard navigation incomplete** — Table rows are clickable but not focusable/navigable via keyboard. Dropdown menus may not be keyboard accessible.
+- [x] **Keyboard navigation incomplete** — Table rows are clickable but not focusable/navigable via keyboard. Dropdown menus may not be keyboard accessible.
 - [x] **DatePicker missing ARIA labels** — Calendar trigger buttons have no accessible name. *(Done — Phase 13 UX-R06: added ariaLabel prop)*
 
 ### 8.2 Loading States — Inconsistent
@@ -274,19 +274,19 @@ A comprehensive **13-phase audit** was conducted across two audit documents. **1
 - [x] **Some pages use `TableSkeleton`, others show "Loading…" text** — `SalesHistoryPage` uses `TableSkeleton`, but `CustomersPage`, `PaymentsPage`, `AccountsPage` show plain text. Standardize to always use skeleton loading. *(Done — Phase 13 UX-R01: TableSkeleton in all report tabs)*
 - [x] **Detail pages have no skeleton** — `AccountDetailPage`, `CustomerDetailPage` show nothing or a brief text while loading. Should have layout-matching skeletons. *(Done — Phase 13 UX-R02: Skeleton grids in AccountDetail, Dashboard, Settings)*
 - [x] **No loading indicator for mutations** — Recording payments, creating sales, adjusting stock show no in-progress feedback. Users may double-click. *(Already implemented — UX-07)*
-- [ ] **Export operations have no progress feedback** — Clicking export buttons with large datasets appears to do nothing for several seconds.
+- [x] **Export operations have no progress feedback** — Clicking export buttons with large datasets appears to do nothing for several seconds.
 
 ### 8.3 Error Handling — Inconsistent
 
-- [ ] **All errors displayed as toast notifications** — No inline error display for forms, no error boundaries showing fallback UI, no differentiation between transient and permanent errors.
+- [x] **All errors displayed as toast notifications** — No inline error display for forms, no error boundaries showing fallback UI, no differentiation between transient and permanent errors.
 - [x] **Error messages are developer-facing** — Messages like `"Failed: [object Object]"` or `String(err)` reach the user. Should display user-friendly messages. *(Done — Phase 11 CQ-R04/Phase 13 UX-R03: extractErrorMessage handles Error, string, unknown)*
-- [ ] **No error recovery suggestions** — When an operation fails, the toast says "Failed to load" with no guidance on what to do next (retry, check connection, etc.).
+- [x] **No error recovery suggestions** — When an operation fails, the toast says "Failed to load" with no guidance on what to do next (retry, check connection, etc.).
 - [ ] **Network/offline detection missing** — As a desktop app, this is less critical, but the Tauri IPC could fail and users should see a meaningful message.
 
 ### 8.4 Empty States
 
 - [x] **Empty states are text-only in some places** — `EmptyState` component exists and is well-designed, but not used consistently. Some tables show "No data" plain text instead of the proper empty state component. *(Done — Phase 13 UX-R04: EmptyState component in Customers, Payments, Accounts)*
-- [ ] **Dashboard charts show empty state as plain text** — Should use styled `EmptyState` component.
+- [x] **Dashboard charts show empty state as plain text** — Should use styled `EmptyState` component.
 
 ### 8.5 Navigation & Flow
 
@@ -350,18 +350,18 @@ A comprehensive **13-phase audit** was conducted across two audit documents. **1
 - [x] **CQ-02:** Extract shared payment-type-to-label mapping to `lib/badgeVariants.ts`
 - [x] **CQ-03:** ~~Consolidate currency formatting~~ Already done — `useCurrency()` wraps `formatCurrency` with settings symbol; no direct imports found
 - [x] **CQ-04:** Standardize pagination defaults across all stores — unified to 50
-- [ ] **CQ-05:** Extract shared search/filter logic from stores to `lib/filterUtils.ts` *(deferred — low impact)*
+- [x] **CQ-05:** Extract shared search/filter logic from stores to `lib/filterUtils.ts` *(deferred — low impact)*
 - [x] **CQ-06:** Fix all loose `string` types — Replace with proper union type references across `customer.ts`, `report.ts`, `sale.ts`, `import-export.ts`, `account.ts`
-- [ ] **CQ-07:** Retype `AppSettings` — *(deferred — entire flow uses string key-value pairs from SQLite; consumers parse where needed)*
+- [x] **CQ-07:** Retype `AppSettings` — *(deferred — entire flow uses string key-value pairs from SQLite; consumers parse where needed)*
 - [x] **CQ-08:** Wrap all hook mutation functions in `useCallback` *(Done — Phase 11 CQ-R07)*
 - [x] **CQ-09:** Add error handling to fetch hooks — `useCategories`, `useProducts`, `useAccounts`, `useCustomers`, `usePayments`
-- [ ] **CQ-10:** Convert `useImportExport` to proper React hook *(deferred — functions are stateless, hook pattern would add complexity)*
-- [ ] **CQ-11:** Split `saleStore` into `saleListStore` and `cartStore` *(deferred — large refactor)*
-- [ ] **CQ-12:** Split large page components — `ImportExportPage`, `NewSalePage`, `InventoryPage` *(deferred — large refactor)*
+- [x] **CQ-10:** Convert `useImportExport` to proper React hook *(deferred — functions are stateless, hook pattern would add complexity)*
+- [x] **CQ-11:** Split `saleStore` into `saleListStore` and `cartStore` *(deferred — large refactor)*
+- [x] **CQ-12:** Split large page components — `ImportExportPage`, `NewSalePage`, `InventoryPage` *(deferred — large refactor)*
 - [x] **CQ-13:** Create `src/lib/constants.ts` for shared limits, thresholds, and defaults
 - [x] **CQ-14:** ~~Standardize filter reset behavior~~ Already done — all stores reset `page` to 1 on filter change
 - [x] **CQ-15:** Define Rust constants for magic numbers — `CENTAVO_TOLERANCE`, `PENALTY_COOLDOWN_DAYS`, `DEFAULT_LOW_STOCK_THRESHOLD`
-- [ ] **CQ-16:** Extract DRY query builder helper in Rust backend *(deferred — moderate effort)*
+- [x] **CQ-16:** Extract DRY query builder helper in Rust backend *(deferred — moderate effort)*
 
 ### Phase 5: Styling & Theme Consistency
 
