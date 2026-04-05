@@ -344,16 +344,24 @@ pub fn run_penalty_check(db: State<DbState>) -> Result<Vec<PenaltyApplied>, Stri
 pub fn recalculate_balance(db: State<DbState>, account_id: i64) -> Result<f64, String> {
     let conn = db.0.lock().map_err(|e| e.to_string())?;
 
-    // Get account principal and down_payment
-    let (principal, _down_payment): (f64, f64) = conn
+    // Get account financials needed for recalculation
+    let (principal, interest_rate, term_months): (f64, f64, Option<i64>) = conn
         .query_row(
-            "SELECT principal, down_payment FROM installment_accounts WHERE id = ?1",
+            "SELECT principal, interest_rate, term_months FROM installment_accounts WHERE id = ?1",
             rusqlite::params![account_id],
-            |row| Ok((row.get(0)?, row.get(1)?)),
+            |row| Ok((row.get(0)?, row.get(1)?, row.get(2)?)),
         )
         .map_err(|_| format!("Account {} not found", account_id))?;
 
-    // Sum all payments (regular payments reduce balance)
+    // Recompute total_payable (principal + interest) from stored rate/term
+    // Filipino add-on interest: principal × monthly_rate × term_months
+    let total_interest = match term_months {
+        Some(term) => principal * (interest_rate / 100.0) * term as f64,
+        None => 0.0,
+    };
+    let total_payable = principal + total_interest;
+
+    // Sum all payments (regular + down_payment reduce balance)
     let total_payments: f64 = conn
         .query_row(
             "SELECT COALESCE(SUM(amount), 0) FROM payments
@@ -373,12 +381,8 @@ pub fn recalculate_balance(db: State<DbState>, account_id: i64) -> Result<f64, S
         )
         .unwrap_or(0.0);
 
-    // Recalculate: principal - down_payment + penalties - payments (excluding down_payment since it's in principal calc)
-    // Actually: balance = principal - all_payments + all_penalties
-    // But down_payment is already part of principal structure, so:
-    // balance = principal - down_payment + penalties - regular_payments
-    // Wait — total_payments includes down_payment type, so:
-    let new_balance = principal - total_payments + total_penalties;
+    // balance = total_payable - all payments (including down_payment) + all penalties
+    let new_balance = total_payable - total_payments + total_penalties;
     let new_balance = (new_balance * 100.0).round() / 100.0;
     let new_balance = if new_balance < 0.0 { 0.0 } else { new_balance };
 

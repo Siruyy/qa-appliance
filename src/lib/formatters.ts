@@ -22,9 +22,12 @@ export function formatDateTime(iso: string): string {
   return format(parseISO(iso), "MMM d, yyyy h:mm a");
 }
 
-/** Format a decimal as a percentage, e.g. 0.05 → "5.00%" */
+/**
+ * Format a whole-number percentage, e.g. 5 → "5.00%"
+ * The value is already in percentage form (not decimal).
+ */
 export function formatPercent(value: number): string {
-  return `${(value * 100).toFixed(2)}%`;
+  return `${value.toFixed(2)}%`;
 }
 
 /**

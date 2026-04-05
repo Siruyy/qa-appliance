@@ -34,7 +34,7 @@ pub fn check_and_apply_penalties(conn: &Connection) -> Result<Vec<PenaltyApplied
     //   - last_penalty_date is NULL or cooldown elapsed (prevent frequent penalties)
     let mut stmt = conn
         .prepare(
-            "SELECT ia.id, ia.balance_remaining, ia.penalty_rate,
+            "SELECT ia.id, ia.principal, ia.penalty_rate,
                     ia.last_penalty_date, c.name AS customer_name,
                     COALESCE(
                         GROUP_CONCAT(DISTINCT p.name || COALESCE(' ' || v.attributes, '')),
@@ -57,7 +57,7 @@ pub fn check_and_apply_penalties(conn: &Connection) -> Result<Vec<PenaltyApplied
         .query_map(rusqlite::params![today], |row| {
             Ok((
                 row.get::<_, i64>(0)?,            // id
-                row.get::<_, f64>(1)?,            // balance_remaining
+                row.get::<_, f64>(1)?,            // principal (for penalty calculation)
                 row.get::<_, f64>(2)?,            // penalty_rate
                 row.get::<_, Option<String>>(3)?, // last_penalty_date
                 row.get::<_, String>(4)?,         // customer_name
@@ -68,7 +68,7 @@ pub fn check_and_apply_penalties(conn: &Connection) -> Result<Vec<PenaltyApplied
 
     let candidates: Vec<_> = rows.collect::<Result<Vec<_>, _>>().map_err(|e| format!("Row read error: {}", e))?;
 
-    for (account_id, balance, penalty_rate, last_penalty_date, customer_name, product_summary) in candidates {
+    for (account_id, principal, penalty_rate, last_penalty_date, customer_name, product_summary) in candidates {
         // All accounts have schedules — check for overdue entries + cooldown
         let overdue_count: i64 = conn
             .query_row(
@@ -84,11 +84,25 @@ pub fn check_and_apply_penalties(conn: &Connection) -> Result<Vec<PenaltyApplied
                 Some(date) => days_since(date, &today) >= PENALTY_COOLDOWN_DAYS,
             };
 
-        if !should_penalize || balance <= 0.0 {
+        if !should_penalize {
             continue;
         }
 
-        let penalty_amount = (balance * penalty_rate / 100.0 * 100.0).round() / 100.0;
+        // Check current balance to ensure account still has outstanding amount
+        let current_balance: f64 = conn
+            .query_row(
+                "SELECT balance_remaining FROM installment_accounts WHERE id = ?1",
+                rusqlite::params![account_id],
+                |row| row.get(0),
+            )
+            .unwrap_or(0.0);
+
+        if current_balance <= 0.0 {
+            continue;
+        }
+
+        // Penalty is computed on original principal to prevent compound spiral
+        let penalty_amount = (principal * penalty_rate / 100.0 * 100.0).round() / 100.0;
         if penalty_amount <= 0.0 {
             continue;
         }

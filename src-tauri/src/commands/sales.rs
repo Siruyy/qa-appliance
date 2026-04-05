@@ -281,12 +281,14 @@ pub fn create_sale(db: State<DbState>, payload: CreateSalePayload) -> Result<i64
             }
 
             // All installments have schedules — calculate monthly amount
+            // Filipino add-on (flat) interest: total_interest = principal × monthly_rate × term_months
+            // interest_rate is stored as a monthly percentage (e.g. 5 = 5%/month)
             let term = inst.term_months.ok_or("Term months required for installment")?;
-            let term_years = term as f64 / 12.0;
-            let total_interest = principal * (inst.interest_rate / 100.0) * term_years;
+            let monthly_rate = inst.interest_rate / 100.0;
+            let total_interest = principal * monthly_rate * term as f64;
             let total_payable = principal + total_interest;
             let monthly_amount = (total_payable / term as f64 * 100.0).ceil() / 100.0;
-            let balance = total_payable;
+            let balance = total_payable - inst.down_payment;
 
             conn.execute(
                 "INSERT INTO installment_accounts
@@ -353,8 +355,8 @@ pub fn create_sale(db: State<DbState>, payload: CreateSalePayload) -> Result<i64
 
     match result {
         Ok(sale_id) => {
-            let _ = insert_audit(&conn, "sale_created", "sale", Some(sale_id), Some(&format!("{} sale, {} items", payload.payment_type, payload.items.len())));
             conn.execute("COMMIT", rusqlite::params![]).map_err(|e| e.to_string())?;
+            let _ = insert_audit(&conn, "sale_created", "sale", Some(sale_id), Some(&format!("{} sale, {} items", payload.payment_type, payload.items.len())));
             Ok(sale_id)
         }
         Err(e) => {
@@ -400,32 +402,27 @@ pub fn void_sale(db: State<DbState>, id: i64) -> Result<(), String> {
     conn.execute("BEGIN TRANSACTION", rusqlite::params![]).map_err(|e| e.to_string())?;
 
     let result = (|| -> Result<(), String> {
-        // Restore stock for all items
+        // Restore stock for all items — use SUM to handle multiple items for the same variant
         conn.execute(
             "UPDATE product_variants SET stock_qty = stock_qty + (
-                SELECT si.quantity FROM sale_items si WHERE si.variant_id = product_variants.id AND si.sale_id = ?1
+                SELECT COALESCE(SUM(si.quantity), 0) FROM sale_items si
+                WHERE si.variant_id = product_variants.id AND si.sale_id = ?1
              ) WHERE id IN (SELECT variant_id FROM sale_items WHERE sale_id = ?1)",
             rusqlite::params![id],
         )
         .map_err(|e| e.to_string())?;
 
-        // Delete installment data (schedule + account)
+        // Soft-delete installment data — set status to 'voided' instead of hard DELETE
         conn.execute(
-            "DELETE FROM payment_schedules WHERE account_id IN
-             (SELECT id FROM installment_accounts WHERE sale_id = ?1)",
+            "UPDATE payment_schedules SET status = 'voided'
+             WHERE account_id IN (SELECT id FROM installment_accounts WHERE sale_id = ?1)",
             rusqlite::params![id],
         )
         .map_err(|e| e.to_string())?;
 
         conn.execute(
-            "DELETE FROM payments WHERE account_id IN
-             (SELECT id FROM installment_accounts WHERE sale_id = ?1)",
-            rusqlite::params![id],
-        )
-        .map_err(|e| e.to_string())?;
-
-        conn.execute(
-            "DELETE FROM installment_accounts WHERE sale_id = ?1",
+            "UPDATE installment_accounts SET status = 'voided', updated_at = datetime('now')
+             WHERE sale_id = ?1",
             rusqlite::params![id],
         )
         .map_err(|e| e.to_string())?;
@@ -442,8 +439,8 @@ pub fn void_sale(db: State<DbState>, id: i64) -> Result<(), String> {
 
     match result {
         Ok(()) => {
-            let _ = insert_audit(&conn, "sale_voided", "sale", Some(id), None);
             conn.execute("COMMIT", rusqlite::params![]).map_err(|e| e.to_string())?;
+            let _ = insert_audit(&conn, "sale_voided", "sale", Some(id), None);
             Ok(())
         }
         Err(e) => {
