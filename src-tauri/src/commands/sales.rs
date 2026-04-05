@@ -227,6 +227,22 @@ pub fn create_sale(db: State<DbState>, payload: CreateSalePayload) -> Result<i64
     let subtotal: f64 = payload.items.iter().map(|i| i.unit_price * i.quantity as f64).sum();
     let total = subtotal - payload.discount;
 
+    // Validate unit prices match DB selling_price (prevent client manipulation)
+    for item in &payload.items {
+        let db_price: f64 = conn.query_row(
+            "SELECT selling_price FROM product_variants WHERE id = ?1 AND is_active = 1",
+            rusqlite::params![item.variant_id],
+            |row| row.get(0),
+        ).map_err(|_| format!("Product variant {} not found or inactive", item.variant_id))?;
+
+        if (item.unit_price - db_price).abs() > 0.01 {
+            return Err(format!(
+                "Price mismatch for variant {}: sent {:.2}, expected {:.2}",
+                item.variant_id, item.unit_price, db_price
+            ));
+        }
+    }
+
     if total <= 0.0 {
         return Err("Sale total must be positive".to_string());
     }
@@ -290,6 +306,10 @@ pub fn create_sale(db: State<DbState>, payload: CreateSalePayload) -> Result<i64
 
             if principal < 0.0 {
                 return Err("Down payment exceeds sale total".to_string());
+            }
+
+            if let Some(ref start) = inst.start_date {
+                crate::utils::validation::require_iso_date("start_date", start)?;
             }
 
             // All installments have schedules — calculate monthly amount
@@ -406,7 +426,7 @@ pub fn void_sale(db: State<DbState>, id: i64) -> Result<(), String> {
         .unwrap_or(false);
 
     if has_payments {
-        return Err("Cannot void sale with existing payments. Manage via accounts receivable.".to_string());
+        return Err("Cannot void sale with recorded payments. Reverse payments first.".to_string());
     }
 
     conn.execute("BEGIN TRANSACTION", rusqlite::params![]).map_err(|e| e.to_string())?;

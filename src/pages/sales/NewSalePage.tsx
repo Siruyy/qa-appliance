@@ -139,12 +139,15 @@ export function NewSalePage() {
     [setCartCustomer]
   );
 
+  const subtotal = cartSubtotal();
+  const total = cartTotal();
+
   // Schedule preview data
   const schedulePreview = useMemo(() => {
     if (!cart.installment?.term_months || !cart.installment.start_date) {
       return null;
     }
-    const principal = cartTotal() - cart.installment.down_payment;
+    const principal = total - cart.installment.down_payment;
     if (principal <= 0) return null;
     const { totalPayable, monthlyPayment } = calculateAddOnInterest(
       principal,
@@ -158,7 +161,7 @@ export function NewSalePage() {
       totalPayable
     );
     return { schedule, monthlyPayment, totalPayable };
-  }, [cart.installment, cartTotal]);
+  }, [cart.installment, total]);
 
   const excludeVariantIds = useMemo(
     () => cart.items.map((i) => i.variant_id),
@@ -183,12 +186,17 @@ export function NewSalePage() {
       toast.error("Select a customer for installment sales");
       return;
     }
-    if (cartTotal() <= 0) {
+    if (cart.customerId && !customers.some((c) => c.id === cart.customerId)) {
+      toast.error("Selected customer no longer exists. Please reselect.");
+      setCartCustomer(null, "");
+      return;
+    }
+    if (total <= 0) {
       toast.error("Sale total must be positive");
       return;
     }
     if (cart.paymentType === "installment" && cart.installment) {
-      if (cart.installment.down_payment > cartTotal()) {
+      if (cart.installment.down_payment > total) {
         toast.error("Down payment cannot exceed the sale total");
         return;
       }
@@ -217,9 +225,6 @@ export function NewSalePage() {
       setSubmitting(false);
     }
   };
-
-  const subtotal = cartSubtotal();
-  const total = cartTotal();
 
   const { format: formatCurrency } = useCurrency();
   return (

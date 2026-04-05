@@ -11,18 +11,18 @@
 > Payment can only be **cash** or **installment**. Remove all "utang" / "open credit" / "open-ended" concepts.
 > Installments always have a payment schedule (`has_schedule` is always `1`).
 
-- [ ] **UTG-01:** Remove `AccountType = "installment" | "utang"` from `src/types/account.ts`
-- [ ] **UTG-02:** Remove `has_schedule` toggle from `InstallmentConfigPanel.tsx` — always true
-- [ ] **UTG-03:** Remove "Utang" filter option from `AccountsPage.tsx` type filter dropdown
-- [ ] **UTG-04:** Remove "Utang" label from `AccountsPage.tsx` table, `AccountDetailPage.tsx`, `AccountMiniCard.tsx`
-- [ ] **UTG-05:** Remove `"utang"` from `accountStore.ts` type filter logic
-- [ ] **UTG-06:** Remove `"utang"` branch from `accounts.rs` backend filter
-- [ ] **UTG-07:** Remove "open-ended" fallback text from `ScheduleTable.tsx`
-- [ ] **UTG-08:** Clean up `penalty.rs` — remove `has_schedule` branching (always has schedule)
-- [ ] **UTG-09:** Clean up `sales.rs` — remove `has_schedule` branching, always generate schedule
-- [ ] **UTG-10:** Update `NewSalePage.tsx` button label from "Installment (Utang)" to "Installment"
-- [ ] **UTG-11:** Update `.github/copilot-instructions.md` — remove "Installment vs Utang" section
-- [ ] **UTG-12:** Update `import_export.rs` — simplify `has_schedule` handling in import/export
+- [x] **UTG-01:** Remove `AccountType = "installment" | "utang"` from `src/types/account.ts`
+- [x] **UTG-02:** Remove `has_schedule` toggle from `InstallmentConfigPanel.tsx` — always true
+- [x] **UTG-03:** Remove "Utang" filter option from `AccountsPage.tsx` type filter dropdown
+- [x] **UTG-04:** Remove "Utang" label from `AccountsPage.tsx` table, `AccountDetailPage.tsx`, `AccountMiniCard.tsx`
+- [x] **UTG-05:** Remove `"utang"` from `accountStore.ts` type filter logic
+- [x] **UTG-06:** Remove `"utang"` branch from `accounts.rs` backend filter
+- [x] **UTG-07:** Remove "open-ended" fallback text from `ScheduleTable.tsx`
+- [x] **UTG-08:** Clean up `penalty.rs` — remove `has_schedule` branching (always has schedule)
+- [x] **UTG-09:** Clean up `sales.rs` — remove `has_schedule` branching, always generate schedule
+- [x] **UTG-10:** Update `NewSalePage.tsx` button label from "Installment (Utang)" to "Installment"
+- [x] **UTG-11:** Update `.github/copilot-instructions.md` — remove "Installment vs Utang" section
+- [x] **UTG-12:** Update `import_export.rs` — simplify `has_schedule` handling in import/export
 
 ---
 
