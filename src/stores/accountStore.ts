@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import type { InstallmentAccount } from "@/types/account";
+import { matchesSearch } from "@/lib/filterUtils";
 
 type StatusFilter = "all" | "open" | "overdue" | "paid" | "defaulted";
 type TypeFilter = "all" | "installment";
@@ -49,15 +50,7 @@ export const useAccountStore = create<AccountState>((set, get) => ({
       if (statusFilter !== "all" && statusFilter !== "overdue" && a.status !== statusFilter)
         return false;
       if (typeFilter === "installment" && !a.has_schedule) return false;
-      if (search) {
-        const q = search.toLowerCase();
-        if (
-          !a.customer_name.toLowerCase().includes(q) &&
-          !a.product_summary.toLowerCase().includes(q)
-        )
-          return false;
-      }
-      return true;
+      return matchesSearch(a, ["customer_name", "product_summary"], search);
     });
   },
   overdueCount: () => {

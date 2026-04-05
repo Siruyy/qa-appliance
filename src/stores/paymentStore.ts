@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import type { Payment, PaymentRecordType } from "@/types/payment";
+import { matchesSearch, matchesDateRange } from "@/lib/filterUtils";
 
 interface PaymentState {
   payments: Payment[];
@@ -47,17 +48,8 @@ export const usePaymentStore = create<PaymentState>((set, get) => ({
     const { payments, search, dateFrom, dateTo, typeFilter } = get();
     return payments.filter((p) => {
       if (typeFilter !== "all" && p.type !== typeFilter) return false;
-      if (dateFrom && p.payment_date < dateFrom) return false;
-      if (dateTo && p.payment_date > dateTo) return false;
-      if (search) {
-        const q = search.toLowerCase();
-        if (
-          !p.customer_name.toLowerCase().includes(q) &&
-          !p.product_summary.toLowerCase().includes(q)
-        )
-          return false;
-      }
-      return true;
+      if (!matchesDateRange(p.payment_date, dateFrom, dateTo)) return false;
+      return matchesSearch(p, ["customer_name", "product_summary"], search);
     });
   },
   totalShown: () => {
