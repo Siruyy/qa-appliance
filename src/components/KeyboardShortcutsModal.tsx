@@ -12,6 +12,7 @@ interface KeyboardShortcutsModalProps {
 }
 
 const shortcuts = [
+  { keys: ["Ctrl", "K"], description: "Search / command palette" },
   { keys: ["Ctrl", "N"], description: "New Sale" },
   { keys: ["Ctrl", ","], description: "Open Settings" },
   { keys: ["?"], description: "Show this help overlay" },

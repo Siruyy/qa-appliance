@@ -9,6 +9,7 @@ import type { PenaltyApplied } from "@/types/account";
 import { Sidebar } from "./Sidebar";
 import { TopBar } from "./TopBar";
 import { KeyboardShortcutsModal } from "@/components/KeyboardShortcutsModal";
+import { CommandPalette } from "@/components/CommandPalette";
 
 interface AppShellProps {
   children: React.ReactNode;
@@ -20,6 +21,7 @@ export function AppShell({ children }: AppShellProps) {
   const theme = useUIStore((s) => s.theme);
   const navigate = useNavigate();
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
+  const [commandOpen, setCommandOpen] = useState(false);
 
   // Apply dark class to <html> element
   useEffect(() => {
@@ -63,7 +65,10 @@ export function AppShell({ children }: AppShellProps) {
       const target = e.target as HTMLElement;
       const isInput = target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable;
       const ctrl = e.ctrlKey || e.metaKey;
-      if (ctrl && e.key === "n") {
+      if (ctrl && e.key === "k") {
+        e.preventDefault();
+        setCommandOpen((o) => !o);
+      } else if (ctrl && e.key === "n") {
         e.preventDefault();
         navigate("/sales/new");
       } else if (ctrl && e.key === ",") {
@@ -92,6 +97,7 @@ export function AppShell({ children }: AppShellProps) {
         </main>
       </div>
       <KeyboardShortcutsModal open={shortcutsOpen} onOpenChange={setShortcutsOpen} />
+      <CommandPalette open={commandOpen} onOpenChange={setCommandOpen} />
     </div>
   );
 }
