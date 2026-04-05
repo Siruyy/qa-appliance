@@ -32,11 +32,12 @@ export const paymentTypeVariant: Record<string, BadgeVariant> = {
   installment: "secondary",
 };
 
-/** Collection payment type (regular, penalty, advance) */
+/** Collection payment type — matches PaymentRecordType values */
 export const collectionTypeVariant: Record<string, BadgeVariant> = {
-  regular: "default",
-  penalty: "secondary",
-  advance: "secondary",
+  payment: "default",
+  penalty: "destructive",
+  down_payment: "secondary",
+  interest_adjustment: "outline",
 };
 
 /** Inventory stock status */

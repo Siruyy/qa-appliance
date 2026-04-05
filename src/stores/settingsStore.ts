@@ -7,7 +7,7 @@ const defaultSettings: AppSettings = {
   default_penalty_rate: "2",
   default_term_months: "12",
   default_down_payment_pct: "20",
-  low_stock_threshold: "2",
+  low_stock_threshold: "5",
   store_name: "Quality Appliance",
   store_address: "",
   store_phone: "",

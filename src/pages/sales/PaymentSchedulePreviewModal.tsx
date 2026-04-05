@@ -6,13 +6,13 @@ import {
 } from "@/components/ui/dialog";
 import { formatDate } from "@/lib/formatters";
 import { useCurrency } from "@/hooks/useCurrency";
-import type { PaymentScheduleEntry } from "@/lib/interest";
+import type { SchedulePreviewEntry } from "@/lib/interest";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface PaymentSchedulePreviewModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  schedule: PaymentScheduleEntry[];
+  schedule: SchedulePreviewEntry[];
   monthlyPayment: number;
   totalPayable: number;
 }

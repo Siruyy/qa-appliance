@@ -31,7 +31,7 @@ export function parseSettings(raw: AppSettings): TypedSettings {
     currency_symbol: raw.currency_symbol ?? '₱',
     default_interest_rate: parseFloat(raw.default_interest_rate) || 0,
     default_penalty_rate: parseFloat(raw.default_penalty_rate) || 0,
-    default_down_payment_pct: parseFloat(raw.default_down_payment_pct) || 30,
+    default_down_payment_pct: parseFloat(raw.default_down_payment_pct) || 20,
     low_stock_threshold: parseInt(raw.low_stock_threshold, 10) || 5,
     default_installment_term: parseInt(raw.default_term_months, 10) || 6,
     receipt_footer: raw.receipt_footer ?? '',

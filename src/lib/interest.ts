@@ -1,6 +1,6 @@
 import { addMonths, format } from "date-fns";
 
-export interface PaymentScheduleEntry {
+export interface SchedulePreviewEntry {
   due_date: string;
   amount_due: number;
   month_number: number;
@@ -36,8 +36,8 @@ export function generatePaymentSchedule(
   termMonths: number,
   startDate: string,
   totalPayable?: number
-): PaymentScheduleEntry[] {
-  const schedule: PaymentScheduleEntry[] = [];
+): SchedulePreviewEntry[] {
+  const schedule: SchedulePreviewEntry[] = [];
   const start = new Date(startDate);
 
   for (let i = 0; i < termMonths; i++) {
