@@ -13,9 +13,11 @@ import {
   RotateCcw,
   Eye,
   Download,
+  Loader2,
 } from "lucide-react";
 import { toast } from "sonner";
 
+import { extractErrorMessage } from "@/lib/error";
 import { useCustomers } from "@/hooks/useCustomers";
 import { useCustomerStore } from "@/stores/customerStore";
 import { useCurrency } from "@/hooks/useCurrency";
@@ -81,6 +83,8 @@ export function CustomersPage() {
 
   const [modal, setModal] = useState<ModalState>({ type: "none" });
   const [archiveTarget, setArchiveTarget] = useState<Customer | null>(null);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
 
   const handleStatusChange = (value: string | null) => {
     if (!value) return;
@@ -93,23 +97,29 @@ export function CustomersPage() {
   };
 
   const confirmArchive = async () => {
-    if (!archiveTarget) return;
+    if (!archiveTarget || isProcessing) return;
+    setIsProcessing(true);
     try {
       await archiveCustomer(archiveTarget.id);
       toast.success("Customer archived");
     } catch (error) {
-      toast.error(error as string);
+      toast.error(extractErrorMessage(error));
     } finally {
       setArchiveTarget(null);
+      setIsProcessing(false);
     }
   };
 
   const handleRestore = async (id: number) => {
+    if (isProcessing) return;
+    setIsProcessing(true);
     try {
       await restoreCustomer(id);
       toast.success("Customer restored");
     } catch (error) {
-      toast.error(error as string);
+      toast.error(extractErrorMessage(error));
+    } finally {
+      setIsProcessing(false);
     }
   };
 
@@ -121,16 +131,21 @@ export function CustomersPage() {
         description="Customer profiles, contact info, and linked accounts."
         actions={
           <div className="flex gap-2">
-            <Button variant="outline" onClick={() => {
-              downloadCsv(customers, "customers", [
-                { key: "name", label: "Name" },
-                { key: "phone", label: "Phone" },
-                { key: "email", label: "Email" },
-                { key: "address", label: "Address" },
-                { key: "is_active", label: "Active" },
-              ]);
+            <Button variant="outline" disabled={isExporting} onClick={async () => {
+              setIsExporting(true);
+              try {
+                downloadCsv(customers, "customers", [
+                  { key: "name", label: "Name" },
+                  { key: "phone", label: "Phone" },
+                  { key: "email", label: "Email" },
+                  { key: "address", label: "Address" },
+                  { key: "is_active", label: "Active" },
+                ]);
+              } finally {
+                setIsExporting(false);
+              }
             }}>
-              <Download className="mr-1 h-4 w-4" /> CSV
+              {isExporting ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : <Download className="mr-1 h-4 w-4" />} CSV
             </Button>
             <Button onClick={() => setModal({ type: "form" })}>
               <Plus className="mr-1 h-4 w-4" /> Add Customer
@@ -275,9 +290,9 @@ export function CustomersPage() {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmArchive}>
-              Archive
+            <AlertDialogCancel disabled={isProcessing}>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmArchive} disabled={isProcessing}>
+              {isProcessing ? "Archiving…" : "Archive"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

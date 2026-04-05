@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 
+import { extractErrorMessage } from "@/lib/error";
 import { useProducts } from "@/hooks/useProducts";
 import { useCategories } from "@/hooks/useCategories";
 import { useProductStore } from "@/stores/productStore";
@@ -84,11 +85,18 @@ export function InventoryPage() {
     [allFiltered, page, pageSize]
   );
 
-  const [expandedIds, setExpandedIds] = useState<Set<number>>(new Set());
+  const [expandedIds, setExpandedIds] = useState<Set<number>>(() => {
+    try {
+      const stored = localStorage.getItem("inventory-expanded-rows");
+      if (stored) return new Set(JSON.parse(stored) as number[]);
+    } catch { /* ignore */ }
+    return new Set();
+  });
   const [modal, setModal] = useState<ModalState>({ type: "none" });
   const [archiveTarget, setArchiveTarget] = useState<Product | null>(null);
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
   const [bulkArchiveOpen, setBulkArchiveOpen] = useState(false);
+  const [isArchiving, setIsArchiving] = useState(false);
 
   const activeProducts = useMemo(() => products.filter((p) => p.is_active), [products]);
   const allActiveSelected = activeProducts.length > 0 && activeProducts.every((p) => selectedIds.has(p.id));
@@ -112,6 +120,8 @@ export function InventoryPage() {
   }, [activeProducts]);
 
   const handleBulkArchive = async () => {
+    if (isArchiving) return;
+    setIsArchiving(true);
     const ids = Array.from(selectedIds);
     let archived = 0;
     for (const id of ids) {
@@ -125,6 +135,7 @@ export function InventoryPage() {
     toast.success(`Archived ${archived} product(s)`);
     setSelectedIds(new Set());
     setBulkArchiveOpen(false);
+    setIsArchiving(false);
   };
 
   const toggleExpanded = (id: number) => {
@@ -132,41 +143,52 @@ export function InventoryPage() {
       const next = new Set(prev);
       if (next.has(id)) next.delete(id);
       else next.add(id);
+      localStorage.setItem("inventory-expanded-rows", JSON.stringify([...next]));
       return next;
     });
   };
 
   const handleArchiveProduct = async (product: Product) => {
+    if (isArchiving) return;
     if (product.is_active) {
       setArchiveTarget(product);
       return;
     }
+    setIsArchiving(true);
     try {
       await restoreProduct(product.id);
       toast.success(`"${product.name}" restored`);
     } catch (e) {
-      toast.error(String(e));
+      toast.error(extractErrorMessage(e));
+    } finally {
+      setIsArchiving(false);
     }
   };
 
   const confirmArchiveProduct = async () => {
-    if (!archiveTarget) return;
+    if (!archiveTarget || isArchiving) return;
+    setIsArchiving(true);
     try {
       await archiveProduct(archiveTarget.id);
       toast.success(`"${archiveTarget.name}" archived`);
     } catch (e) {
-      toast.error(String(e));
+      toast.error(extractErrorMessage(e));
     } finally {
       setArchiveTarget(null);
+      setIsArchiving(false);
     }
   };
 
   const handleArchiveVariant = async (variant: ProductVariant) => {
+    if (isArchiving) return;
+    setIsArchiving(true);
     try {
       await archiveVariant(variant.id);
       toast.success("Variant archived");
     } catch (e) {
-      toast.error(String(e));
+      toast.error(extractErrorMessage(e));
+    } finally {
+      setIsArchiving(false);
     }
   };
 
@@ -175,7 +197,7 @@ export function InventoryPage() {
       await adjustStock(id, delta);
       toast.success("Stock updated");
     } catch (e) {
-      toast.error(String(e));
+      toast.error(extractErrorMessage(e));
     }
   };
 
@@ -483,9 +505,9 @@ export function InventoryPage() {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmArchiveProduct}>
-              Archive
+            <AlertDialogCancel disabled={isArchiving}>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmArchiveProduct} disabled={isArchiving}>
+              {isArchiving ? "Archiving…" : "Archive"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -500,9 +522,9 @@ export function InventoryPage() {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleBulkArchive}>
-              Archive All
+            <AlertDialogCancel disabled={isArchiving}>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleBulkArchive} disabled={isArchiving}>
+              {isArchiving ? "Archiving…" : "Archive All"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

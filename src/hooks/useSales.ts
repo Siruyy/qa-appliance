@@ -1,7 +1,7 @@
 import { useCallback, useEffect } from "react";
 import { invoke } from "@/lib/invoke";
 import { toast } from "sonner";
-import { extractErrorMessage } from "@/lib/error";
+import { extractErrorMessage, getErrorWithRecovery } from "@/lib/error";
 import type { Sale, SaleDetail, CreateSalePayload } from "@/types/sale";
 import type { PaginatedResult } from "@/types/shared";
 import { useSaleStore } from "@/stores/saleStore";
@@ -62,7 +62,7 @@ export function useSales() {
       await fetchSales();
       return id;
     } catch (err) {
-      toast.error(extractErrorMessage(err));
+      toast.error(getErrorWithRecovery(err, "Failed to create sale"));
       return null;
     }
   }, [fetchSales]);

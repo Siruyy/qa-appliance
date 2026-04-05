@@ -35,6 +35,7 @@ import { calculateAddOnInterest, generatePaymentSchedule } from "@/lib/interest"
 import type { CartItem, CreateInstallmentPayload, PaymentType } from "@/types/sale";
 import type { Customer } from "@/types/customer";
 import { getErrorWithRecovery } from "@/lib/error";
+import { useSaleStore } from "@/stores/saleStore";
 import { useCustomerStore } from "@/stores/customerStore";
 import { useProducts } from "@/hooks/useProducts";
 import { useCustomers } from "@/hooks/useCustomers";
@@ -166,7 +167,7 @@ export function NewSalePage() {
   }, [cart.installment, total]);
 
   const excludeVariantIds = useMemo(
-    () => cart.items.map((i) => i.variant_id),
+    () => cart.items.map((i: CartItem) => i.variant_id),
     [cart.items]
   );
 
@@ -177,7 +178,7 @@ export function NewSalePage() {
       toast.error("Add at least one item");
       return;
     }
-    if (cart.items.some((i) => i.quantity <= 0)) {
+    if (cart.items.some((i: CartItem) => i.quantity <= 0)) {
       toast.error("All item quantities must be greater than 0");
       return;
     }
@@ -212,7 +213,7 @@ export function NewSalePage() {
         payment_type: cart.paymentType,
         discount: cart.discount,
         notes: cart.notes || null,
-        items: cart.items.map((i) => ({
+        items: cart.items.map((i: CartItem) => ({
           variant_id: i.variant_id,
           quantity: i.quantity,
           unit_price: i.unit_price,

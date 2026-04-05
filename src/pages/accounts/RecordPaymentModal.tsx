@@ -1,4 +1,4 @@
-import { extractErrorMessage } from "@/lib/error";
+import { getErrorWithRecovery } from "@/lib/error";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -29,6 +29,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
+import { Loader2 } from "lucide-react";
 import { ScheduleTable } from "./ScheduleTable";
 
 interface RecordPaymentModalProps {
@@ -85,6 +86,7 @@ export function RecordPaymentModal({
   };
 
   const onSubmit = async (values: RecordPaymentValues) => {
+    if (submitting) return;
     setSubmitting(true);
     try {
       await recordPayment({
@@ -107,7 +109,7 @@ export function RecordPaymentModal({
       setApplyMode("auto");
       onSuccess();
     } catch (err) {
-      toast.error(extractErrorMessage(err));
+      toast.error(getErrorWithRecovery(err, "Failed to record payment"));
     } finally {
       setSubmitting(false);
     }
@@ -202,7 +204,11 @@ export function RecordPaymentModal({
               Cancel
             </Button>
             <Button type="submit" disabled={submitting}>
-              {submitting ? "Recording..." : "Record Payment"}
+              {submitting ? (
+                <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Recording…</>
+              ) : (
+                "Record Payment"
+              )}
             </Button>
           </DialogFooter>
         </form>

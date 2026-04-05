@@ -58,10 +58,11 @@ export function SaleDetailModal({ open, onOpenChange, saleId, onVoided }: SaleDe
   };
 
   const handleVoid = async () => {
-    if (!saleId) return;
+    if (voiding || !saleId) return;
     setVoiding(true);
     const ok = await voidSale(saleId);
     setVoiding(false);
+    setShowVoidConfirm(false);
     if (ok) {
       onOpenChange(false);
       onVoided();
@@ -232,7 +233,11 @@ export function SaleDetailModal({ open, onOpenChange, saleId, onVoided }: SaleDe
                   onClick={() => setShowVoidConfirm(true)}
                   disabled={voiding}
                 >
-                  {voiding ? "Voiding..." : "Void Sale"}
+                  {voiding ? (
+                    <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Voiding…</>
+                  ) : (
+                    "Void Sale"
+                  )}
                 </Button>
               )}
             </div>
@@ -251,12 +256,17 @@ export function SaleDetailModal({ open, onOpenChange, saleId, onVoided }: SaleDe
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel disabled={voiding}>Cancel</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleVoid}
+              disabled={voiding}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              Void Sale
+              {voiding ? (
+                <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Voiding…</>
+              ) : (
+                "Void Sale"
+              )}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
