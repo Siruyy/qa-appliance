@@ -55,7 +55,6 @@ export function AccountsPage() {
     typeFilter,
     setSearch,
     setStatusFilter,
-    setTypeFilter,
     filteredAccounts,
     overdueCount,
     accounts: rawAccounts,
@@ -85,17 +84,12 @@ export function AccountsPage() {
     setStatusFilter(value as "all" | "open" | "overdue" | "paid" | "defaulted");
   };
 
-  const handleTypeChange = (value: string | null) => {
-    if (!value) return;
-    setTypeFilter(value as "all" | "installment" | "utang");
-  };
-
   const { format: formatCurrency } = useCurrency();
   return (
     <div className="space-y-6">
       <PageHeader
         title="Accounts / Receivables"
-        description="Track all open installment and utang accounts."
+        description="Track all open installment accounts."
         actions={
           <Button variant="outline" className="gap-2" onClick={() => {
             downloadCsv(accounts, "accounts", [
@@ -148,16 +142,6 @@ export function AccountsPage() {
             <SelectItem value="defaulted">Defaulted</SelectItem>
           </SelectContent>
         </Select>
-        <Select value={typeFilter} onValueChange={handleTypeChange}>
-          <SelectTrigger className="w-[150px]">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Types</SelectItem>
-            <SelectItem value="installment">Installment</SelectItem>
-            <SelectItem value="utang">Utang</SelectItem>
-          </SelectContent>
-        </Select>
       </div>
 
       <div className="rounded-md border">
@@ -197,7 +181,7 @@ export function AccountsPage() {
                   </TableCell>
                   <TableCell>
                     <Badge variant="outline">
-                      {a.has_schedule ? "Installment" : "Utang"}
+                      Installment
                     </Badge>
                   </TableCell>
                   <TableCell>

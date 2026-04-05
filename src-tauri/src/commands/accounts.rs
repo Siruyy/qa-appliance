@@ -43,13 +43,8 @@ pub fn get_accounts(
         }
     }
 
-    if let Some(ref acct_type) = account_type {
-        match acct_type.as_str() {
-            "installment" => conditions.push("ia.has_schedule = 1".to_string()),
-            "utang" => conditions.push("ia.has_schedule = 0".to_string()),
-            _ => {}
-        }
-    }
+    // All accounts are now scheduled installments; account_type filter is a no-op
+    let _ = &account_type;
 
     if let Some(ref s) = search {
         if !s.is_empty() {

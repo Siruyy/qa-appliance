@@ -292,24 +292,13 @@ pub fn create_sale(db: State<DbState>, payload: CreateSalePayload) -> Result<i64
                 return Err("Down payment exceeds sale total".to_string());
             }
 
-            // Calculate monthly amount if schedule exists
-            let (monthly_amount, total_payable) = if inst.has_schedule {
-                let term = inst.term_months.ok_or("Term months required for scheduled installment")?;
-                let term_years = term as f64 / 12.0;
-                let total_interest = principal * (inst.interest_rate / 100.0) * term_years;
-                let tp = principal + total_interest;
-                let monthly = (tp / term as f64 * 100.0).ceil() / 100.0;
-                (Some(monthly), tp)
-            } else {
-                (None, principal)
-            };
-
-            // Balance = actual total payable (not monthly × term, which would overshoot due to ceiling)
-            let balance = if inst.has_schedule {
-                total_payable
-            } else {
-                principal
-            };
+            // All installments have schedules — calculate monthly amount
+            let term = inst.term_months.ok_or("Term months required for installment")?;
+            let term_years = term as f64 / 12.0;
+            let total_interest = principal * (inst.interest_rate / 100.0) * term_years;
+            let total_payable = principal + total_interest;
+            let monthly_amount = (total_payable / term as f64 * 100.0).ceil() / 100.0;
+            let balance = total_payable;
 
             conn.execute(
                 "INSERT INTO installment_accounts
@@ -324,9 +313,9 @@ pub fn create_sale(db: State<DbState>, payload: CreateSalePayload) -> Result<i64
                     inst.interest_rate,
                     inst.penalty_rate,
                     balance,
-                    inst.has_schedule as i64,
+                    1_i64, // has_schedule always true
                     inst.term_months,
-                    monthly_amount,
+                    Some(monthly_amount),
                     inst.start_date,
                 ],
             )
@@ -344,11 +333,10 @@ pub fn create_sale(db: State<DbState>, payload: CreateSalePayload) -> Result<i64
                 .map_err(|e| e.to_string())?;
             }
 
-            // Generate payment schedule
-            if inst.has_schedule {
-                let term = inst.term_months.unwrap();
+            // Generate payment schedule (always)
+            {
                 let start = inst.start_date.as_deref().unwrap_or("");
-                let monthly = monthly_amount.unwrap();
+                let monthly = monthly_amount;
 
                 for i in 0..term {
                     // Calculate due date by adding months

@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-A standalone desktop management system for a physical appliance store (Philippines). Handles inventory, sales (cash + installment/utang/open credit), accounts receivable, payments, and reporting. No internet required — all data lives in a local SQLite file.
+A standalone desktop management system for a physical appliance store (Philippines). Handles inventory, sales (cash + installment), accounts receivable, payments, and reporting. No internet required — all data lives in a local SQLite file.
 
 **Target:** Windows laptop (minimum 1280×900), build from macOS dev environment.
 
@@ -139,13 +139,9 @@ monthly_payment = (principal + total_interest - down_payment) / term_months
 ```
 See `src-tauri/src/services/interest.rs` and `src/lib/interest.ts` for client-side helpers.
 
-### Installment vs Utang
+### Installment Accounts
 
-Both use the `installment_accounts` table. The distinction is a single flag:
-- `has_schedule = 1` → Installment (fixed monthly payments, `payment_schedules` rows generated)
-- `has_schedule = 0` → Utang / Open Credit (no schedule, customer pays ad hoc)
-
-`payment_type` on the `sales` table is always `'cash'` or `'installment'` (utang is modeled as `'installment'`).
+All installment sales use the `installment_accounts` table with `has_schedule = 1`. Fixed monthly payments are generated in the `payment_schedules` table. `payment_type` on the `sales` table is always `'cash'` or `'installment'`.
 
 ### `balance_remaining`
 

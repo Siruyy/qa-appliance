@@ -1,7 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Separator } from "@/components/ui/separator";
 import { useCurrency } from "@/hooks/useCurrency";
 import { calculateAddOnInterest } from "@/lib/interest";
@@ -26,7 +25,7 @@ export function InstallmentConfigPanel({
   const principal = saleTotal - config.down_payment;
 
   const interest =
-    config.has_schedule && config.term_months
+    config.term_months
       ? calculateAddOnInterest(principal, config.interest_rate, config.term_months)
       : null;
 
@@ -92,26 +91,9 @@ export function InstallmentConfigPanel({
             }
           />
         </div>
-        <div className="flex items-end pb-2">
-          <div className="flex items-center gap-2">
-            <Checkbox
-              checked={config.has_schedule}
-              onCheckedChange={(checked) =>
-                onChange({
-                  ...config,
-                  has_schedule: !!checked,
-                  term_months: checked ? config.term_months ?? 6 : null,
-                  start_date: checked ? config.start_date ?? new Date().toISOString().split("T")[0] : null,
-                })
-              }
-            />
-            <Label>Fixed Schedule</Label>
-          </div>
-        </div>
       </div>
 
-      {config.has_schedule && (
-        <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-2 gap-4">
         <div className="space-y-1.5">
           <Label>Term (months)</Label>
           <div className="flex gap-1 mb-1.5 flex-wrap">
@@ -146,8 +128,7 @@ export function InstallmentConfigPanel({
               onChange={(e) => onChange({ ...config, start_date: e.target.value || null })}
             />
           </div>
-        </div>
-      )}
+      </div>
 
       <Separator />
 
@@ -182,14 +163,9 @@ export function InstallmentConfigPanel({
             </div>
           </>
         )}
-        {!config.has_schedule && (
-          <p className="text-xs text-muted-foreground italic">
-            No fixed schedule — customer pays flexibly against the balance.
-          </p>
-        )}
       </div>
 
-      {config.has_schedule && config.term_months && config.start_date && (
+      {config.term_months && config.start_date && (
         <button
           type="button"
           className="text-sm text-primary underline hover:no-underline"

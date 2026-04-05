@@ -204,9 +204,7 @@ export function AccountDetailPage() {
         <div>
           <p className="text-xs text-muted-foreground">Type</p>
           <p className="text-sm font-medium">
-            {account.has_schedule
-              ? `Installment (${account.term_months} months)`
-              : "Utang (open-ended)"}
+            {`Installment (${account.term_months} months)`}
           </p>
         </div>
         <div>
@@ -250,14 +248,12 @@ export function AccountDetailPage() {
       <Separator />
 
       {/* Payment Schedule */}
-      {account.has_schedule && (
         <div>
           <h2 className="text-lg font-semibold mb-3">Payment Schedule</h2>
           <div className="rounded-md border">
             <ScheduleTable schedule={account.schedule} />
           </div>
         </div>
-      )}
 
       <Separator />
 

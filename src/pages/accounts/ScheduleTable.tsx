@@ -22,7 +22,7 @@ export function ScheduleTable({ schedule, onSelectEntry, selectedId }: ScheduleT
   if (schedule.length === 0) {
     return (
       <p className="text-sm text-muted-foreground py-4 text-center">
-        No schedule entries (open-ended account)
+        No schedule entries
       </p>
     );
   }

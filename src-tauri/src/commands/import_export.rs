@@ -464,12 +464,10 @@ fn preview_balances(
             row_errors.push("balance_remaining cannot exceed original_amount".to_string());
         }
 
-        let has_schedule = get_field(&data, "has_schedule").to_lowercase();
-        if has_schedule == "yes" {
-            let term = get_field(&data, "term_months");
-            if term.parse::<i64>().unwrap_or(0) <= 0 {
-                row_errors.push("term_months required when has_schedule = yes".to_string());
-            }
+        // All imported accounts are scheduled — term_months is required
+        let term = get_field(&data, "term_months");
+        if term.parse::<i64>().unwrap_or(0) <= 0 {
+            row_errors.push("term_months is required".to_string());
         }
 
         if row_errors.is_empty() {
@@ -659,7 +657,7 @@ fn import_balance_row(db: &rusqlite::Connection, data: &HashMap<String, String>)
     let balance_remaining: f64 = get_field(data, "balance_remaining").parse().unwrap_or(0.0);
     let interest_rate: f64 = get_field(data, "interest_rate").parse().unwrap_or(0.0);
     let penalty_rate: f64 = get_field(data, "penalty_rate").parse().unwrap_or(0.0);
-    let has_schedule = get_field(data, "has_schedule").to_lowercase() == "yes";
+    let has_schedule = true; // all accounts are scheduled
     let term_months: Option<i64> = get_field(data, "term_months").parse().ok();
     let monthly_amount: Option<f64> = get_field(data, "monthly_amount").parse().ok();
     let start_date = {
@@ -731,8 +729,8 @@ fn import_balance_row(db: &rusqlite::Connection, data: &HashMap<String, String>)
     ).map_err(|e| e.to_string())?;
     let account_id = db.last_insert_rowid();
 
-    // If has_schedule, generate payment schedules
-    if has_schedule {
+    // Always generate payment schedules
+    {
         if let (Some(term), Some(monthly)) = (term_months, monthly_amount) {
             let base_date = start_date.clone().unwrap_or_else(|| {
                 chrono_free_today()

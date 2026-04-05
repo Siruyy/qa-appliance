@@ -1,7 +1,6 @@
 import type { PaymentRecordType } from "./payment";
 
 export type AccountStatus = "open" | "paid" | "defaulted";
-export type AccountType = "installment" | "utang";
 
 export interface PaymentScheduleEntry {
   id: number;

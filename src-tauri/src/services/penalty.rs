@@ -7,8 +7,8 @@ use crate::utils::date::{today_iso, days_since};
 /// Check all open accounts for overdue schedule entries and apply penalties where needed.
 ///
 /// Logic:
-/// 1. For scheduled accounts: mark overdue schedule entries
-/// 2. For all open accounts: apply penalty if conditions met and not already applied today
+/// 1. Mark overdue schedule entries
+/// 2. For all open accounts: apply penalty if overdue entries exist, cooldown met, not already applied today
 /// 3. Penalty = balance_remaining × (penalty_rate / 100)
 pub fn check_and_apply_penalties(conn: &Connection) -> Result<Vec<PenaltyApplied>, String> {
     let today = today_iso();
@@ -30,11 +30,11 @@ pub fn check_and_apply_penalties(conn: &Connection) -> Result<Vec<PenaltyApplied
     // Conditions:
     //   - status = 'open'
     //   - penalty_rate > 0
-    //   - Has overdue schedule entries OR (no schedule AND last_penalty_date is NULL or >= 30 days ago)
-    //   - last_penalty_date is NOT today (prevent double-apply)
+    //   - Has overdue schedule entries
+    //   - last_penalty_date is NULL or cooldown elapsed (prevent frequent penalties)
     let mut stmt = conn
         .prepare(
-            "SELECT ia.id, ia.balance_remaining, ia.penalty_rate, ia.has_schedule,
+            "SELECT ia.id, ia.balance_remaining, ia.penalty_rate,
                     ia.last_penalty_date, c.name AS customer_name,
                     COALESCE(
                         GROUP_CONCAT(DISTINCT p.name || COALESCE(' ' || v.attributes, '')),
@@ -56,43 +56,33 @@ pub fn check_and_apply_penalties(conn: &Connection) -> Result<Vec<PenaltyApplied
     let rows = stmt
         .query_map(rusqlite::params![today], |row| {
             Ok((
-                row.get::<_, i64>(0)?,          // id
-                row.get::<_, f64>(1)?,          // balance_remaining
-                row.get::<_, f64>(2)?,          // penalty_rate
-                row.get::<_, bool>(3)?,         // has_schedule
-                row.get::<_, Option<String>>(4)?, // last_penalty_date
-                row.get::<_, String>(5)?,       // customer_name
-                row.get::<_, String>(6)?,       // product_summary
+                row.get::<_, i64>(0)?,            // id
+                row.get::<_, f64>(1)?,            // balance_remaining
+                row.get::<_, f64>(2)?,            // penalty_rate
+                row.get::<_, Option<String>>(3)?, // last_penalty_date
+                row.get::<_, String>(4)?,         // customer_name
+                row.get::<_, String>(5)?,         // product_summary
             ))
         })
         .map_err(|e| format!("Failed to read penalty candidates: {}", e))?;
 
     let candidates: Vec<_> = rows.filter_map(|r| r.ok()).collect();
 
-    for (account_id, balance, penalty_rate, has_schedule, last_penalty_date, customer_name, product_summary) in candidates {
-        let should_penalize = if has_schedule {
-            // Check if there are overdue entries for this account
-            let overdue_count: i64 = conn
-                .query_row(
-                    "SELECT COUNT(*) FROM payment_schedules
-                     WHERE account_id = ?1 AND status = 'overdue'",
-                    rusqlite::params![account_id],
-                    |row| row.get(0),
-                )
-                .unwrap_or(0);
-            // Must have overdue entries AND respect cooldown to prevent daily penalties
-            overdue_count > 0
-                && match &last_penalty_date {
-                    None => true,
-                    Some(date) => days_since(date, &today) >= PENALTY_COOLDOWN_DAYS,
-                }
-        } else {
-            // Open-ended: penalize if last_penalty_date is NULL or >= cooldown days ago
-            match &last_penalty_date {
+    for (account_id, balance, penalty_rate, last_penalty_date, customer_name, product_summary) in candidates {
+        // All accounts have schedules — check for overdue entries + cooldown
+        let overdue_count: i64 = conn
+            .query_row(
+                "SELECT COUNT(*) FROM payment_schedules
+                 WHERE account_id = ?1 AND status = 'overdue'",
+                rusqlite::params![account_id],
+                |row| row.get(0),
+            )
+            .unwrap_or(0);
+        let should_penalize = overdue_count > 0
+            && match &last_penalty_date {
                 None => true,
                 Some(date) => days_since(date, &today) >= PENALTY_COOLDOWN_DAYS,
-            }
-        };
+            };
 
         if !should_penalize || balance <= 0.0 {
             continue;

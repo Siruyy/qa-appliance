@@ -2,7 +2,7 @@ import { create } from "zustand";
 import type { InstallmentAccount } from "@/types/account";
 
 type StatusFilter = "all" | "open" | "overdue" | "paid" | "defaulted";
-type TypeFilter = "all" | "installment" | "utang";
+type TypeFilter = "all" | "installment";
 
 interface AccountState {
   accounts: InstallmentAccount[];
@@ -49,7 +49,6 @@ export const useAccountStore = create<AccountState>((set, get) => ({
       if (statusFilter !== "all" && statusFilter !== "overdue" && a.status !== statusFilter)
         return false;
       if (typeFilter === "installment" && !a.has_schedule) return false;
-      if (typeFilter === "utang" && a.has_schedule) return false;
       if (search) {
         const q = search.toLowerCase();
         if (

@@ -27,9 +27,7 @@ export function AccountMiniCard({ account, onClick }: Props) {
             {account.items_summary || `Account #${account.id}`}
           </p>
           <p className="mt-1 text-sm text-muted-foreground">
-            {account.has_schedule
-              ? `${account.term_months} months — ${formatCurrency(account.monthly_amount ?? 0)}/mo`
-              : "Open credit (no schedule)"}
+            {`${account.term_months} months — ${formatCurrency(account.monthly_amount ?? 0)}/mo`}
           </p>
         </div>
         <Badge className={statusColors[account.status] ?? "bg-muted text-muted-foreground"}>

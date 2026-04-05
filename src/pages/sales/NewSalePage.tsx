@@ -141,7 +141,7 @@ export function NewSalePage() {
 
   // Schedule preview data
   const schedulePreview = useMemo(() => {
-    if (!cart.installment?.has_schedule || !cart.installment.term_months || !cart.installment.start_date) {
+    if (!cart.installment?.term_months || !cart.installment.start_date) {
       return null;
     }
     const principal = cartTotal() - cart.installment.down_payment;
@@ -381,7 +381,7 @@ export function NewSalePage() {
                     </SelectItem>
                     <SelectItem value="installment">
                       <span className="flex items-center gap-2">
-                        <CreditCard className="h-4 w-4" /> Installment (Utang)
+                        <CreditCard className="h-4 w-4" /> Installment
                       </span>
                     </SelectItem>
                   </SelectContent>
