@@ -58,22 +58,6 @@ pub fn optional_phone(value: &Option<String>) -> Result<Option<String>, String> 
     }
 }
 
-/// Validate that a numeric value is positive.
-pub fn require_positive(field: &str, value: f64) -> Result<(), String> {
-    if value <= 0.0 {
-        return Err(format!("{} must be greater than zero", field));
-    }
-    Ok(())
-}
-
-/// Validate that a numeric value is non-negative.
-pub fn require_non_negative(field: &str, value: f64) -> Result<(), String> {
-    if value < 0.0 {
-        return Err(format!("{} must not be negative", field));
-    }
-    Ok(())
-}
-
 /// Validate an ISO date string (YYYY-MM-DD format).
 pub fn require_iso_date(field: &str, value: &str) -> Result<(), String> {
     let trimmed = value.trim();

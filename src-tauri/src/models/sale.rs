@@ -72,7 +72,6 @@ pub struct CreateInstallmentPayload {
     pub down_payment: f64,
     pub interest_rate: f64,
     pub penalty_rate: f64,
-    pub has_schedule: bool,
     pub term_months: Option<i64>,
     pub start_date: Option<String>,
 }
