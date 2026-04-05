@@ -1,3 +1,6 @@
+import type { PaymentType, SaleStatus } from "./sale";
+import type { AccountStatus } from "./account";
+
 // ── Import Preview & Result ──────────────────────────────
 
 export interface ImportErrorRow {
@@ -77,9 +80,9 @@ export interface ExportSale {
   customer_name: string;
   items_summary: string;
   total_amount: number;
-  payment_type: string;
+  payment_type: PaymentType;
   down_payment: number | null;
-  status: string;
+  status: SaleStatus;
 }
 
 export interface ExportAccount {
@@ -92,7 +95,7 @@ export interface ExportAccount {
   penalty_rate: number;
   term_months: number | null;
   has_schedule: boolean;
-  status: string;
+  status: AccountStatus;
   created_at: string;
 }
 
@@ -102,7 +105,7 @@ export interface ExportPayment {
   customer_name: string;
   product_summary: string;
   amount: number;
-  payment_type: string;
+  payment_type: PaymentType;
   notes: string | null;
 }
 

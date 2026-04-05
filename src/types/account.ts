@@ -1,3 +1,5 @@
+import type { PaymentRecordType } from "./payment";
+
 export type AccountStatus = "open" | "paid" | "defaulted";
 export type AccountType = "installment" | "utang";
 
@@ -43,7 +45,7 @@ export interface AccountPayment {
   id: number;
   amount: number;
   payment_date: string;
-  type: string;
+  type: PaymentRecordType;
   notes: string | null;
 }
 

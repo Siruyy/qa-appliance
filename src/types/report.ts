@@ -1,3 +1,9 @@
+import type { PaymentType, SaleStatus } from "./sale";
+import type { AccountStatus } from "./account";
+import type { PaymentRecordType } from "./payment";
+
+export type StockStatus = "In Stock" | "Low Stock" | "Out of Stock";
+
 // Shared
 export interface ReportKPI {
   label: string;
@@ -21,7 +27,7 @@ export interface RecentSale {
   sale_date: string;
   customer_name: string;
   total: number;
-  payment_type: string;
+  payment_type: PaymentType;
 }
 
 export interface UpcomingDue {
@@ -56,8 +62,8 @@ export interface SalesSummaryRow {
   customer_name: string;
   items_summary: string;
   total: number;
-  payment_type: string;
-  status: string;
+  payment_type: PaymentType;
+  status: SaleStatus;
 }
 
 export interface DailyTotal {
@@ -81,7 +87,7 @@ export interface ReceivablesRow {
   product_summary: string;
   balance_remaining: number;
   has_schedule: boolean;
-  status: string;
+  status: AccountStatus;
   days_overdue: number | null;
 }
 
@@ -109,7 +115,7 @@ export interface InventoryRow {
   selling_price: number;
   cost_value: number;
   retail_value: number;
-  status: string;
+  status: StockStatus;
 }
 
 export interface CategoryStock {
@@ -136,7 +142,7 @@ export interface CollectionsRow {
   customer_name: string;
   product_summary: string;
   amount: number;
-  type: string;
+  type: PaymentRecordType;
 }
 
 export interface CollectionsReport {
@@ -154,14 +160,14 @@ export interface CustomerSaleRow {
   sale_date: string;
   items_summary: string;
   total: number;
-  payment_type: string;
+  payment_type: PaymentType;
 }
 
 export interface CustomerPaymentRow {
   id: number;
   payment_date: string;
   amount: number;
-  type: string;
+  type: PaymentRecordType;
   product_summary: string;
 }
 

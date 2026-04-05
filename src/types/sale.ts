@@ -1,3 +1,5 @@
+import type { AccountStatus } from "./account";
+
 export type PaymentType = "cash" | "installment";
 export type SaleStatus = "completed" | "voided";
 
@@ -78,5 +80,5 @@ export interface InstallmentAccountSummary {
   balance_remaining: number;
   term_months: number | null;
   monthly_amount: number | null;
-  status: string;
+  status: AccountStatus;
 }

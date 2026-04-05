@@ -1,3 +1,7 @@
+import type { PaymentType, SaleStatus } from "./sale";
+import type { AccountStatus } from "./account";
+import type { PaymentRecordType } from "./payment";
+
 export interface Customer {
   id: number;
   name: string;
@@ -22,8 +26,8 @@ export interface CustomerSaleSummary {
   id: number;
   sale_date: string;
   total: number;
-  payment_type: string;
-  status: string;
+  payment_type: PaymentType;
+  status: SaleStatus;
   items_summary: string;
 }
 
@@ -35,7 +39,7 @@ export interface CustomerAccountSummary {
   has_schedule: boolean;
   term_months: number | null;
   monthly_amount: number | null;
-  status: string;
+  status: AccountStatus;
   items_summary: string;
 }
 
@@ -44,7 +48,7 @@ export interface CustomerPaymentSummary {
   account_id: number;
   amount: number;
   payment_date: string;
-  type: string;
+  type: PaymentRecordType;
   notes: string | null;
 }
 
