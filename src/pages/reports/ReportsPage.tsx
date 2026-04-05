@@ -14,6 +14,7 @@ import { useReports } from "@/hooks/useReports";
 import { toExcel, toPdf, toCsv } from "@/lib/export";
 import { formatProductSummary } from "@/lib/formatters";
 import { useCurrency } from "@/hooks/useCurrency";
+import { useSettingsStore } from "@/stores/settingsStore";
 import { toast } from "sonner";
 
 import { SalesSummaryTab } from "./SalesSummaryTab";
@@ -62,6 +63,7 @@ export function ReportsPage() {
   } = useReports();
 
   const { format: formatCurrency } = useCurrency();
+  const storeName = useSettingsStore((s) => s.settings.store_name);
 
   const handleExport = useCallback(
     async (format: "excel" | "pdf" | "csv") => {
@@ -87,7 +89,7 @@ export function ReportsPage() {
             s.payment_type,
             s.status,
           ]);
-          doExport(format, `sales-summary`, tabLabel, dateRange, kpis, headers, rows);
+          doExport(format, `sales-summary`, tabLabel, dateRange, kpis, headers, rows, storeName);
         } else if (activeTab === "receivables") {
           const report = await getReceivablesReport(statusFilter === "all" ? undefined : statusFilter);
           const kpis = [
@@ -103,7 +105,7 @@ export function ReportsPage() {
             a.status,
             a.days_overdue,
           ]);
-          doExport(format, `receivables`, tabLabel, undefined, kpis, headers, rows);
+          doExport(format, `receivables`, tabLabel, undefined, kpis, headers, rows, storeName);
         } else if (activeTab === "inventory") {
           const report = await getInventoryValuationReport();
           const kpis = [
@@ -123,7 +125,7 @@ export function ReportsPage() {
             i.retail_value,
             i.status,
           ]);
-          doExport(format, `inventory-valuation`, tabLabel, undefined, kpis, headers, rows);
+          doExport(format, `inventory-valuation`, tabLabel, undefined, kpis, headers, rows, storeName);
         } else if (activeTab === "collections") {
           const report = await getCollectionsReport(dateFrom, dateTo);
           const kpis = [
@@ -138,7 +140,7 @@ export function ReportsPage() {
             p.amount,
             p.type,
           ]);
-          doExport(format, `collections`, tabLabel, dateRange, kpis, headers, rows);
+          doExport(format, `collections`, tabLabel, dateRange, kpis, headers, rows, storeName);
         } else if (activeTab === "customer-history" && selectedCustomerId) {
           const report = await getCustomerHistoryReport(selectedCustomerId, dateFrom, dateTo);
           const kpis = [
@@ -150,7 +152,7 @@ export function ReportsPage() {
           const salesRows = report.sales.map((s) => [s.sale_date, s.items_summary, s.total, s.payment_type]);
           const paymentRows = report.payments.map((p) => [p.payment_date, formatProductSummary(p.product_summary), p.amount, p.type]);
           const rows = [...salesRows, ["---", "--- Payments ---", "---", "---"], ...paymentRows];
-          doExport(format, `customer-${report.customer_name}`, tabLabel, dateRange, kpis, headers, rows);
+          doExport(format, `customer-${report.customer_name}`, tabLabel, dateRange, kpis, headers, rows, storeName);
         } else if (activeTab === "profit-loss") {
           const report = await getProfitLossReport(dateFrom, dateTo);
           const kpis = [
@@ -167,7 +169,7 @@ export function ReportsPage() {
             c.revenue - c.cogs,
             `${c.pct.toFixed(1)}%`,
           ]);
-          doExport(format, `profit-loss`, tabLabel, dateRange, kpis, headers, rows);
+          doExport(format, `profit-loss`, tabLabel, dateRange, kpis, headers, rows, storeName);
         }
         toast.success(`Exported as ${format.toUpperCase()}`);
       } catch (e) {
@@ -282,12 +284,13 @@ function doExport(
   dateRange: string | undefined,
   kpis: { label: string; value: string }[],
   headers: string[],
-  rows: (string | number | null)[][]
+  rows: (string | number | null)[][],
+  storeName?: string
 ) {
   if (format === "excel") {
     toExcel({ filename, sheetName: title, kpis, headers, rows });
   } else if (format === "pdf") {
-    toPdf({ filename, title, dateRange, kpis, headers, rows });
+    toPdf({ filename, title, storeName, dateRange, kpis, headers, rows });
   } else {
     toCsv({ filename, headers, rows });
   }

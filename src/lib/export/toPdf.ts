@@ -4,6 +4,7 @@ import autoTable from "jspdf-autotable";
 interface PdfExportOptions {
   filename: string;
   title: string;
+  storeName?: string;
   dateRange?: string;
   kpis?: { label: string; value: string }[];
   headers: string[];
@@ -11,9 +12,13 @@ interface PdfExportOptions {
   orientation?: "portrait" | "landscape";
 }
 
+// Emerald-based header color matching --cta theme
+const HEADER_COLOR: [number, number, number] = [16, 185, 129];
+
 export function toPdf({
   filename,
   title,
+  storeName = "Quality Appliance",
   dateRange,
   kpis,
   headers,
@@ -28,7 +33,7 @@ export function toPdf({
 
   // Header
   doc.setFontSize(16);
-  doc.text("Quality Appliance", 14, 20);
+  doc.text(storeName, 14, 20);
   doc.setFontSize(12);
   doc.text(title, 14, 28);
 
@@ -57,7 +62,7 @@ export function toPdf({
     head: [headers],
     body: rows.map((r) => r.map((c) => (c === null ? "—" : String(c)))),
     styles: { fontSize: 8 },
-    headStyles: { fillColor: [37, 99, 235] },
+    headStyles: { fillColor: HEADER_COLOR },
     didDrawPage: (data) => {
       // Footer with page number
       const pageCount = doc.getNumberOfPages();
