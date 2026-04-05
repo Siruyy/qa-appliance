@@ -32,7 +32,8 @@ import type { DashboardData } from "@/types/report";
 import { KpiCard } from "@/components/KpiCard";
 import { ChartTooltip, gridStyle, axisTickStyle, barRadius, animationProps } from "@/components/charts";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ShoppingCart, TrendingUp, Wallet, AlertTriangle } from "lucide-react";
+import { ShoppingCart, TrendingUp, Wallet, AlertTriangle, BarChart3, Banknote, Receipt, CalendarClock } from "lucide-react";
+import { EmptyState } from "@/components/EmptyState";
 
 export function DashboardPage() {
   const { fetchDashboard } = useDashboard();
@@ -168,9 +169,7 @@ export function DashboardPage() {
           </CardHeader>
           <CardContent>
             {data.sales_last_30_days.length === 0 ? (
-              <p className="text-muted-foreground text-sm text-center py-8">
-                No sales data yet
-              </p>
+              <EmptyState icon={BarChart3} title="No sales data yet" description="Sales data will appear here once transactions are recorded." />
             ) : (
               <div role="img" aria-label={`Sales trend chart for the last ${chartDays} days`}>
               <ResponsiveContainer width="100%" height={240}>
@@ -230,9 +229,7 @@ export function DashboardPage() {
           </CardHeader>
           <CardContent>
             {data.collections_last_30_days.length === 0 ? (
-              <p className="text-muted-foreground text-sm text-center py-8">
-                No collection data yet
-              </p>
+              <EmptyState icon={Banknote} title="No collection data yet" description="Payment collections will appear here once recorded." />
             ) : (
                             <div role="img" aria-label={`Collections chart for the last ${chartDays} days`}>
               <ResponsiveContainer width="100%" height={240}>
@@ -296,9 +293,7 @@ export function DashboardPage() {
           </CardHeader>
           <CardContent>
             {data.recent_sales.length === 0 ? (
-              <p className="text-muted-foreground text-sm text-center py-4">
-                No sales recorded yet
-              </p>
+              <EmptyState icon={Receipt} title="No sales recorded yet" description="Recent sales will show up here." />
             ) : (
               <Table>
                 <TableHeader>
@@ -350,9 +345,7 @@ export function DashboardPage() {
           </CardHeader>
           <CardContent>
             {data.upcoming_due.length === 0 ? (
-              <p className="text-muted-foreground text-sm text-center py-4">
-                No upcoming payments
-              </p>
+              <EmptyState icon={CalendarClock} title="No upcoming payments" description="Upcoming payment due dates will appear here." />
             ) : (
               <Table>
                 <TableHeader>

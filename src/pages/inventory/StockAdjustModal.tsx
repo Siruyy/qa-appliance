@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Minus, Plus } from "lucide-react";
+import { Minus, Plus, RotateCcw } from "lucide-react";
 import type { ProductVariant } from "@/types/product";
 
 import {
@@ -83,6 +83,21 @@ export function StockAdjustModal({ variant, onAdjust, onClose }: Props) {
               <Plus className="h-4 w-4" />
             </Button>
           </div>
+
+          {variant.stock_qty > 0 && (
+            <div className="flex justify-center">
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="text-xs text-muted-foreground"
+                onClick={() => setDelta(-variant.stock_qty)}
+              >
+                <RotateCcw className="mr-1 h-3 w-3" />
+                Set to 0
+              </Button>
+            </div>
+          )}
 
           <div className="flex justify-between text-sm px-2">
             <span className="text-muted-foreground">

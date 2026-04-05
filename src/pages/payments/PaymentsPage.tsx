@@ -1,6 +1,6 @@
-import { useEffect, useCallback } from "react";
+import { useEffect, useCallback, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { CreditCard, Search, Download, Banknote } from "lucide-react";
+import { CreditCard, Search, Download, Banknote, Loader2 } from "lucide-react";
 
 import { usePayments } from "@/hooks/usePayments";
 import { EmptyState } from "@/components/EmptyState";
@@ -69,6 +69,7 @@ export function PaymentsPage() {
 
   const payments = filteredPayments();
   const total = totalShown();
+  const [isExporting, setIsExporting] = useState(false);
 
   const { format: formatCurrency } = useCurrency();
   return (
@@ -81,16 +82,21 @@ export function PaymentsPage() {
             <p className="text-sm text-muted-foreground">All recorded payments across accounts</p>
           </div>
         </div>
-        <Button variant="outline" className="gap-2" onClick={() => {
-          downloadCsv(payments, "payments", [
-            { key: "payment_date", label: "Date" },
-            { key: "customer_name", label: "Customer" },
-            { key: "amount", label: "Amount" },
-            { key: "type", label: "Type" },
-            { key: "product_summary", label: "Products" },
-          ]);
+        <Button variant="outline" className="gap-2" disabled={isExporting} onClick={async () => {
+          setIsExporting(true);
+          try {
+            downloadCsv(payments, "payments", [
+              { key: "payment_date", label: "Date" },
+              { key: "customer_name", label: "Customer" },
+              { key: "amount", label: "Amount" },
+              { key: "type", label: "Type" },
+              { key: "product_summary", label: "Products" },
+            ]);
+          } finally {
+            setIsExporting(false);
+          }
         }}>
-          <Download className="h-4 w-4" />
+          {isExporting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
           CSV
         </Button>
       </div>

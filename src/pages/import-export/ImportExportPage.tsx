@@ -47,6 +47,7 @@ import { toExcel } from "@/lib/export";
 import { useCurrency } from "@/hooks/useCurrency";
 import { formatProductSummary } from "@/lib/formatters";
 import type { ImportPreview } from "@/types/import-export";
+import { Loader2 } from "lucide-react";
 
 // ── Export Section ───────────────────────────────────
 
@@ -271,7 +272,7 @@ function ExportSection() {
                 disabled={exportLoading}
                 onClick={() => handleExport(btn.type)}
               >
-                {exportLoading ? "Exporting…" : "Export"}
+                {exportLoading ? <><Loader2 className="mr-1 h-4 w-4 animate-spin" /> Exporting…</> : "Export"}
               </Button>
             </div>
           </Card>
