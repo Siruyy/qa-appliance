@@ -36,7 +36,7 @@ A comprehensive **13-phase audit** was conducted across two audit documents. **2
 | Styling & Theme | 7.5/10 | **9/10** | StatusBadge, CSS vars, PDF theming, store name branding, Firefox scrollbar |
 | UI/UX | 6/10 | **9.5/10** | Skeletons, EmptyState, ARIA labels, a11y titles, keyboard nav, error recovery |
 
-**Summary:** 215 items checked ✅ · 18 items remaining (wontfix / future enhancements)
+**Summary:** 217 items checked ✅ · 16 items remaining (wontfix / future enhancements)
 
 ---
 
@@ -274,7 +274,7 @@ A comprehensive **13-phase audit** was conducted across two audit documents. **2
 - [x] **Some pages use `TableSkeleton`, others show "Loading…" text** — `SalesHistoryPage` uses `TableSkeleton`, but `CustomersPage`, `PaymentsPage`, `AccountsPage` show plain text. Standardize to always use skeleton loading. *(Done — Phase 13 UX-R01: TableSkeleton in all report tabs)*
 - [x] **Detail pages have no skeleton** — `AccountDetailPage`, `CustomerDetailPage` show nothing or a brief text while loading. Should have layout-matching skeletons. *(Done — Phase 13 UX-R02: Skeleton grids in AccountDetail, Dashboard, Settings)*
 - [x] **No loading indicator for mutations** — Recording payments, creating sales, adjusting stock show no in-progress feedback. Users may double-click. *(Already implemented — UX-07)*
-- [x] **Export operations have no progress feedback** — Clicking export buttons with large datasets appears to do nothing for several seconds.
+- [x] **Export operations have no progress feedback** — Clicking export buttons with large datasets appears to do nothing for several seconds. *(Done — loading spinners on export buttons)*
 
 ### 8.3 Error Handling — Inconsistent
 
@@ -391,14 +391,14 @@ A comprehensive **13-phase audit** was conducted across two audit documents. **2
 - [x] **UX-05:** Add text alternatives for all charts (either `aria-label` or companion data table) — Added `role="img"` and `aria-label` to dashboard chart containers.
 - [x] ~~**UX-06:** Standardize loading states~~ *(Done — Phase 13 UX-R01: TableSkeleton everywhere)*
 - [x] **UX-07:** Add loading indicators for mutations — Already implemented (submitting/saving state in NewSale, Settings, RecordPayment, StockAdjust).
-- [ ] ~~**UX-08:** Add progress feedback for export operations~~ — Deferred (export is fast enough for desktop app)
+- [x] ~~**UX-08:** Add progress feedback for export operations~~ — Done (loading spinners added to export buttons)
 - [x] ~~**UX-09:** Improve error messages~~ *(Done — Phase 11/13: extractErrorMessage utility)*
 - [x] ~~**UX-10:** Use `EmptyState` component consistently in all tables~~ *(Done — Phase 13 UX-R04: EmptyState in all tables)*
 - [x] **UX-11:** Add breadcrumbs to detail pages (`CustomerDetailPage`, `AccountDetailPage`)
 - [x] **UX-12:** Add "unsaved changes" warning on Settings page — `isDirty` detection, `beforeunload` guard, visual indicator, disabled save when clean.
 - [x] **UX-13:** Add 404 catch-all route with proper "Page Not Found" UI
 - [x] **UX-14:** Fix `index.html` title to "Quality Appliance" and update favicon
-- [ ] ~~**UX-15:** Add colorblind-accessible patterns to pie charts~~ — Deferred (no pie charts currently used; chart colors already distinct)
+- [x] ~~**UX-15:** Add colorblind-accessible patterns to pie charts~~ — Done (chart legends with labels added)
 - [x] **UX-16:** Persist sidebar collapsed state to localStorage
 
 ### Phase 7: Feature Enhancements
