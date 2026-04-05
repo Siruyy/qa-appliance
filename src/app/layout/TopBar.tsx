@@ -47,7 +47,7 @@ export function TopBar() {
 
   return (
     <header className="flex h-[var(--topbar-height)] shrink-0 items-center justify-between border-b border-border bg-background px-6">
-      <h1 className="text-lg font-semibold text-foreground" style={{ fontFamily: "var(--font-heading)" }}>
+      <h1 className="text-lg font-semibold text-foreground font-heading">
         {title}
       </h1>
       <div className="flex items-center gap-2">

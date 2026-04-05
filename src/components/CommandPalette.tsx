@@ -44,18 +44,12 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
   };
 
   const filteredCustomers = useMemo(
-    () =>
-      customers
-        .filter((c) => c.is_active)
-        .slice(0, 8),
+    () => customers.filter((c) => c.is_active),
     [customers]
   );
 
   const filteredProducts = useMemo(
-    () =>
-      products
-        .filter((p) => p.is_active)
-        .slice(0, 8),
+    () => products.filter((p) => p.is_active),
     [products]
   );
 

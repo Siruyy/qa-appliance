@@ -62,8 +62,17 @@ export function DashboardPage() {
 
   if (loading || !data) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">{Array.from({ length: 4 }).map((_, i) => (<Skeleton key={i} className="h-24 rounded-lg" />))}</div>
+      <div className="space-y-6 p-6">
+        <Skeleton className="h-8 w-48 rounded-lg" />
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <Skeleton key={i} className="h-24 rounded-lg" />
+          ))}
+        </div>
+        <div className="grid gap-4 md:grid-cols-2">
+          <Skeleton className="h-64 rounded-lg" />
+          <Skeleton className="h-64 rounded-lg" />
+        </div>
       </div>
     );
   }
@@ -111,16 +120,16 @@ export function DashboardPage() {
       {/* KPI Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <KpiCard
-          title="Today's Sales"
+          label="Today's Sales"
           value={formatCurrency(data.today_sales_total)}
-          sub={`${data.today_sales_count} transaction${data.today_sales_count !== 1 ? "s" : ""}`}
+          description={`${data.today_sales_count} transaction${data.today_sales_count !== 1 ? "s" : ""}`}
           icon={ShoppingCart}
           color="success"
         />
         <KpiCard
-          title="This Month"
+          label="This Month"
           value={formatCurrency(data.month_sales_total)}
-          sub={
+          description={
             monthChange !== null
               ? `${Number(monthChange) >= 0 ? "+" : ""}${monthChange}% vs last month`
               : `${data.month_sales_count} transactions`
@@ -129,16 +138,16 @@ export function DashboardPage() {
           color="default"
         />
         <KpiCard
-          title="Total Receivables"
+          label="Total Receivables"
           value={formatCurrency(data.total_receivables)}
-          sub={`${data.open_accounts_count} open account${data.open_accounts_count !== 1 ? "s" : ""}`}
+          description={`${data.open_accounts_count} open account${data.open_accounts_count !== 1 ? "s" : ""}`}
           icon={Wallet}
           color="warning"
         />
         <KpiCard
-          title="Overdue"
+          label="Overdue"
           value={formatCurrency(data.overdue_total)}
-          sub={`${data.overdue_accounts_count} account${data.overdue_accounts_count !== 1 ? "s" : ""}`}
+          description={`${data.overdue_accounts_count} account${data.overdue_accounts_count !== 1 ? "s" : ""}`}
           alert={data.overdue_accounts_count > 0}
           icon={AlertTriangle}
           color={data.overdue_accounts_count > 0 ? "danger" : "default"}

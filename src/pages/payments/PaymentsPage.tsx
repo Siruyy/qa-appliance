@@ -10,6 +10,7 @@ import { Pagination } from "@/components/Pagination";
 import { formatDate, formatProductSummary } from "@/lib/formatters";
 import { useCurrency } from "@/hooks/useCurrency";
 import { DatePicker } from "@/components/DatePicker";
+import { collectionTypeVariant } from "@/lib/badgeVariants";
 
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -30,13 +31,6 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { downloadCsv } from "@/lib/csv";
-
-const typeColor: Record<string, string> = {
-  payment: "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200",
-  down_payment: "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200",
-  penalty: "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200",
-  interest_adjustment: "bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200",
-};
 
 export function PaymentsPage() {
   const navigate = useNavigate();
@@ -188,7 +182,7 @@ export function PaymentsPage() {
                   <TableCell>{p.customer_name}</TableCell>
                   <TableCell className="max-w-[180px] truncate">{formatProductSummary(p.product_summary)}</TableCell>
                   <TableCell>
-                    <Badge variant="outline" className={typeColor[p.type] ?? ""}>
+                    <Badge variant={collectionTypeVariant[p.type] ?? "outline"}>
                       {p.type.replace("_", " ")}
                     </Badge>
                   </TableCell>

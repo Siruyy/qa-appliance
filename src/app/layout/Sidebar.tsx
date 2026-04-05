@@ -4,6 +4,7 @@ import {
   Package,
   Users,
   ShoppingCart,
+  Receipt,
   CreditCard,
   Banknote,
   BarChart2,
@@ -20,6 +21,7 @@ const mainNav = [
   { to: "/inventory", label: "Inventory", icon: Package },
   { to: "/customers", label: "Customers", icon: Users },
   { to: "/sales/new", label: "New Sale", icon: ShoppingCart, accent: true },
+  { to: "/sales", label: "Sales History", icon: Receipt, end: true },
   { to: "/accounts", label: "Accounts", icon: CreditCard },
   { to: "/payments", label: "Payments", icon: Banknote },
   { to: "/reports", label: "Reports", icon: BarChart2 },
@@ -36,16 +38,19 @@ function NavItem({
   icon: Icon,
   accent,
   collapsed,
+  end,
 }: {
   to: string;
   label: string;
   icon: React.ElementType;
   accent?: boolean;
   collapsed: boolean;
+  end?: boolean;
 }) {
   return (
     <NavLink
       to={to}
+      end={end}
       title={collapsed ? label : undefined}
       className={({ isActive }) =>
         cn(
