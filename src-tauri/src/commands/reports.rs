@@ -524,3 +524,94 @@ pub fn get_profit_loss_report(
         by_category,
     })
 }
+
+#[tauri::command]
+pub fn get_aging_report(state: State<DbState>) -> Result<AgingReport, String> {
+    let db = state.0.lock().map_err(|e| e.to_string())?;
+
+    // For each open account, compute days overdue based on earliest unpaid schedule
+    let sql = "
+        SELECT
+            c.id AS customer_id,
+            c.first_name || ' ' || c.last_name AS customer_name,
+            ia.balance_remaining,
+            COALESCE(
+                (SELECT MIN(ps.due_date) FROM payment_schedules ps
+                 WHERE ps.account_id = ia.id AND ps.status IN ('pending', 'overdue')),
+                ia.start_date
+            ) AS earliest_due
+        FROM installment_accounts ia
+        JOIN sales s ON s.id = ia.sale_id
+        JOIN customers c ON c.id = s.customer_id
+        WHERE ia.status = 'open' AND ia.balance_remaining > 0.01
+        ORDER BY c.last_name, c.first_name
+    ";
+
+    let mut stmt = db.prepare(sql).map_err(|e| e.to_string())?;
+    let rows = stmt.query_map([], |row| {
+        Ok((
+            row.get::<_, i64>(0)?,
+            row.get::<_, String>(1)?,
+            row.get::<_, f64>(2)?,
+            row.get::<_, String>(3)?,
+        ))
+    }).map_err(|e| e.to_string())?;
+
+    let today = chrono::Local::now().format("%Y-%m-%d").to_string();
+
+    // Aggregate by customer
+    let mut customer_map: std::collections::HashMap<i64, AgingBucket> = std::collections::HashMap::new();
+
+    for row in rows {
+        let (cid, cname, balance, earliest_due) = row.map_err(|e| e.to_string())?;
+
+        let days_overdue = if earliest_due <= today {
+            let due_date = chrono::NaiveDate::parse_from_str(&earliest_due, "%Y-%m-%d")
+                .map_err(|e| e.to_string())?;
+            let today_date = chrono::NaiveDate::parse_from_str(&today, "%Y-%m-%d")
+                .map_err(|e| e.to_string())?;
+            (today_date - due_date).num_days()
+        } else {
+            0
+        };
+
+        let entry = customer_map.entry(cid).or_insert_with(|| AgingBucket {
+            customer_id: cid,
+            customer_name: cname,
+            current: 0.0,
+            days_1_30: 0.0,
+            days_31_60: 0.0,
+            days_61_90: 0.0,
+            days_over_90: 0.0,
+            total: 0.0,
+        });
+
+        match days_overdue {
+            d if d <= 0 => entry.current += balance,
+            1..=30 => entry.days_1_30 += balance,
+            31..=60 => entry.days_31_60 += balance,
+            61..=90 => entry.days_61_90 += balance,
+            _ => entry.days_over_90 += balance,
+        }
+        entry.total += balance;
+    }
+
+    let buckets: Vec<AgingBucket> = customer_map.into_values().collect();
+
+    let total_current = buckets.iter().map(|b| b.current).sum();
+    let total_1_30 = buckets.iter().map(|b| b.days_1_30).sum();
+    let total_31_60 = buckets.iter().map(|b| b.days_31_60).sum();
+    let total_61_90 = buckets.iter().map(|b| b.days_61_90).sum();
+    let total_over_90 = buckets.iter().map(|b| b.days_over_90).sum();
+    let grand_total = buckets.iter().map(|b| b.total).sum();
+
+    Ok(AgingReport {
+        buckets,
+        total_current,
+        total_1_30,
+        total_31_60,
+        total_61_90,
+        total_over_90,
+        grand_total,
+    })
+}

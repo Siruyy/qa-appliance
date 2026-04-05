@@ -62,6 +62,7 @@ pub fn run() {
             commands::reports::get_collections_report,
             commands::reports::get_customer_history_report,
             commands::reports::get_profit_loss_report,
+            commands::reports::get_aging_report,
             commands::import_export::export_products_data,
             commands::import_export::export_customers_data,
             commands::import_export::export_sales_data,

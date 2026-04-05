@@ -6,7 +6,8 @@ export type ReportTab =
   | "inventory"
   | "collections"
   | "customer-history"
-  | "profit-loss";
+  | "profit-loss"
+  | "aging";
 
 interface ReportState {
   activeTab: ReportTab;

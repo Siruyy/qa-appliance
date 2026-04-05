@@ -210,3 +210,27 @@ pub struct DashboardData {
     pub recent_sales: Vec<RecentSale>,
     pub upcoming_due: Vec<UpcomingDue>,
 }
+
+// Report 7: Customer Aging
+#[derive(Debug, Serialize)]
+pub struct AgingBucket {
+    pub customer_id: i64,
+    pub customer_name: String,
+    pub current: f64,
+    pub days_1_30: f64,
+    pub days_31_60: f64,
+    pub days_61_90: f64,
+    pub days_over_90: f64,
+    pub total: f64,
+}
+
+#[derive(Debug, Serialize)]
+pub struct AgingReport {
+    pub buckets: Vec<AgingBucket>,
+    pub total_current: f64,
+    pub total_1_30: f64,
+    pub total_31_60: f64,
+    pub total_61_90: f64,
+    pub total_over_90: f64,
+    pub grand_total: f64,
+}

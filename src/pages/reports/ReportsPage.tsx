@@ -21,6 +21,7 @@ import { InventoryTab } from "./InventoryTab";
 import { CollectionsTab } from "./CollectionsTab";
 import { CustomerHistoryTab } from "./CustomerHistoryTab";
 import { ProfitLossTab } from "./ProfitLossTab";
+import { AgingTab } from "./AgingTab";
 import { PageHeader } from "@/components/PageHeader";
 import { DatePicker } from "@/components/DatePicker";
 
@@ -31,6 +32,7 @@ const TAB_CONFIG: { value: ReportTab; label: string }[] = [
   { value: "collections", label: "Collections" },
   { value: "customer-history", label: "Customer History" },
   { value: "profit-loss", label: "Profit & Loss" },
+  { value: "aging", label: "Aging" },
 ];
 
 // Tabs that use date range filter
@@ -262,6 +264,9 @@ export function ReportsPage() {
         </TabsContent>
         <TabsContent value="profit-loss">
           <ProfitLossTab />
+        </TabsContent>
+        <TabsContent value="aging">
+          <AgingTab />
         </TabsContent>
       </Tabs>
     </div>
