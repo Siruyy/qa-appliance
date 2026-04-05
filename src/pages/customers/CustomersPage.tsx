@@ -23,6 +23,16 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -67,6 +77,7 @@ export function CustomersPage() {
   const customers = useMemo(() => filteredCustomers(), [rawCustomers, filters]);
 
   const [modal, setModal] = useState<ModalState>({ type: "none" });
+  const [archiveTarget, setArchiveTarget] = useState<Customer | null>(null);
 
   const handleStatusChange = (value: string | null) => {
     if (!value) return;
@@ -74,12 +85,19 @@ export function CustomersPage() {
     setFilter("status", status);
   };
 
-  const handleArchive = async (id: number) => {
+  const handleArchive = (customer: Customer) => {
+    setArchiveTarget(customer);
+  };
+
+  const confirmArchive = async () => {
+    if (!archiveTarget) return;
     try {
-      await archiveCustomer(id);
+      await archiveCustomer(archiveTarget.id);
       toast.success("Customer archived");
     } catch (error) {
       toast.error(error as string);
+    } finally {
+      setArchiveTarget(null);
     }
   };
 
@@ -201,7 +219,7 @@ export function CustomersPage() {
                         <Pencil className="mr-2 h-4 w-4" /> Edit
                       </DropdownMenuItem>
                       {c.is_active ? (
-                        <DropdownMenuItem onClick={() => handleArchive(c.id)}>
+                        <DropdownMenuItem onClick={() => handleArchive(c)}>
                           <Archive className="mr-2 h-4 w-4" /> Archive
                         </DropdownMenuItem>
                       ) : (
@@ -232,6 +250,23 @@ export function CustomersPage() {
           onClose={() => setModal({ type: "none" })}
         />
       )}
+
+      <AlertDialog open={!!archiveTarget} onOpenChange={(open) => !open && setArchiveTarget(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Archive this customer?</AlertDialogTitle>
+            <AlertDialogDescription>
+              &ldquo;{archiveTarget?.name}&rdquo; will be hidden from active lists. You can restore them later.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmArchive}>
+              Archive
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

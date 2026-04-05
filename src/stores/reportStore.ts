@@ -32,7 +32,7 @@ function defaultDateRange() {
   };
 }
 
-export const useReportStore = create<ReportState>((set) => ({
+export const useReportStore = create<ReportState>((set, get) => ({
   activeTab: "sales",
   ...defaultDateRange(),
   selectedCustomerId: null,

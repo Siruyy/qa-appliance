@@ -29,6 +29,16 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -73,6 +83,7 @@ export function InventoryPage() {
 
   const [expandedIds, setExpandedIds] = useState<Set<number>>(new Set());
   const [modal, setModal] = useState<ModalState>({ type: "none" });
+  const [archiveTarget, setArchiveTarget] = useState<Product | null>(null);
 
   const toggleExpanded = (id: number) => {
     setExpandedIds((prev) => {
@@ -84,16 +95,27 @@ export function InventoryPage() {
   };
 
   const handleArchiveProduct = async (product: Product) => {
+    if (product.is_active) {
+      setArchiveTarget(product);
+      return;
+    }
     try {
-      if (product.is_active) {
-        await archiveProduct(product.id);
-        toast.success(`"${product.name}" archived`);
-      } else {
-        await restoreProduct(product.id);
-        toast.success(`"${product.name}" restored`);
-      }
+      await restoreProduct(product.id);
+      toast.success(`"${product.name}" restored`);
     } catch (e) {
       toast.error(String(e));
+    }
+  };
+
+  const confirmArchiveProduct = async () => {
+    if (!archiveTarget) return;
+    try {
+      await archiveProduct(archiveTarget.id);
+      toast.success(`"${archiveTarget.name}" archived`);
+    } catch (e) {
+      toast.error(String(e));
+    } finally {
+      setArchiveTarget(null);
     }
   };
 
@@ -350,6 +372,23 @@ export function InventoryPage() {
           onClose={() => setModal({ type: "none" })}
         />
       )}
+
+      <AlertDialog open={!!archiveTarget} onOpenChange={(open) => !open && setArchiveTarget(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Archive this product?</AlertDialogTitle>
+            <AlertDialogDescription>
+              &ldquo;{archiveTarget?.name}&rdquo; and its variants will be hidden from active lists. You can restore them later.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmArchiveProduct}>
+              Archive
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

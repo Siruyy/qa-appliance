@@ -13,6 +13,16 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
   Table,
   TableBody,
   TableCell,
@@ -27,6 +37,7 @@ export function CategoryManagement() {
   const { createCategory, updateCategory, deleteCategory } = useCategories();
   const categories = useProductStore((s) => s.categories);
   const [editing, setEditing] = useState<EditingState>({ type: "none" });
+  const [deleteTarget, setDeleteTarget] = useState<Category | null>(null);
 
   const {
     register,
@@ -68,11 +79,18 @@ export function CategoryManagement() {
   };
 
   const handleDelete = async (category: Category) => {
+    setDeleteTarget(category);
+  };
+
+  const confirmDelete = async () => {
+    if (!deleteTarget) return;
     try {
-      await deleteCategory(category.id);
-      toast.success(`"${category.name}" deleted`);
+      await deleteCategory(deleteTarget.id);
+      toast.success(`"${deleteTarget.name}" deleted`);
     } catch (e) {
       toast.error(String(e));
+    } finally {
+      setDeleteTarget(null);
     }
   };
 
@@ -199,6 +217,26 @@ export function CategoryManagement() {
           </Table>
         </div>
       </CardContent>
+
+      <AlertDialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete category?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete &ldquo;{deleteTarget?.name}&rdquo;. Categories with linked products cannot be deleted.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmDelete}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Card>
   );
 }

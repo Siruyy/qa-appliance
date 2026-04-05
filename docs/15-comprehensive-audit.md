@@ -309,18 +309,18 @@ The Quality Appliance codebase is a functional Philippine appliance installment/
 
 > Correct behavior that could cause data issues or user confusion.
 
-- [ ] **BIZ-01:** Add cart validation — Quantity must be > 0, discount must be ≥ 0, stock must be sufficient
-- [ ] **BIZ-02:** Add down payment maximum validation — Cannot exceed sale total
-- [ ] **BIZ-03:** Add confirmation dialogs — Void sale, delete category, archive customer/product must require user confirmation via `AlertDialog`
-- [ ] **BIZ-04:** Implement `includeVoided` filter in `saleStore.filteredSales()`
-- [ ] **BIZ-05:** Implement date range filter in `paymentStore.filteredPayments()`
-- [ ] **BIZ-06:** Check category usage before deletion — Prevent deleting categories with assigned products
-- [ ] **BIZ-07:** Add date range validation in `reportStore` — Ensure `dateFrom <= dateTo`
-- [ ] **BIZ-08:** Fix `recordPayment` to refetch payment list after success
-- [ ] **BIZ-09:** Reset page to 1 after archive/restore operations that change the total count
-- [ ] **BIZ-10:** Generate default payment schedule for open-ended installments (e.g., due every 30 days)
-- [ ] **BIZ-11:** Validate `selling_price >= cost_price` in variant schema (or show warning)
-- [ ] **BIZ-12:** Add `start_date` ISO format validation in `createSaleSchema`
+- [x] **BIZ-01:** Add cart validation — Quantity must be > 0, discount must be ≥ 0, stock must be sufficient
+- [x] **BIZ-02:** Add down payment maximum validation — Cannot exceed sale total
+- [x] **BIZ-03:** Add confirmation dialogs — Void sale, delete category, archive customer/product must require user confirmation via `AlertDialog`
+- [x] **BIZ-04:** Implement `includeVoided` filter in `saleStore.filteredSales()`
+- [x] **BIZ-05:** Implement date range filter in `paymentStore.filteredPayments()`
+- [x] **BIZ-06:** Check category usage before deletion — Prevent deleting categories with assigned products
+- [x] **BIZ-07:** Add date range validation in `reportStore` — Ensure `dateFrom <= dateTo`
+- [x] **BIZ-08:** Fix `recordPayment` to refetch payment list after success
+- [x] **BIZ-09:** Reset page to 1 after archive/restore operations that change the total count
+- [ ] **BIZ-10:** Generate default payment schedule for open-ended installments (deferred to Phase 7)
+- [x] **BIZ-11:** Validate `selling_price >= cost_price` in variant schema (or show warning)
+- [x] **BIZ-12:** Add `start_date` ISO format validation in `createSaleSchema`
 
 ### Phase 3: Performance Optimization
 
