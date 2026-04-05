@@ -16,7 +16,7 @@ export function Pagination({ page, pageSize, total, onPageChange }: PaginationPr
   const end = Math.min(page * pageSize, total);
 
   return (
-    <div className="flex items-center justify-between px-2 py-3 text-sm text-muted-foreground">
+    <nav role="navigation" aria-label="Pagination" className="flex items-center justify-between px-2 py-3 text-sm text-muted-foreground">
       <span>
         Showing {start}–{end} of {total}
       </span>
@@ -45,6 +45,6 @@ export function Pagination({ page, pageSize, total, onPageChange }: PaginationPr
           <ChevronRight className="h-3.5 w-3.5" />
         </Button>
       </div>
-    </div>
+    </nav>
   );
 }

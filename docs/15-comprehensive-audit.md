@@ -362,18 +362,18 @@ The Quality Appliance codebase is a functional Philippine appliance installment/
 
 > Unify the visual language across the entire application.
 
-- [ ] **STY-01:** Create `<StatusBadge>` component — Single source of truth for status → variant/color mapping. Replace all inline status color logic.
-- [ ] **STY-02:** Create `<PaymentTypeBadge>` component — Centralize payment type display labels and colors.
-- [ ] **STY-03:** Extract chart colors to CSS custom properties — Define `--chart-primary`, `--chart-secondary`, etc. in `globals.css` and use everywhere.
-- [ ] **STY-04:** Remove hardcoded sidebar colors — Replace `text-blue-300` and `border-l-[3px]` with theme-based classes.
-- [ ] **STY-05:** Fix PDF export branding — Read store name from settings, use theme primary color for header.
-- [ ] **STY-06:** Add Firefox scrollbar support — Add `scrollbar-color` and `scrollbar-width` to `globals.css`.
-- [ ] **STY-07:** Remove obsolete font smoothing properties from `globals.css`.
-- [ ] **STY-08:** Standardize button sizes — Document when to use `size="sm"` vs default vs `size="lg"`.
-- [ ] **STY-09:** Standardize modal max-heights — All modals should use `max-h-[80vh]` with `ScrollArea` for overflow.
-- [ ] **STY-10:** Rewrite `SaleReceipt` to use Tailwind — Replace all inline styles with Tailwind classes for consistency.
-- [ ] **STY-11:** Define animation/transition tokens in `globals.css` — Duration scale, easing functions.
-- [ ] **STY-12:** Extract layout constants (sidebar width, topbar height) to CSS custom properties.
+- [x] **STY-01:** Create `<StatusBadge>` component — Single source of truth for status → variant/color mapping. Replace all inline status color logic.
+- [x] **STY-02:** Create `<PaymentTypeBadge>` component — Centralize payment type display labels and colors.
+- [x] **STY-03:** Extract chart colors to CSS custom properties — Already done (`--chart-1` through `--chart-5`).
+- [x] **STY-04:** Remove hardcoded sidebar colors — Replaced `emerald-500/600/400` with `var(--cta)` in Sidebar; replaced hardcoded colors in KpiCard with `var(--success/warning/danger)`.
+- [x] **STY-05:** Fix PDF export branding — Already handled (storeName read from settings via `useSettingsStore`).
+- [x] **STY-06:** Add Firefox scrollbar support — Added `scrollbar-color` and `scrollbar-width` to `globals.css`.
+- [x] **STY-07:** Font smoothing — Already present and valid (`-webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale`).
+- [ ] ~~**STY-08:** Standardize button sizes~~ — Deferred (documentation-only item).
+- [x] **STY-09:** Standardize modal max-heights — Added `max-h-[85vh] overflow-y-auto` to all DialogContent modals.
+- [ ] ~~**STY-10:** Rewrite `SaleReceipt` to use Tailwind~~ — Deferred (inline styles intentionally needed for print popup window).
+- [x] **STY-11:** Define animation/transition tokens in `globals.css` — Duration scale, easing functions.
+- [x] **STY-12:** Extract layout constants (sidebar width, topbar height) to CSS custom properties.
 
 ### Phase 6: UI/UX Polish & Accessibility
 

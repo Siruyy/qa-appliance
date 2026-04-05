@@ -157,6 +157,7 @@ export function VariantFormModal({ productId, variant, onClose }: Props) {
                     size="icon"
                     className="h-9 w-9 shrink-0"
                     onClick={() => remove(index)}
+                    aria-label="Remove variant"
                   >
                     <Trash2 className="h-4 w-4" />
                   </Button>

@@ -8,7 +8,7 @@ interface TableSkeletonProps {
 
 export function TableSkeleton({ cols, rows = 5 }: TableSkeletonProps) {
   return (
-    <TableBody>
+    <TableBody aria-busy="true" aria-label="Loading data">
       {Array.from({ length: rows }).map((_, rowIdx) => (
         <TableRow key={rowIdx}>
           {Array.from({ length: cols }).map((_, colIdx) => (

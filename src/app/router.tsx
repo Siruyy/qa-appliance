@@ -1,6 +1,7 @@
 import { lazy, Suspense } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { NotFoundPage } from "@/pages/errors/NotFoundPage";
 import { Loader2 } from "lucide-react";
 
 const DashboardPage = lazy(() => import("@/pages/dashboard/DashboardPage").then(m => ({ default: m.DashboardPage })));
@@ -48,6 +49,7 @@ export function AppRouter() {
       <Route path="/reports" element={<Wrap><ReportsPage /></Wrap>} />
       <Route path="/import-export" element={<Wrap><ImportExportPage /></Wrap>} />
       <Route path="/settings" element={<Wrap><SettingsPage /></Wrap>} />
+      <Route path="*" element={<NotFoundPage />} />
     </Routes>
   );
 }

@@ -17,9 +17,21 @@ function getInitialTheme(): Theme {
   return "system";
 }
 
+function getInitialSidebarCollapsed(): boolean {
+  try {
+    return localStorage.getItem("sidebarCollapsed") === "true";
+  } catch {}
+  return false;
+}
+
 export const useUIStore = create<UIState>((set) => ({
-  sidebarCollapsed: false,
-  toggleSidebar: () => set((s) => ({ sidebarCollapsed: !s.sidebarCollapsed })),
+  sidebarCollapsed: getInitialSidebarCollapsed(),
+  toggleSidebar: () =>
+    set((s) => {
+      const next = !s.sidebarCollapsed;
+      try { localStorage.setItem("sidebarCollapsed", String(next)); } catch {}
+      return { sidebarCollapsed: next };
+    }),
   theme: getInitialTheme(),
   setTheme: (theme) => {
     try { localStorage.setItem("theme", theme); } catch {}

@@ -27,6 +27,7 @@ export function SaleItemRow({ item, onUpdateQty, onRemove }: SaleItemRowProps) {
             variant="ghost"
             size="icon"
             className="h-7 w-7"
+            aria-label="Decrease quantity"
             onClick={() => onUpdateQty(item.variant_id, Math.max(1, item.quantity - 1))}
             disabled={item.quantity <= 1}
           >
@@ -49,6 +50,7 @@ export function SaleItemRow({ item, onUpdateQty, onRemove }: SaleItemRowProps) {
             variant="ghost"
             size="icon"
             className="h-7 w-7"
+            aria-label="Increase quantity"
             onClick={() => onUpdateQty(item.variant_id, Math.min(item.stock_qty, item.quantity + 1))}
             disabled={item.quantity >= item.stock_qty}
           >
@@ -65,6 +67,7 @@ export function SaleItemRow({ item, onUpdateQty, onRemove }: SaleItemRowProps) {
           variant="ghost"
           size="icon"
           className="h-7 w-7 text-destructive hover:text-destructive"
+          aria-label="Remove item"
           onClick={() => onRemove(item.variant_id)}
         >
           <Trash2 className="h-4 w-4" />

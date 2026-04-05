@@ -58,6 +58,7 @@ export function StockAdjustModal({ variant, onAdjust, onClose }: Props) {
               size="icon"
               onClick={() => setDelta((d) => d - 1)}
               disabled={newQty <= 0}
+              aria-label="Decrease stock adjustment"
             >
               <Minus className="h-4 w-4" />
             </Button>
@@ -77,6 +78,7 @@ export function StockAdjustModal({ variant, onAdjust, onClose }: Props) {
               variant="outline"
               size="icon"
               onClick={() => setDelta((d) => d + 1)}
+              aria-label="Increase stock adjustment"
             >
               <Plus className="h-4 w-4" />
             </Button>

@@ -153,6 +153,7 @@ export function CategoryManagement() {
                         variant="ghost"
                         className="h-8 w-8"
                         disabled={isSubmitting}
+                        aria-label="Save category"
                       >
                         <Check className="h-4 w-4 text-green-600" />
                       </Button>
@@ -162,6 +163,7 @@ export function CategoryManagement() {
                         variant="ghost"
                         className="h-8 w-8"
                         onClick={cancel}
+                        aria-label="Cancel editing"
                       >
                         <X className="h-4 w-4" />
                       </Button>
@@ -196,6 +198,7 @@ export function CategoryManagement() {
                           className="h-8 w-8"
                           onClick={() => startEdit(cat)}
                           disabled={isEditing}
+                          aria-label="Edit category"
                         >
                           <Pencil className="h-4 w-4" />
                         </Button>
@@ -205,6 +208,7 @@ export function CategoryManagement() {
                           className="h-8 w-8"
                           onClick={() => handleDelete(cat)}
                           disabled={isEditing}
+                          aria-label="Delete category"
                         >
                           <Trash2 className="h-4 w-4 text-destructive" />
                         </Button>

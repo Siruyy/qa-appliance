@@ -107,7 +107,7 @@ export function CustomerDetailPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <Button variant="ghost" size="icon" onClick={() => navigate("/customers")}>
+          <Button variant="ghost" size="icon" onClick={() => navigate("/customers")} aria-label="Back to customers">
             <ArrowLeft className="h-5 w-5" />
           </Button>
           <div>
