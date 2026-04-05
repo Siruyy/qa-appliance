@@ -102,6 +102,7 @@ export function CustomerDetailPage() {
   };
 
   const openAccounts = accounts.filter((a) => a.status === "open");
+  const closedAccounts = accounts.filter((a) => a.status !== "open");
 
   return (
     <div className="space-y-6">
@@ -172,23 +173,44 @@ export function CustomerDetailPage() {
 
       <Separator />
 
-      {/* Open Accounts */}
+      {/* Accounts */}
       <section>
         <h2 className="mb-3 flex items-center gap-2 text-lg font-semibold">
           <CreditCard className="h-5 w-5" />
-          Open Accounts ({openAccounts.length})
+          Accounts ({accounts.length})
         </h2>
-        {openAccounts.length === 0 ? (
-          <p className="text-sm text-muted-foreground">No open accounts.</p>
+        {accounts.length === 0 ? (
+          <p className="text-sm text-muted-foreground">No accounts.</p>
         ) : (
-          <div className="grid gap-3 sm:grid-cols-2">
-            {openAccounts.map((acct) => (
-              <AccountMiniCard
-                key={acct.id}
-                account={acct}
-                onClick={() => navigate(`/accounts/${acct.id}`)}
-              />
-            ))}
+          <div className="space-y-4">
+            {openAccounts.length > 0 && (
+              <div>
+                <h3 className="mb-2 text-sm font-medium text-muted-foreground">Open ({openAccounts.length})</h3>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  {openAccounts.map((acct) => (
+                    <AccountMiniCard
+                      key={acct.id}
+                      account={acct}
+                      onClick={() => navigate(`/accounts/${acct.id}`)}
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
+            {closedAccounts.length > 0 && (
+              <div>
+                <h3 className="mb-2 text-sm font-medium text-muted-foreground">Closed / Paid / Defaulted ({closedAccounts.length})</h3>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  {closedAccounts.map((acct) => (
+                    <AccountMiniCard
+                      key={acct.id}
+                      account={acct}
+                      onClick={() => navigate(`/accounts/${acct.id}`)}
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         )}
       </section>

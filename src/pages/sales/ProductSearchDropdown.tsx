@@ -79,7 +79,7 @@ export function ProductSearchDropdown({ onSelect, excludeVariantIds = [] }: Prod
               {options.map((opt) => (
                 <CommandItem
                   key={opt.variant.id}
-                  value={`${opt.label} ${opt.variant.sku ?? ""}`}
+                  value={`${opt.label} ${opt.variant.sku ?? ""} ${opt.product.category_name ?? ""}`}
                   onSelect={() => {
                     onSelect(opt);
                     setOpen(false);
