@@ -89,6 +89,7 @@ export const useSaleStore = create<SaleState>((set, get) => ({
   filteredSales: () => {
     const { sales, filters } = get();
     return sales.filter((s) => {
+      if (!filters.includeVoided && s.status === "voided") return false;
       if (filters.paymentType !== "all" && s.payment_type !== filters.paymentType) return false;
       if (filters.search) {
         const q = filters.search.toLowerCase();

@@ -5,6 +5,16 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -28,6 +38,7 @@ export function SaleDetailModal({ open, onOpenChange, saleId, onVoided }: SaleDe
   const [detail, setDetail] = useState<SaleDetail | null>(null);
   const [loading, setLoading] = useState(false);
   const [voiding, setVoiding] = useState(false);
+  const [showVoidConfirm, setShowVoidConfirm] = useState(false);
   const storeName = useSettingsStore((s) => s.settings.store_name);
 
   const load = useCallback(async () => {
@@ -217,7 +228,7 @@ export function SaleDetailModal({ open, onOpenChange, saleId, onVoided }: SaleDe
                 <Button
                   variant="destructive"
                   size="sm"
-                  onClick={handleVoid}
+                  onClick={() => setShowVoidConfirm(true)}
                   disabled={voiding}
                 >
                   {voiding ? "Voiding..." : "Void Sale"}
@@ -229,6 +240,26 @@ export function SaleDetailModal({ open, onOpenChange, saleId, onVoided }: SaleDe
           <p className="text-muted-foreground text-sm">Sale not found.</p>
         )}
       </DialogContent>
+
+      <AlertDialog open={showVoidConfirm} onOpenChange={setShowVoidConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Void this sale?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. The sale will be marked as voided and inventory will be restored.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleVoid}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Void Sale
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Dialog>
   );
 }

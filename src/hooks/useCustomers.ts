@@ -10,7 +10,7 @@ import type {
 import type { PaginatedResult } from "@/types/shared";
 
 export function useCustomers() {
-  const { setCustomers, setLoading, setTotalCount, filters, page, pageSize } =
+  const { setCustomers, setLoading, setTotalCount, setPage, filters, page, pageSize } =
     useCustomerStore();
 
   const fetchCustomers = useCallback(async () => {
@@ -62,13 +62,15 @@ export function useCustomers() {
 
   const archiveCustomer = useCallback(async (id: number) => {
     await invoke<void>("archive_customer", { id });
+    setPage(1);
     await fetchCustomers();
-  }, [fetchCustomers]);
+  }, [fetchCustomers, setPage]);
 
   const restoreCustomer = useCallback(async (id: number) => {
     await invoke<void>("restore_customer", { id });
+    setPage(1);
     await fetchCustomers();
-  }, [fetchCustomers]);
+  }, [fetchCustomers, setPage]);
 
   return {
     fetchCustomers,

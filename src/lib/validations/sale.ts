@@ -12,7 +12,10 @@ export const installmentSchema = z.object({
   penalty_rate: z.number().min(0).max(100, { error: "Penalty rate must be 0-100%" }),
   has_schedule: z.boolean(),
   term_months: z.number().int().min(1).max(60).nullable(),
-  start_date: z.string().nullable(),
+  start_date: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/, "Start date must be in YYYY-MM-DD format")
+    .nullable(),
 });
 
 export const createSaleSchema = z

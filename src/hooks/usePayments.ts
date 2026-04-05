@@ -36,8 +36,11 @@ export function usePayments() {
   }, []);
 
   const recordPayment = useCallback(async (payload: RecordPaymentPayload): Promise<Payment> => {
-    return invoke<Payment>("record_payment", { payload });
-  }, []);
+    const payment = await invoke<Payment>("record_payment", { payload });
+    // Refetch payments list so the store reflects the new payment
+    await fetchPayments();
+    return payment;
+  }, [fetchPayments]);
 
   return {
     fetchPayments,

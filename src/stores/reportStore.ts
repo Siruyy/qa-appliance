@@ -39,8 +39,16 @@ export const useReportStore = create<ReportState>((set) => ({
   statusFilter: "all",
   categoryId: null,
   setActiveTab: (activeTab) => set({ activeTab }),
-  setDateFrom: (dateFrom) => set({ dateFrom }),
-  setDateTo: (dateTo) => set({ dateTo }),
+  setDateFrom: (dateFrom) => {
+    const { dateTo } = get();
+    if (dateTo && dateFrom > dateTo) return;
+    set({ dateFrom });
+  },
+  setDateTo: (dateTo) => {
+    const { dateFrom } = get();
+    if (dateFrom && dateTo < dateFrom) return;
+    set({ dateTo });
+  },
   setSelectedCustomerId: (selectedCustomerId) => set({ selectedCustomerId }),
   setStatusFilter: (statusFilter) => set({ statusFilter }),
   setCategoryId: (categoryId) => set({ categoryId }),

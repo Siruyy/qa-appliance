@@ -40,14 +40,20 @@ export const usePaymentStore = create<PaymentState>((set, get) => ({
   setPageSize: (pageSize) => set({ pageSize, page: 1 }),
   setTotalCount: (totalCount) => set({ totalCount }),
   filteredPayments: () => {
-    const { payments, search } = get();
-    if (!search) return payments;
-    const q = search.toLowerCase();
-    return payments.filter(
-      (p) =>
-        p.customer_name.toLowerCase().includes(q) ||
-        p.product_summary.toLowerCase().includes(q)
-    );
+    const { payments, search, dateFrom, dateTo } = get();
+    return payments.filter((p) => {
+      if (dateFrom && p.payment_date < dateFrom) return false;
+      if (dateTo && p.payment_date > dateTo) return false;
+      if (search) {
+        const q = search.toLowerCase();
+        if (
+          !p.customer_name.toLowerCase().includes(q) &&
+          !p.product_summary.toLowerCase().includes(q)
+        )
+          return false;
+      }
+      return true;
+    });
   },
   totalShown: () => {
     return get()
