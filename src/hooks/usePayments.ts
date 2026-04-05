@@ -8,7 +8,6 @@ import type { PaginatedResult } from "@/types/shared";
 
 /** Hook for managing payment records with pagination and filtering. */
 export function usePayments() {
-  const store = usePaymentStore();
 
   /** Fetch paginated payments with optional date range, customer, and search filters. */
   const fetchPayments = useCallback(async (
@@ -17,26 +16,27 @@ export function usePayments() {
     customerId?: number,
     search?: string
   ) => {
-    store.setLoading(true);
+    const { page, pageSize, setLoading, setPayments, setTotalCount } = usePaymentStore.getState();
+    setLoading(true);
     try {
       const result = await invoke<PaginatedResult<Payment>>("get_payments", {
         fromDate: fromDate || null,
         toDate: toDate || null,
         customerId: customerId ?? null,
         search: search || null,
-        limit: store.pageSize,
-        offset: (store.page - 1) * store.pageSize,
+        limit: pageSize,
+        offset: (page - 1) * pageSize,
       });
-      store.setPayments(result.items);
-      store.setTotalCount(result.total);
+      setPayments(result.items);
+      setTotalCount(result.total);
       return result.items;
     } catch (e) {
       toast.error(`Failed to load payments: ${extractErrorMessage(e)}`);
       return [];
     } finally {
-      store.setLoading(false);
+      setLoading(false);
     }
-  }, [store.page, store.pageSize]);
+  }, []);
 
   /** Get all payments associated with an installment account. */
   const getPaymentsForAccount = useCallback(async (accountId: number): Promise<Payment[]> => {

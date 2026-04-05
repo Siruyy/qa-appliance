@@ -21,22 +21,22 @@ export function useCategories() {
     fetchCategories();
   }, [fetchCategories]);
 
-  const createCategory = async (name: string, description?: string) => {
+  const createCategory = useCallback(async (name: string, description?: string) => {
     const category = await invoke<Category>("create_category", { name, description });
     await fetchCategories();
     return category;
-  };
+  }, [fetchCategories]);
 
-  const updateCategory = async (id: number, name: string, description?: string) => {
+  const updateCategory = useCallback(async (id: number, name: string, description?: string) => {
     const category = await invoke<Category>("update_category", { id, name, description });
     await fetchCategories();
     return category;
-  };
+  }, [fetchCategories]);
 
-  const deleteCategory = async (id: number) => {
+  const deleteCategory = useCallback(async (id: number) => {
     await invoke<void>("delete_category", { id });
     await fetchCategories();
-  };
+  }, [fetchCategories]);
 
   return {
     fetchCategories,

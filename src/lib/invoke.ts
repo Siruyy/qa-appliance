@@ -1,7 +1,7 @@
 import { invoke as tauriInvoke } from "@tauri-apps/api/core";
 
 /** Known Tauri command names — keeps invoke calls type-safe at runtime */
-const ALLOWED_COMMANDS = new Set([
+const ALLOWED_COMMANDS = [
   // DB
   "ping", "backup_database", "restore_database", "get_database_path",
   // Products & Inventory
@@ -36,14 +36,19 @@ const ALLOWED_COMMANDS = new Set([
   "preview_import", "confirm_import", "list_import_logs",
   // Audit
   "get_audit_log",
-] as const);
+] as const;
+
+/** Union type of all valid Tauri command names */
+export type TauriCommand = (typeof ALLOWED_COMMANDS)[number];
+
+const COMMAND_SET: Set<string> = new Set(ALLOWED_COMMANDS);
 
 /**
  * Typed wrapper around Tauri's invoke. All IPC calls go through here
  * for consistent error handling, allowlist validation, and type safety.
  */
-export async function invoke<T>(cmd: string, args?: Record<string, unknown>): Promise<T> {
-  if (!ALLOWED_COMMANDS.has(cmd as never)) {
+export async function invoke<T>(cmd: TauriCommand, args?: Record<string, unknown>): Promise<T> {
+  if (!COMMAND_SET.has(cmd)) {
     const msg = `Unknown command: ${cmd}`;
     if (import.meta.env.DEV) console.error(`[invoke] ${msg}`);
     throw new Error(msg);

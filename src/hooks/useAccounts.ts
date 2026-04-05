@@ -8,7 +8,6 @@ import type { PaginatedResult } from "@/types/shared";
 
 /** Hook for managing installment accounts with pagination and filtering. */
 export function useAccounts() {
-  const store = useAccountStore();
 
   /** Fetch paginated accounts with optional status, type, and search filters. */
   const fetchAccounts = useCallback(async (
@@ -16,7 +15,8 @@ export function useAccounts() {
     accountType?: string,
     search?: string
   ) => {
-    store.setLoading(true);
+    const { page, pageSize, setLoading, setAccounts, setTotalCount } = useAccountStore.getState();
+    setLoading(true);
     try {
       const result = await invoke<PaginatedResult<InstallmentAccount>>(
         "get_accounts",
@@ -24,20 +24,20 @@ export function useAccounts() {
           statusFilter: statusFilter === "all" ? null : (statusFilter ?? null),
           accountType: accountType === "all" ? null : (accountType ?? null),
           search: search || null,
-          limit: store.pageSize,
-          offset: (store.page - 1) * store.pageSize,
+          limit: pageSize,
+          offset: (page - 1) * pageSize,
         }
       );
-      store.setAccounts(result.items);
-      store.setTotalCount(result.total);
+      setAccounts(result.items);
+      setTotalCount(result.total);
       return result.items;
     } catch (e) {
       toast.error(`Failed to load accounts: ${extractErrorMessage(e)}`);
       return [];
     } finally {
-      store.setLoading(false);
+      setLoading(false);
     }
-  }, [store.page, store.pageSize]);
+  }, []);
 
   /** Fetch a single account's full details by ID. */
   const getAccountById = useCallback(async (id: number): Promise<AccountDetail> => {

@@ -3,6 +3,7 @@ use tauri::State;
 use crate::db::connection::DbState;
 use crate::models::sale::*;
 use crate::models::PaginatedResult;
+use crate::utils::date::add_months_to_date;
 use crate::utils::query::{build_where, paginated_query};
 use crate::commands::audit_log::insert_audit;
 
@@ -448,37 +449,4 @@ pub fn void_sale(db: State<DbState>, id: i64) -> Result<(), String> {
             Err(e)
         }
     }
-}
-
-/// Add months to a date string (YYYY-MM-DD)
-fn add_months_to_date(date_str: &str, months: u32) -> Result<String, String> {
-    let parts: Vec<&str> = date_str.split('-').collect();
-    if parts.len() != 3 {
-        return Err("Invalid date format".to_string());
-    }
-
-    let year: i32 = parts[0].parse().map_err(|_| "Invalid year")?;
-    let month: u32 = parts[1].parse().map_err(|_| "Invalid month")?;
-    let day: u32 = parts[2].parse().map_err(|_| "Invalid day")?;
-
-    let total_months = (year * 12 + month as i32 - 1) + months as i32;
-    let new_year = total_months / 12;
-    let new_month = (total_months % 12) + 1;
-
-    // Clamp day to last day of target month
-    let days_in_month = match new_month as u32 {
-        1 | 3 | 5 | 7 | 8 | 10 | 12 => 31,
-        4 | 6 | 9 | 11 => 30,
-        2 => {
-            if (new_year % 4 == 0 && new_year % 100 != 0) || (new_year % 400 == 0) {
-                29
-            } else {
-                28
-            }
-        }
-        _ => 30,
-    };
-
-    let clamped_day = day.min(days_in_month);
-    Ok(format!("{:04}-{:02}-{:02}", new_year, new_month, clamped_day))
 }

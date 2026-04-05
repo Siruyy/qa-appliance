@@ -38,57 +38,57 @@ export function useProducts() {
   }, [fetchProducts]);
 
   /** Create a new product and refresh the list. */
-  const createProduct = async (payload: CreateProductPayload) => {
+  const createProduct = useCallback(async (payload: CreateProductPayload) => {
     const product = await invoke<Product>("create_product", { payload });
     await fetchProducts();
     return product;
-  };
+  }, [fetchProducts]);
 
   /** Update an existing product and refresh the list. */
-  const updateProduct = async (payload: UpdateProductPayload) => {
+  const updateProduct = useCallback(async (payload: UpdateProductPayload) => {
     const product = await invoke<Product>("update_product", { payload });
     await fetchProducts();
     return product;
-  };
+  }, [fetchProducts]);
 
   /** Soft-delete a product and refresh the list. */
-  const archiveProduct = async (id: number) => {
+  const archiveProduct = useCallback(async (id: number) => {
     await invoke<void>("archive_product", { id });
     await fetchProducts();
-  };
+  }, [fetchProducts]);
 
   /** Restore an archived product and refresh the list. */
-  const restoreProduct = async (id: number) => {
+  const restoreProduct = useCallback(async (id: number) => {
     await invoke<void>("restore_product", { id });
     await fetchProducts();
-  };
+  }, [fetchProducts]);
 
   /** Create a product variant and refresh the list. */
-  const createVariant = async (payload: CreateVariantPayload) => {
+  const createVariant = useCallback(async (payload: CreateVariantPayload) => {
     const variant = await invoke<ProductVariant>("create_variant", { payload });
     await fetchProducts();
     return variant;
-  };
+  }, [fetchProducts]);
 
   /** Update a product variant and refresh the list. */
-  const updateVariant = async (payload: UpdateVariantPayload) => {
+  const updateVariant = useCallback(async (payload: UpdateVariantPayload) => {
     const variant = await invoke<ProductVariant>("update_variant", { payload });
     await fetchProducts();
     return variant;
-  };
+  }, [fetchProducts]);
 
   /** Soft-delete a variant and refresh the list. */
-  const archiveVariant = async (id: number) => {
+  const archiveVariant = useCallback(async (id: number) => {
     await invoke<void>("archive_variant", { id });
     await fetchProducts();
-  };
+  }, [fetchProducts]);
 
   /** Adjust variant stock by a delta amount and refresh the list. */
-  const adjustStock = async (id: number, delta: number) => {
+  const adjustStock = useCallback(async (id: number, delta: number) => {
     const variant = await invoke<ProductVariant>("adjust_stock", { id, delta });
     await fetchProducts();
     return variant;
-  };
+  }, [fetchProducts]);
 
   return {
     fetchProducts,

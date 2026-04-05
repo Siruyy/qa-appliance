@@ -1,5 +1,6 @@
 use crate::db::connection::DbState;
 use crate::models::import_export::*;
+use crate::utils::date::{add_months_to_date, today_iso};
 use calamine::{open_workbook, Reader, Xlsx};
 use rusqlite::params;
 use std::collections::HashMap;
@@ -733,10 +734,11 @@ fn import_balance_row(db: &rusqlite::Connection, data: &HashMap<String, String>)
     {
         if let (Some(term), Some(monthly)) = (term_months, monthly_amount) {
             let base_date = start_date.clone().unwrap_or_else(|| {
-                chrono_free_today()
+                today_iso()
             });
             for month_idx in 1..=term {
-                let due_date = add_months_to_date(&base_date, month_idx as u32);
+                let due_date = add_months_to_date(&base_date, month_idx as u32)
+                    .map_err(|e| e.to_string())?;
                 db.execute(
                     "INSERT INTO payment_schedules (account_id, due_date, amount_due, status)
                      VALUES (?1, ?2, ?3, 'pending')",
@@ -756,55 +758,6 @@ fn import_balance_row(db: &rusqlite::Connection, data: &HashMap<String, String>)
     }
 
     Ok(())
-}
-
-// Simple date helpers (no chrono dependency)
-fn chrono_free_today() -> String {
-    // Use system time to get today's date
-    let now = std::time::SystemTime::now()
-        .duration_since(std::time::UNIX_EPOCH)
-        .unwrap()
-        .as_secs();
-    let days = (now / 86400) as i64;
-    let (y, m, d) = civil_from_days(days + 719468);
-    format!("{:04}-{:02}-{:02}", y, m, d)
-}
-
-fn add_months_to_date(date_str: &str, months: u32) -> String {
-    let parts: Vec<&str> = date_str.split('-').collect();
-    if parts.len() != 3 { return date_str.to_string(); }
-    let y: i32 = parts[0].parse().unwrap_or(2026);
-    let m: u32 = parts[1].parse().unwrap_or(1);
-    let d: u32 = parts[2].parse().unwrap_or(1);
-
-    let total_months = (y as u32) * 12 + (m - 1) + months;
-    let new_y = (total_months / 12) as i32;
-    let new_m = (total_months % 12) + 1;
-    let max_d = days_in_month(new_y, new_m);
-    let new_d = d.min(max_d);
-    format!("{:04}-{:02}-{:02}", new_y, new_m, new_d)
-}
-
-fn days_in_month(y: i32, m: u32) -> u32 {
-    match m {
-        1 | 3 | 5 | 7 | 8 | 10 | 12 => 31,
-        4 | 6 | 9 | 11 => 30,
-        2 => if y % 4 == 0 && (y % 100 != 0 || y % 400 == 0) { 29 } else { 28 },
-        _ => 30,
-    }
-}
-
-fn civil_from_days(days: i64) -> (i32, u32, u32) {
-    let era = if days >= 0 { days } else { days - 146096 } / 146097;
-    let doe = (days - era * 146097) as u32;
-    let yoe = (doe - doe / 1460 + doe / 36524 - doe / 146096) / 365;
-    let y = yoe as i64 + era * 400;
-    let doy = doe - (365 * yoe + yoe / 4 - yoe / 100);
-    let mp = (5 * doy + 2) / 153;
-    let d = doy - (153 * mp + 2) / 5 + 1;
-    let m = if mp < 10 { mp + 3 } else { mp - 9 };
-    let y = if m <= 2 { y + 1 } else { y };
-    (y as i32, m, d)
 }
 
 // ── Import Logs ──────────────────────────────────────

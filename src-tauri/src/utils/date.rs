@@ -87,3 +87,24 @@ fn days_in_month(year: i32, month: u32) -> u32 {
         _ => 30,
     }
 }
+
+/// Adds `months` calendar months to a "YYYY-MM-DD" string, clamping the day
+/// to the last valid day of the resulting month (e.g., Jan 31 + 1 month → Feb 28/29).
+pub fn add_months_to_date(date_str: &str, months: u32) -> Result<String, String> {
+    let parts: Vec<&str> = date_str.split('-').collect();
+    if parts.len() != 3 {
+        return Err("Invalid date format".to_string());
+    }
+
+    let year: i32 = parts[0].parse().map_err(|_| "Invalid year".to_string())?;
+    let month: u32 = parts[1].parse().map_err(|_| "Invalid month".to_string())?;
+    let day: u32 = parts[2].parse().map_err(|_| "Invalid day".to_string())?;
+
+    let total_months = (year * 12 + month as i32 - 1) + months as i32;
+    let new_year = total_months / 12;
+    let new_month = (total_months % 12) + 1;
+
+    let max_day = days_in_month(new_year, new_month as u32);
+    let clamped_day = day.min(max_day);
+    Ok(format!("{:04}-{:02}-{:02}", new_year, new_month, clamped_day))
+}

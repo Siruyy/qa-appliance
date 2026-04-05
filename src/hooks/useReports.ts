@@ -1,3 +1,4 @@
+import { useCallback } from "react";
 import { invoke } from "@/lib/invoke";
 import type {
   SalesSummaryReport,
@@ -9,7 +10,7 @@ import type {
 } from "@/types/report";
 
 export function useReports() {
-  const getSalesSummary = async (
+  const getSalesSummary = useCallback(async (
     fromDate: string,
     toDate: string
   ): Promise<SalesSummaryReport> => {
@@ -17,25 +18,25 @@ export function useReports() {
       fromDate,
       toDate,
     });
-  };
+  }, []);
 
-  const getReceivablesReport = async (
+  const getReceivablesReport = useCallback(async (
     statusFilter?: string
   ): Promise<ReceivablesReport> => {
     return invoke<ReceivablesReport>("get_receivables_report", {
       statusFilter: statusFilter ?? null,
     });
-  };
+  }, []);
 
-  const getInventoryValuationReport = async (
+  const getInventoryValuationReport = useCallback(async (
     categoryId?: number
   ): Promise<InventoryReport> => {
     return invoke<InventoryReport>("get_inventory_valuation_report", {
       categoryId: categoryId ?? null,
     });
-  };
+  }, []);
 
-  const getCollectionsReport = async (
+  const getCollectionsReport = useCallback(async (
     fromDate: string,
     toDate: string,
     customerId?: number
@@ -45,9 +46,9 @@ export function useReports() {
       toDate,
       customerId: customerId ?? null,
     });
-  };
+  }, []);
 
-  const getCustomerHistoryReport = async (
+  const getCustomerHistoryReport = useCallback(async (
     customerId: number,
     fromDate?: string,
     toDate?: string
@@ -57,9 +58,9 @@ export function useReports() {
       fromDate: fromDate ?? null,
       toDate: toDate ?? null,
     });
-  };
+  }, []);
 
-  const getProfitLossReport = async (
+  const getProfitLossReport = useCallback(async (
     fromDate: string,
     toDate: string
   ): Promise<ProfitLossReport> => {
@@ -67,7 +68,7 @@ export function useReports() {
       fromDate,
       toDate,
     });
-  };
+  }, []);
 
   return {
     getSalesSummary,
