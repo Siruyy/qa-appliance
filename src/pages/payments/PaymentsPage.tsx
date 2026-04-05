@@ -1,6 +1,6 @@
 import { useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { CreditCard, Search } from "lucide-react";
+import { CreditCard, Search, Download } from "lucide-react";
 
 import { usePayments } from "@/hooks/usePayments";
 import { usePaymentStore } from "@/stores/paymentStore";
@@ -26,6 +26,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { Button } from "@/components/ui/button";
+import { downloadCsv } from "@/lib/csv";
 
 const typeColor: Record<string, string> = {
   payment: "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200",
@@ -69,12 +71,26 @@ export function PaymentsPage() {
   const { format: formatCurrency } = useCurrency();
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-3">
-        <CreditCard className="h-6 w-6" />
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">Payment History</h1>
-          <p className="text-sm text-muted-foreground">All recorded payments across accounts</p>
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <CreditCard className="h-6 w-6" />
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight">Payment History</h1>
+            <p className="text-sm text-muted-foreground">All recorded payments across accounts</p>
+          </div>
         </div>
+        <Button variant="outline" className="gap-2" onClick={() => {
+          downloadCsv(payments, "payments", [
+            { key: "payment_date", label: "Date" },
+            { key: "customer_name", label: "Customer" },
+            { key: "amount", label: "Amount" },
+            { key: "type", label: "Type" },
+            { key: "product_summary", label: "Products" },
+          ]);
+        }}>
+          <Download className="h-4 w-4" />
+          CSV
+        </Button>
       </div>
 
       {/* Filters */}

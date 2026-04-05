@@ -2,7 +2,7 @@ import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { PageHeader } from "@/components/PageHeader";
 import { Pagination } from "@/components/Pagination";
-import { Plus, Search, X, ReceiptText } from "lucide-react";
+import { Plus, Search, X, ReceiptText, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -32,6 +32,7 @@ import { useSales } from "@/hooks/useSales";
 import { SaleDetailModal } from "./SaleDetailModal";
 import { EmptyState } from "@/components/EmptyState";
 import { TableSkeleton } from "@/components/TableSkeleton";
+import { downloadCsv } from "@/lib/csv";
 
 export function SalesHistoryPage() {
   const navigate = useNavigate();
@@ -66,10 +67,25 @@ export function SalesHistoryPage() {
         title="Sales History"
         description="View and manage past sales transactions."
         actions={
-          <Button onClick={() => navigate("/sales/new")} className="gap-2">
-            <Plus className="h-4 w-4" />
-            New Sale
-          </Button>
+          <div className="flex gap-2">
+            <Button variant="outline" className="gap-2" onClick={() => {
+              downloadCsv(sales, "sales-history", [
+                { key: "sale_date", label: "Date" },
+                { key: "customer_name", label: "Customer" },
+                { key: "items_summary", label: "Items" },
+                { key: "total", label: "Total" },
+                { key: "payment_type", label: "Type" },
+                { key: "status", label: "Status" },
+              ]);
+            }}>
+              <Download className="h-4 w-4" />
+              CSV
+            </Button>
+            <Button onClick={() => navigate("/sales/new")} className="gap-2">
+              <Plus className="h-4 w-4" />
+              New Sale
+            </Button>
+          </div>
         }
       />
 

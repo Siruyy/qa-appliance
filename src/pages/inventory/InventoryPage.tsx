@@ -16,6 +16,7 @@ import {
   PackagePlus,
   AlertTriangle,
   XCircle,
+  Download,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -64,6 +65,7 @@ import {
 import { ProductFormModal } from "./ProductFormModal";
 import { VariantFormModal } from "./VariantFormModal";
 import { StockAdjustModal } from "./StockAdjustModal";
+import { downloadCsv } from "@/lib/csv";
 
 type ModalState =
   | { type: "none" }
@@ -184,10 +186,38 @@ export function InventoryPage() {
         title="Inventory"
         description="Manage products, variants, stock levels, and categories."
         actions={
-          <Button onClick={() => setModal({ type: "product" })}>
-            <Plus className="mr-2 h-4 w-4" />
-            Add Product
-          </Button>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => {
+              const flat = products.flatMap((p) =>
+                (p.variants ?? []).map((v) => ({
+                  product: p.name,
+                  category: p.category_name ?? "",
+                  sku: v.sku ?? "",
+                  attributes: v.attributes ? Object.values(v.attributes).join(" / ") : "",
+                  cost_price: v.cost_price,
+                  selling_price: v.selling_price,
+                  stock_qty: v.stock_qty,
+                  active: p.is_active ? "Yes" : "No",
+                }))
+              );
+              downloadCsv(flat, "inventory", [
+                { key: "product", label: "Product" },
+                { key: "category", label: "Category" },
+                { key: "sku", label: "SKU" },
+                { key: "attributes", label: "Variant" },
+                { key: "cost_price", label: "Cost" },
+                { key: "selling_price", label: "Price" },
+                { key: "stock_qty", label: "Stock" },
+                { key: "active", label: "Active" },
+              ]);
+            }}>
+              <Download className="mr-1 h-4 w-4" /> CSV
+            </Button>
+            <Button onClick={() => setModal({ type: "product" })}>
+              <Plus className="mr-2 h-4 w-4" />
+              Add Product
+            </Button>
+          </div>
         }
       />
 

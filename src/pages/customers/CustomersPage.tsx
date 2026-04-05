@@ -11,6 +11,7 @@ import {
   Archive,
   RotateCcw,
   Eye,
+  Download,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -55,6 +56,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 import { CustomerFormModal } from "./CustomerFormModal";
+import { downloadCsv } from "@/lib/csv";
 
 type ModalState =
   | { type: "none" }
@@ -117,9 +119,22 @@ export function CustomersPage() {
         title="Customers"
         description="Customer profiles, contact info, and linked accounts."
         actions={
-          <Button onClick={() => setModal({ type: "form" })}>
-            <Plus className="mr-1 h-4 w-4" /> Add Customer
-          </Button>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => {
+              downloadCsv(customers, "customers", [
+                { key: "name", label: "Name" },
+                { key: "phone", label: "Phone" },
+                { key: "email", label: "Email" },
+                { key: "address", label: "Address" },
+                { key: "is_active", label: "Active" },
+              ]);
+            }}>
+              <Download className="mr-1 h-4 w-4" /> CSV
+            </Button>
+            <Button onClick={() => setModal({ type: "form" })}>
+              <Plus className="mr-1 h-4 w-4" /> Add Customer
+            </Button>
+          </div>
         }
       />
 

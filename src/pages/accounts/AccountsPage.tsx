@@ -9,6 +9,7 @@ import {
   Eye,
   CreditCard,
   XCircle,
+  Download,
 } from "lucide-react";
 
 import { useAccounts } from "@/hooks/useAccounts";
@@ -18,6 +19,7 @@ import { useCurrency } from "@/hooks/useCurrency";
 import { accountStatusVariant } from "@/lib/badgeVariants";
 
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
   Select,
@@ -41,6 +43,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { TableSkeleton } from "@/components/TableSkeleton";
+import { downloadCsv } from "@/lib/csv";
 
 export function AccountsPage() {
   const navigate = useNavigate();
@@ -93,6 +96,21 @@ export function AccountsPage() {
       <PageHeader
         title="Accounts / Receivables"
         description="Track all open installment and utang accounts."
+        actions={
+          <Button variant="outline" className="gap-2" onClick={() => {
+            downloadCsv(accounts, "accounts", [
+              { key: "customer_name", label: "Customer" },
+              { key: "type", label: "Type" },
+              { key: "total_payable", label: "Total Payable" },
+              { key: "balance_remaining", label: "Balance" },
+              { key: "status", label: "Status" },
+              { key: "start_date", label: "Start Date" },
+            ]);
+          }}>
+            <Download className="h-4 w-4" />
+            CSV
+          </Button>
+        }
       />
 
       {overdue > 0 && (
