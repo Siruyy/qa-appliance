@@ -1,13 +1,14 @@
 import { memo, useEffect, useState } from "react";
 import {
-  LineChart,
-  Line,
+  AreaChart,
+  Area,
   XAxis,
   YAxis,
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
 } from "recharts";
+import { ChartTooltip, gridStyle, axisTickStyle, animationProps } from "@/components/charts";
 import {
   Table,
   TableBody,
@@ -24,6 +25,7 @@ import { useReportStore } from "@/stores/reportStore";
 import { useClientPagination } from "@/hooks/useClientPagination";
 import { formatDate } from "@/lib/formatters";
 import { useCurrency } from "@/hooks/useCurrency";
+import { paymentTypeVariant, saleStatusVariant } from "@/lib/badgeVariants";
 import type { SalesSummaryReport } from "@/types/report";
 import { toast } from "sonner";
 
@@ -58,15 +60,38 @@ export function SalesSummaryTab() {
       {/* Chart */}
       {data.daily_totals.length > 0 && (
         <div className="rounded-lg border bg-card p-4">
-          <h3 className="mb-4 text-sm font-medium">Daily Sales Trend</h3>
-          <ResponsiveContainer width="100%" height={260}>
-            <LineChart data={data.daily_totals}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="date" tick={{ fontSize: 11 }} />
-              <YAxis tick={{ fontSize: 11 }} tickFormatter={(v) => `₱${(v / 1000).toFixed(0)}k`} />
-              <Tooltip formatter={(v) => formatCurrency(Number(v))} />
-              <Line type="monotone" dataKey="total" stroke="var(--chart-1)" strokeWidth={2} dot={false} />
-            </LineChart>
+          <h3 className="mb-4 text-sm font-medium" style={{ fontFamily: "var(--font-heading)" }}>Daily Sales Trend</h3>
+          <p className="mb-3 text-xs text-muted-foreground">Revenue by day for the selected period</p>
+          <ResponsiveContainer width="100%" height={280}>
+            <AreaChart data={data.daily_totals} {...animationProps}>
+              <defs>
+                <linearGradient id="salesSummaryGradient" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="var(--chart-1)" stopOpacity={0.3} />
+                  <stop offset="95%" stopColor="var(--chart-1)" stopOpacity={0.02} />
+                </linearGradient>
+              </defs>
+              <CartesianGrid {...gridStyle} vertical={false} />
+              <XAxis dataKey="date" tick={axisTickStyle} axisLine={false} tickLine={false} />
+              <YAxis tick={axisTickStyle} tickFormatter={(v) => `₱${(v / 1000).toFixed(0)}k`} axisLine={false} tickLine={false} width={48} />
+              <Tooltip
+                content={
+                  <ChartTooltip
+                    labelFormatter={(l) => formatDate(String(l))}
+                    valueFormatter={(v) => formatCurrency(v)}
+                  />
+                }
+              />
+              <Area
+                type="monotone"
+                dataKey="total"
+                name="Sales"
+                stroke="var(--chart-1)"
+                strokeWidth={2}
+                fill="url(#salesSummaryGradient)"
+                dot={false}
+                activeDot={{ r: 4, strokeWidth: 2, fill: "var(--background)" }}
+              />
+            </AreaChart>
           </ResponsiveContainer>
         </div>
       )}
@@ -109,12 +134,12 @@ const SalesTable = memo(function SalesTable({ sales, formatCurrency }: { sales: 
                   <TableCell className="max-w-[200px] truncate">{s.items_summary}</TableCell>
                   <TableCell className="text-right">{formatCurrency(s.total)}</TableCell>
                   <TableCell>
-                    <Badge variant={s.payment_type === "cash" ? "default" : "secondary"}>
+                    <Badge variant={paymentTypeVariant[s.payment_type] ?? "secondary"}>
                       {s.payment_type}
                     </Badge>
                   </TableCell>
                   <TableCell>
-                    <Badge variant={s.status === "completed" ? "default" : "destructive"}>
+                    <Badge variant={saleStatusVariant[s.status] ?? "default"}>
                       {s.status}
                     </Badge>
                   </TableCell>

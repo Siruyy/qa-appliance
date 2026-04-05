@@ -19,11 +19,13 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { KpiCard } from "@/components/KpiCard";
 import { Pagination } from "@/components/Pagination";
+import { ChartTooltip, gridStyle, axisTickStyle, barRadius, animationProps } from "@/components/charts";
 import { useReports } from "@/hooks/useReports";
 import { useReportStore } from "@/stores/reportStore";
 import { useClientPagination } from "@/hooks/useClientPagination";
 import { formatDate, formatProductSummary } from "@/lib/formatters";
 import { useCurrency } from "@/hooks/useCurrency";
+import { collectionTypeVariant } from "@/lib/badgeVariants";
 import type { CollectionsReport } from "@/types/report";
 import { toast } from "sonner";
 
@@ -57,14 +59,28 @@ export function CollectionsTab() {
       {/* Chart */}
       {data.daily_totals.length > 0 && (
         <div className="rounded-lg border bg-card p-4">
-          <h3 className="mb-4 text-sm font-medium">Daily Collections</h3>
-          <ResponsiveContainer width="100%" height={260}>
-            <BarChart data={data.daily_totals}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="date" tick={{ fontSize: 11 }} />
-              <YAxis tick={{ fontSize: 11 }} tickFormatter={(v) => `₱${(v / 1000).toFixed(0)}k`} />
-              <Tooltip formatter={(v) => formatCurrency(Number(v))} />
-              <Bar dataKey="total" fill="var(--chart-2)" name="Collections" />
+          <h3 className="mb-4 text-sm font-medium" style={{ fontFamily: "var(--font-heading)" }}>Daily Collections</h3>
+          <p className="mb-3 text-xs text-muted-foreground">Payment collections received per day</p>
+          <ResponsiveContainer width="100%" height={280}>
+            <BarChart data={data.daily_totals} {...animationProps}>
+              <defs>
+                <linearGradient id="collectionsReportGradient" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="var(--chart-2)" stopOpacity={0.9} />
+                  <stop offset="100%" stopColor="var(--chart-2)" stopOpacity={0.5} />
+                </linearGradient>
+              </defs>
+              <CartesianGrid {...gridStyle} vertical={false} />
+              <XAxis dataKey="date" tick={axisTickStyle} axisLine={false} tickLine={false} />
+              <YAxis tick={axisTickStyle} tickFormatter={(v) => `₱${(v / 1000).toFixed(0)}k`} axisLine={false} tickLine={false} width={48} />
+              <Tooltip
+                content={
+                  <ChartTooltip
+                    labelFormatter={(l) => formatDate(String(l))}
+                    valueFormatter={(v) => formatCurrency(v)}
+                  />
+                }
+              />
+              <Bar dataKey="total" fill="url(#collectionsReportGradient)" name="Collections" radius={barRadius} />
             </BarChart>
           </ResponsiveContainer>
         </div>
@@ -107,7 +123,7 @@ const PaymentsTable = memo(function PaymentsTable({ payments, formatCurrency }: 
                   <TableCell className="max-w-[200px] truncate">{formatProductSummary(p.product_summary)}</TableCell>
                   <TableCell className="text-right">{formatCurrency(p.amount)}</TableCell>
                   <TableCell>
-                    <Badge variant={p.type === "regular" ? "default" : "secondary"}>
+                    <Badge variant={collectionTypeVariant[p.type] ?? "default"}>
                       {p.type}
                     </Badge>
                   </TableCell>

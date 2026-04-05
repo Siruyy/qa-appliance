@@ -11,8 +11,8 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import {
-  LineChart,
-  Line,
+  AreaChart,
+  Area,
   BarChart,
   Bar,
   XAxis,
@@ -24,10 +24,12 @@ import {
 import { useDashboard } from "@/hooks/useDashboard";
 import { formatDate } from "@/lib/formatters";
 import { useCurrency } from "@/hooks/useCurrency";
+import { paymentTypeVariant } from "@/lib/badgeVariants";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import type { DashboardData } from "@/types/report";
 import { KpiCard } from "@/components/KpiCard";
+import { ChartTooltip, gridStyle, axisTickStyle, barRadius, animationProps } from "@/components/charts";
 import { ShoppingCart, TrendingUp, Wallet, AlertTriangle } from "lucide-react";
 
 export function DashboardPage() {
@@ -142,7 +144,8 @@ export function DashboardPage() {
       <div className="grid md:grid-cols-2 gap-4">
         <Card>
           <CardHeader>
-            <CardTitle className="text-sm">Sales (Last 30 Days)</CardTitle>
+            <CardTitle className="text-sm" style={{ fontFamily: "var(--font-heading)" }}>Sales (Last 30 Days)</CardTitle>
+            <p className="text-xs text-muted-foreground">Daily revenue trend</p>
           </CardHeader>
           <CardContent>
             {data.sales_last_30_days.length === 0 ? (
@@ -150,30 +153,48 @@ export function DashboardPage() {
                 No sales data yet
               </p>
             ) : (
-              <ResponsiveContainer width="100%" height={220}>
-                <LineChart data={data.sales_last_30_days}>
-                  <CartesianGrid strokeDasharray="3 3" />
+              <ResponsiveContainer width="100%" height={240}>
+                <AreaChart data={data.sales_last_30_days} {...animationProps}>
+                  <defs>
+                    <linearGradient id="salesGradient" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="var(--chart-1)" stopOpacity={0.3} />
+                      <stop offset="95%" stopColor="var(--chart-1)" stopOpacity={0.02} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid {...gridStyle} vertical={false} />
                   <XAxis
                     dataKey="date"
                     tickFormatter={(d) => d.slice(5)}
-                    fontSize={11}
+                    tick={axisTickStyle}
+                    axisLine={false}
+                    tickLine={false}
                   />
                   <YAxis
                     tickFormatter={(v) => `₱${(v / 1000).toFixed(0)}k`}
-                    fontSize={11}
+                    tick={axisTickStyle}
+                    axisLine={false}
+                    tickLine={false}
+                    width={48}
                   />
                   <Tooltip
-                    formatter={(v) => formatCurrency(Number(v))}
-                    labelFormatter={(l) => formatDate(String(l))}
+                    content={
+                      <ChartTooltip
+                        labelFormatter={(l) => formatDate(String(l))}
+                        valueFormatter={(v) => formatCurrency(v)}
+                      />
+                    }
                   />
-                  <Line
+                  <Area
                     type="monotone"
                     dataKey="total"
+                    name="Sales"
                     stroke="var(--chart-1)"
                     strokeWidth={2}
+                    fill="url(#salesGradient)"
                     dot={false}
+                    activeDot={{ r: 4, strokeWidth: 2, fill: "var(--background)" }}
                   />
-                </LineChart>
+                </AreaChart>
               </ResponsiveContainer>
             )}
           </CardContent>
@@ -181,9 +202,10 @@ export function DashboardPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle className="text-sm">
+            <CardTitle className="text-sm" style={{ fontFamily: "var(--font-heading)" }}>
               Collections (Last 30 Days)
             </CardTitle>
+            <p className="text-xs text-muted-foreground">Daily payment collections</p>
           </CardHeader>
           <CardContent>
             {data.collections_last_30_days.length === 0 ? (
@@ -191,23 +213,43 @@ export function DashboardPage() {
                 No collection data yet
               </p>
             ) : (
-              <ResponsiveContainer width="100%" height={220}>
-                <BarChart data={data.collections_last_30_days}>
-                  <CartesianGrid strokeDasharray="3 3" />
+              <ResponsiveContainer width="100%" height={240}>
+                <BarChart data={data.collections_last_30_days} {...animationProps}>
+                  <defs>
+                    <linearGradient id="collectionsGradient" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="var(--chart-2)" stopOpacity={0.9} />
+                      <stop offset="100%" stopColor="var(--chart-2)" stopOpacity={0.5} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid {...gridStyle} vertical={false} />
                   <XAxis
                     dataKey="date"
                     tickFormatter={(d) => d.slice(5)}
-                    fontSize={11}
+                    tick={axisTickStyle}
+                    axisLine={false}
+                    tickLine={false}
                   />
                   <YAxis
                     tickFormatter={(v) => `₱${(v / 1000).toFixed(0)}k`}
-                    fontSize={11}
+                    tick={axisTickStyle}
+                    axisLine={false}
+                    tickLine={false}
+                    width={48}
                   />
                   <Tooltip
-                    formatter={(v) => formatCurrency(Number(v))}
-                    labelFormatter={(l) => formatDate(String(l))}
+                    content={
+                      <ChartTooltip
+                        labelFormatter={(l) => formatDate(String(l))}
+                        valueFormatter={(v) => formatCurrency(v)}
+                      />
+                    }
                   />
-                  <Bar dataKey="total" fill="var(--chart-2)" radius={[2, 2, 0, 0]} />
+                  <Bar
+                    dataKey="total"
+                    name="Collections"
+                    fill="url(#collectionsGradient)"
+                    radius={barRadius}
+                  />
                 </BarChart>
               </ResponsiveContainer>
             )}
@@ -258,9 +300,7 @@ export function DashboardPage() {
                       </TableCell>
                       <TableCell>
                         <Badge
-                          variant={
-                            s.payment_type === "cash" ? "secondary" : "outline"
-                          }
+                          variant={paymentTypeVariant[s.payment_type] ?? "outline"}
                         >
                           {s.payment_type}
                         </Badge>

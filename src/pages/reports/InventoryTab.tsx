@@ -19,10 +19,12 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { KpiCard } from "@/components/KpiCard";
 import { Pagination } from "@/components/Pagination";
+import { ChartTooltip, gridStyle, axisTickStyle, barRadius, animationProps } from "@/components/charts";
 import { useReports } from "@/hooks/useReports";
 import { useReportStore } from "@/stores/reportStore";
 import { useClientPagination } from "@/hooks/useClientPagination";
 import { useCurrency } from "@/hooks/useCurrency";
+import { stockStatusVariant } from "@/lib/badgeVariants";
 import type { InventoryReport } from "@/types/report";
 import { toast } from "sonner";
 
@@ -58,14 +60,25 @@ export function InventoryTab() {
       {/* Bar chart by category */}
       {data.by_category.length > 0 && (
         <div className="rounded-lg border bg-card p-4">
-          <h3 className="mb-4 text-sm font-medium">Stock by Category</h3>
-          <ResponsiveContainer width="100%" height={260}>
-            <BarChart data={data.by_category}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="category" tick={{ fontSize: 11 }} />
-              <YAxis tick={{ fontSize: 11 }} />
-              <Tooltip formatter={(v) => formatCurrency(Number(v))} />
-              <Bar dataKey="total_cost_value" fill="var(--chart-1)" name="Cost Value" />
+          <h3 className="mb-4 text-sm font-medium" style={{ fontFamily: "var(--font-heading)" }}>Stock by Category</h3>
+          <p className="mb-3 text-xs text-muted-foreground">Total cost value of inventory per category</p>
+          <ResponsiveContainer width="100%" height={280}>
+            <BarChart data={data.by_category} {...animationProps}>
+              <defs>
+                <linearGradient id="inventoryGradient" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="var(--chart-1)" stopOpacity={0.9} />
+                  <stop offset="100%" stopColor="var(--chart-1)" stopOpacity={0.5} />
+                </linearGradient>
+              </defs>
+              <CartesianGrid {...gridStyle} vertical={false} />
+              <XAxis dataKey="category" tick={axisTickStyle} axisLine={false} tickLine={false} />
+              <YAxis tick={axisTickStyle} tickFormatter={(v) => `₱${(v / 1000).toFixed(0)}k`} axisLine={false} tickLine={false} width={48} />
+              <Tooltip
+                content={
+                  <ChartTooltip valueFormatter={(v) => formatCurrency(v)} />
+                }
+              />
+              <Bar dataKey="total_cost_value" fill="url(#inventoryGradient)" name="Cost Value" radius={barRadius} />
             </BarChart>
           </ResponsiveContainer>
         </div>
@@ -117,9 +130,7 @@ const ItemsTable = memo(function ItemsTable({ items, formatCurrency }: { items: 
                   <TableCell className="text-right">{formatCurrency(item.retail_value)}</TableCell>
                   <TableCell>
                     <Badge
-                      variant={
-                        item.status === "in_stock" ? "default" : item.status === "low_stock" ? "secondary" : "destructive"
-                      }
+                      variant={stockStatusVariant[item.status] ?? "outline"}
                     >
                       {item.status.replace("_", " ")}
                     </Badge>

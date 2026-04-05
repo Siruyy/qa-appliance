@@ -18,10 +18,12 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { KpiCard } from "@/components/KpiCard";
 import { Pagination } from "@/components/Pagination";
+import { ChartTooltip, animationProps } from "@/components/charts";
 import { useReports } from "@/hooks/useReports";
 import { useReportStore } from "@/stores/reportStore";
 import { useClientPagination } from "@/hooks/useClientPagination";
 import { useCurrency } from "@/hooks/useCurrency";
+import { accountStatusVariant } from "@/lib/badgeVariants";
 import { formatProductSummary } from "@/lib/formatters";
 import type { ReceivablesReport } from "@/types/report";
 import { toast } from "sonner";
@@ -55,11 +57,12 @@ export function ReceivablesTab() {
         <KpiCard label="Open Accounts" value={data.open_count} type="number" />
       </div>
 
-      {/* Pie chart */}
+      {/* Donut chart */}
       {data.status_breakdown.length > 0 && (
         <div className="rounded-lg border bg-card p-4">
-          <h3 className="mb-4 text-sm font-medium">Status Breakdown</h3>
-          <ResponsiveContainer width="100%" height={260}>
+          <h3 className="mb-4 text-sm font-medium" style={{ fontFamily: "var(--font-heading)" }}>Status Breakdown</h3>
+          <p className="mb-3 text-xs text-muted-foreground">Outstanding balances by account status</p>
+          <ResponsiveContainer width="100%" height={300}>
             <PieChart>
               <Pie
                 data={data.status_breakdown}
@@ -67,15 +70,30 @@ export function ReceivablesTab() {
                 nameKey="label"
                 cx="50%"
                 cy="50%"
-                outerRadius={90}
+                innerRadius={60}
+                outerRadius={100}
+                paddingAngle={3}
+                cornerRadius={4}
                 label={({ name, percent }) => `${name} ${((percent ?? 0) * 100).toFixed(0)}%`}
+                {...animationProps}
               >
                 {data.status_breakdown.map((_, i) => (
-                  <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />
+                  <Cell
+                    key={i}
+                    fill={PIE_COLORS[i % PIE_COLORS.length]}
+                    strokeWidth={0}
+                  />
                 ))}
               </Pie>
-              <Tooltip formatter={(v) => formatCurrency(Number(v))} />
-              <Legend />
+              <Tooltip
+                content={
+                  <ChartTooltip valueFormatter={(v) => formatCurrency(v)} />
+                }
+              />
+              <Legend
+                wrapperStyle={{ fontSize: 12, paddingTop: 8 }}
+                formatter={(value) => <span className="text-muted-foreground">{value}</span>}
+              />
             </PieChart>
           </ResponsiveContainer>
         </div>
@@ -118,9 +136,7 @@ const AccountsTable = memo(function AccountsTable({ accounts, formatCurrency }: 
                   <TableCell className="text-right">{formatCurrency(a.balance_remaining)}</TableCell>
                   <TableCell>
                     <Badge
-                      variant={
-                        a.status === "open" ? "default" : a.status === "closed" ? "secondary" : "destructive"
-                      }
+                      variant={accountStatusVariant[a.status] ?? "outline"}
                     >
                       {a.status}
                     </Badge>

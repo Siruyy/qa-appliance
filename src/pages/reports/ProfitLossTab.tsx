@@ -18,6 +18,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { KpiCard } from "@/components/KpiCard";
+import { ChartTooltip, gridStyle, axisTickStyle, barRadius, animationProps } from "@/components/charts";
 import { useReports } from "@/hooks/useReports";
 import { useReportStore } from "@/stores/reportStore";
 import { useCurrency } from "@/hooks/useCurrency";
@@ -54,16 +55,31 @@ export function ProfitLossTab() {
       {/* Grouped bar chart by category */}
       {data.by_category.length > 0 && (
         <div className="rounded-lg border bg-card p-4">
-          <h3 className="mb-4 text-sm font-medium">Revenue vs COGS by Category</h3>
-          <ResponsiveContainer width="100%" height={280}>
-            <BarChart data={data.by_category}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="category" tick={{ fontSize: 11 }} />
-              <YAxis tick={{ fontSize: 11 }} tickFormatter={(v) => `₱${(v / 1000).toFixed(0)}k`} />
-              <Tooltip formatter={(v) => formatCurrency(Number(v))} />
-              <Legend />
-              <Bar dataKey="revenue" fill="var(--chart-1)" name="Revenue" />
-              <Bar dataKey="cogs" fill="var(--chart-3)" name="COGS" />
+          <h3 className="mb-4 text-sm font-medium" style={{ fontFamily: "var(--font-heading)" }}>Revenue vs COGS by Category</h3>
+          <p className="mb-3 text-xs text-muted-foreground">Gross margin breakdown by product category</p>
+          <ResponsiveContainer width="100%" height={300}>
+            <BarChart data={data.by_category} {...animationProps} barGap={2}>
+              <defs>
+                <linearGradient id="revenueGradient" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="var(--chart-1)" stopOpacity={0.9} />
+                  <stop offset="100%" stopColor="var(--chart-1)" stopOpacity={0.55} />
+                </linearGradient>
+                <linearGradient id="cogsGradient" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="var(--chart-3)" stopOpacity={0.9} />
+                  <stop offset="100%" stopColor="var(--chart-3)" stopOpacity={0.55} />
+                </linearGradient>
+              </defs>
+              <CartesianGrid {...gridStyle} vertical={false} />
+              <XAxis dataKey="category" tick={axisTickStyle} axisLine={false} tickLine={false} />
+              <YAxis tick={axisTickStyle} tickFormatter={(v) => `₱${(v / 1000).toFixed(0)}k`} axisLine={false} tickLine={false} width={48} />
+              <Tooltip
+                content={
+                  <ChartTooltip valueFormatter={(v) => formatCurrency(v)} />
+                }
+              />
+              <Legend wrapperStyle={{ fontSize: 12, paddingTop: 8 }} />
+              <Bar dataKey="revenue" fill="url(#revenueGradient)" name="Revenue" radius={barRadius} />
+              <Bar dataKey="cogs" fill="url(#cogsGradient)" name="COGS" radius={barRadius} />
             </BarChart>
           </ResponsiveContainer>
         </div>
