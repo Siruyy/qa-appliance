@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import type { Payment } from "@/types/payment";
+import type { Payment, PaymentRecordType } from "@/types/payment";
 
 interface PaymentState {
   payments: Payment[];
@@ -7,6 +7,7 @@ interface PaymentState {
   search: string;
   dateFrom: string;
   dateTo: string;
+  typeFilter: PaymentRecordType | "all";
   page: number;
   pageSize: number;
   totalCount: number;
@@ -15,6 +16,7 @@ interface PaymentState {
   setSearch: (search: string) => void;
   setDateFrom: (date: string) => void;
   setDateTo: (date: string) => void;
+  setTypeFilter: (type: PaymentRecordType | "all") => void;
   setPage: (page: number) => void;
   setPageSize: (pageSize: number) => void;
   setTotalCount: (totalCount: number) => void;
@@ -28,6 +30,7 @@ export const usePaymentStore = create<PaymentState>((set, get) => ({
   search: "",
   dateFrom: "",
   dateTo: "",
+  typeFilter: "all",
   page: 1,
   pageSize: 50,
   totalCount: 0,
@@ -36,12 +39,14 @@ export const usePaymentStore = create<PaymentState>((set, get) => ({
   setSearch: (search) => set({ search, page: 1 }),
   setDateFrom: (dateFrom) => set({ dateFrom, page: 1 }),
   setDateTo: (dateTo) => set({ dateTo, page: 1 }),
+  setTypeFilter: (typeFilter) => set({ typeFilter, page: 1 }),
   setPage: (page) => set({ page }),
   setPageSize: (pageSize) => set({ pageSize, page: 1 }),
   setTotalCount: (totalCount) => set({ totalCount }),
   filteredPayments: () => {
-    const { payments, search, dateFrom, dateTo } = get();
+    const { payments, search, dateFrom, dateTo, typeFilter } = get();
     return payments.filter((p) => {
+      if (typeFilter !== "all" && p.type !== typeFilter) return false;
       if (dateFrom && p.payment_date < dateFrom) return false;
       if (dateTo && p.payment_date > dateTo) return false;
       if (search) {

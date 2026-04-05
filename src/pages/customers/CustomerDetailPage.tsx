@@ -130,6 +130,15 @@ export function CustomerDetailPage() {
           <Button variant="outline" size="sm" onClick={() => setEditing(true)}>
             <Pencil className="mr-1 h-4 w-4" /> Edit
           </Button>
+          {customer.is_active && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => navigate(`/sales/new?customer_id=${customer.id}`)}
+            >
+              <ShoppingCart className="mr-1 h-4 w-4" /> New Sale
+            </Button>
+          )}
           {customer.is_active ? (
             <Button variant="outline" size="sm" onClick={handleArchive}>
               <Archive className="mr-1 h-4 w-4" /> Archive

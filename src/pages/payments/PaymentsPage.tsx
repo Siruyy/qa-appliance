@@ -12,6 +12,13 @@ import { DatePicker } from "@/components/DatePicker";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
   Table,
   TableBody,
   TableCell,
@@ -35,9 +42,11 @@ export function PaymentsPage() {
     search,
     dateFrom,
     dateTo,
+    typeFilter,
     setSearch,
     setDateFrom,
     setDateTo,
+    setTypeFilter,
     filteredPayments,
     totalShown,
     page,
@@ -95,6 +104,18 @@ export function PaymentsPage() {
             className="w-[160px]"
           />
         </div>
+        <Select value={typeFilter} onValueChange={(v) => setTypeFilter(v as typeof typeFilter)}>
+          <SelectTrigger className="w-[160px]">
+            <SelectValue placeholder="All types" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Types</SelectItem>
+            <SelectItem value="payment">Payment</SelectItem>
+            <SelectItem value="down_payment">Down Payment</SelectItem>
+            <SelectItem value="penalty">Penalty</SelectItem>
+            <SelectItem value="interest_adjustment">Interest Adj.</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
 
       {/* Summary */}

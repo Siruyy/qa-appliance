@@ -1,6 +1,7 @@
 import { useLocation, Link } from "react-router-dom";
 import { Settings as SettingsIcon, Sun, Moon, Monitor } from "lucide-react";
 import { format } from "date-fns";
+import { useState, useEffect } from "react";
 import { useUIStore } from "@/stores/uiStore";
 import {
   DropdownMenu,
@@ -32,6 +33,12 @@ export function TopBar() {
   );
   const title = pathKey ? pageTitles[pathKey] : "Quality Appliance";
 
+  const [now, setNow] = useState(new Date());
+  useEffect(() => {
+    const id = setInterval(() => setNow(new Date()), 60_000);
+    return () => clearInterval(id);
+  }, []);
+
   return (
     <header className="flex h-[var(--topbar-height)] shrink-0 items-center justify-between border-b border-border bg-background px-6">
       <h1 className="text-lg font-semibold text-foreground" style={{ fontFamily: "var(--font-heading)" }}>
@@ -39,7 +46,7 @@ export function TopBar() {
       </h1>
       <div className="flex items-center gap-2">
         <span className="text-sm text-muted-foreground">
-          {format(new Date(), "EEEE, MMMM d, yyyy")}
+          {format(now, "EEEE, MMMM d, yyyy · h:mm a")}
         </span>
         <DropdownMenu>
           <DropdownMenuTrigger className="inline-flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground" aria-label="Toggle theme">

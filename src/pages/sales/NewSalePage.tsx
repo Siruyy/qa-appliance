@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { ShoppingCart, User, Banknote, CreditCard } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -45,6 +45,7 @@ import { PaymentSchedulePreviewModal } from "./PaymentSchedulePreviewModal";
 
 export function NewSalePage() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { createSale } = useSales();
   const { fetchProducts } = useProducts();
   const { fetchCustomers } = useCustomers();
@@ -83,6 +84,18 @@ export function NewSalePage() {
     fetchProducts();
     fetchCustomers();
   }, [fetchProducts, fetchCustomers]);
+
+  // Pre-select customer from URL params (e.g., from customer detail page)
+  useEffect(() => {
+    const preselectedId = searchParams.get("customer_id");
+    if (preselectedId && !cart.customerId) {
+      const id = Number(preselectedId);
+      const cust = customers.find((c) => c.id === id);
+      if (cust) {
+        setCartCustomer(id, cust.name);
+      }
+    }
+  }, [searchParams, customers, cart.customerId, setCartCustomer]);
 
   // Payment type selection
   const handlePaymentTypeChange = useCallback(
