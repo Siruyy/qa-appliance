@@ -24,7 +24,6 @@ import { extractErrorMessage } from "@/lib/error";
 import { useProducts } from "@/hooks/useProducts";
 import { useCategories } from "@/hooks/useCategories";
 import { useProductStore } from "@/stores/productStore";
-import { useCurrency } from "@/hooks/useCurrency";
 import type { Product, ProductVariant } from "@/types/product";
 
 import { Input } from "@/components/ui/input";
@@ -66,6 +65,7 @@ import {
 import { ProductFormModal } from "./ProductFormModal";
 import { VariantFormModal } from "./VariantFormModal";
 import { StockAdjustModal } from "./StockAdjustModal";
+import { VariantRow } from "./VariantRow";
 import { downloadCsv } from "@/lib/csv";
 
 type ModalState =
@@ -167,10 +167,23 @@ export function InventoryPage() {
 
   const confirmArchiveProduct = async () => {
     if (!archiveTarget || isArchiving) return;
+    const target = archiveTarget;
     setIsArchiving(true);
     try {
-      await archiveProduct(archiveTarget.id);
-      toast.success(`"${archiveTarget.name}" archived`);
+      await archiveProduct(target.id);
+      toast.success(`"${target.name}" archived`, {
+        action: {
+          label: "Undo",
+          onClick: async () => {
+            try {
+              await restoreProduct(target.id);
+              toast.success(`"${target.name}" restored`);
+            } catch (err) {
+              toast.error(extractErrorMessage(err));
+            }
+          },
+        },
+      });
     } catch (e) {
       toast.error(extractErrorMessage(e));
     } finally {
@@ -533,74 +546,4 @@ export function InventoryPage() {
   );
 }
 
-// ── Variant sub-row ──
 
-function VariantRow({
-  variant,
-  onEdit,
-  onAdjustStock,
-  onArchive,
-}: {
-  variant: ProductVariant;
-  onEdit: () => void;
-  onAdjustStock: () => void;
-  onArchive: () => void;
-}) {
-  const attrs = variant.attributes
-    ? Object.entries(variant.attributes as Record<string, string>)
-        .map(([k, v]) => `${k}: ${v}`)
-        .join(", ")
-    : "—";
-
-  const { format: formatCurrency } = useCurrency();
-
-  const stockBadge = () => {
-    if (!variant.is_active) return <Badge variant="secondary">Archived</Badge>;
-    if (variant.stock_qty === 0)
-      return <Badge variant="destructive">Out of Stock</Badge>;
-    if (variant.stock_qty <= variant.low_stock_threshold)
-      return <Badge className="bg-warning text-warning-foreground">Low Stock</Badge>;
-    return <Badge variant="outline">In Stock</Badge>;
-  };
-
-  return (
-    <TableRow className="bg-muted/30">
-      <TableCell />
-      <TableCell className="pl-8 text-sm text-muted-foreground">
-        <span className="font-mono text-xs">{variant.sku || "No SKU"}</span>
-        <span className="ml-2">{attrs}</span>
-      </TableCell>
-      <TableCell />
-      <TableCell className="text-right text-sm">
-        {formatCurrency(variant.selling_price)}
-      </TableCell>
-      <TableCell className="text-right tabular-nums text-sm">
-        {variant.stock_qty}
-      </TableCell>
-      <TableCell>{stockBadge()}</TableCell>
-      <TableCell>
-        <DropdownMenu>
-          <DropdownMenuTrigger className="inline-flex items-center justify-center rounded-md h-8 w-8 hover:bg-accent hover:text-accent-foreground" title="Variant actions">
-            <MoreHorizontal className="h-4 w-4" />
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={onEdit}>
-              <Pencil className="mr-2 h-4 w-4" />
-              Edit Variant
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={onAdjustStock}>
-              <Package className="mr-2 h-4 w-4" />
-              Adjust Stock
-            </DropdownMenuItem>
-            {variant.is_active && (
-              <DropdownMenuItem onClick={onArchive}>
-                <Archive className="mr-2 h-4 w-4" />
-                Archive
-              </DropdownMenuItem>
-            )}
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </TableCell>
-    </TableRow>
-  );
-}

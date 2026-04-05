@@ -98,10 +98,23 @@ export function CustomersPage() {
 
   const confirmArchive = async () => {
     if (!archiveTarget || isProcessing) return;
+    const target = archiveTarget;
     setIsProcessing(true);
     try {
-      await archiveCustomer(archiveTarget.id);
-      toast.success("Customer archived");
+      await archiveCustomer(target.id);
+      toast.success("Customer archived", {
+        action: {
+          label: "Undo",
+          onClick: async () => {
+            try {
+              await restoreCustomer(target.id);
+              toast.success("Customer restored");
+            } catch (err) {
+              toast.error(extractErrorMessage(err));
+            }
+          },
+        },
+      });
     } catch (error) {
       toast.error(extractErrorMessage(error));
     } finally {
