@@ -35,7 +35,7 @@ import { calculateAddOnInterest, generatePaymentSchedule } from "@/lib/interest"
 import type { CartItem, CreateInstallmentPayload, PaymentType } from "@/types/sale";
 import type { Customer } from "@/types/customer";
 import { getErrorWithRecovery } from "@/lib/error";
-import { useSaleStore } from "@/stores/saleStore";
+import { useCartStore } from "@/stores/cartStore";
 import { useCustomerStore } from "@/stores/customerStore";
 import { useProducts } from "@/hooks/useProducts";
 import { useCustomers } from "@/hooks/useCustomers";
@@ -77,7 +77,7 @@ export function NewSalePage() {
     setCartInstallment,
     cartSubtotal,
     cartTotal,
-  } = useSaleStore();
+  } = useCartStore();
 
   const [submitting, setSubmitting] = useState(false);
   const [showSchedulePreview, setShowSchedulePreview] = useState(false);

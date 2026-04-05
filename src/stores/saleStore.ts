@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import type { Sale, CartItem, PaymentType, CreateInstallmentPayload } from "@/types/sale";
+import type { Sale } from "@/types/sale";
 
 interface SaleFilters {
   search: string;
@@ -9,18 +9,7 @@ interface SaleFilters {
   includeVoided: boolean;
 }
 
-interface CartState {
-  items: CartItem[];
-  customerId: number | null;
-  customerName: string;
-  discount: number;
-  paymentType: PaymentType;
-  notes: string;
-  installment: CreateInstallmentPayload | null;
-}
-
-interface SaleState {
-  // Sales list
+interface SaleListState {
   sales: Sale[];
   loading: boolean;
   filters: SaleFilters;
@@ -35,20 +24,6 @@ interface SaleState {
   setPageSize: (pageSize: number) => void;
   setTotalCount: (totalCount: number) => void;
   filteredSales: () => Sale[];
-
-  // Cart (new sale)
-  cart: CartState;
-  addToCart: (item: CartItem) => void;
-  updateCartQty: (variantId: number, qty: number) => void;
-  removeFromCart: (variantId: number) => void;
-  clearCart: () => void;
-  setCartCustomer: (id: number | null, name: string) => void;
-  setCartDiscount: (discount: number) => void;
-  setCartPaymentType: (type: PaymentType) => void;
-  setCartNotes: (notes: string) => void;
-  setCartInstallment: (config: CreateInstallmentPayload | null) => void;
-  cartSubtotal: () => number;
-  cartTotal: () => number;
 }
 
 const defaultFilters: SaleFilters = {
@@ -59,17 +34,8 @@ const defaultFilters: SaleFilters = {
   includeVoided: false,
 };
 
-const defaultCart: CartState = {
-  items: [],
-  customerId: null,
-  customerName: "",
-  discount: 0,
-  paymentType: "cash",
-  notes: "",
-  installment: null,
-};
-
-export const useSaleStore = create<SaleState>((set, get) => ({
+/** Zustand store for sales list, filters, and pagination. */
+export const useSaleStore = create<SaleListState>((set, get) => ({
   sales: [],
   loading: false,
   filters: { ...defaultFilters },
@@ -79,13 +45,16 @@ export const useSaleStore = create<SaleState>((set, get) => ({
 
   setSales: (sales) => set({ sales }),
   setLoading: (loading) => set({ loading }),
+  /** Update a single sale filter and reset to page 1. */
   setFilter: (key, value) =>
     set((state) => ({ filters: { ...state.filters, [key]: value }, page: 1 })),
+  /** Reset all sale filters to defaults and go to page 1. */
   resetFilters: () => set({ filters: { ...defaultFilters }, page: 1 }),
   setPage: (page) => set({ page }),
   setPageSize: (pageSize) => set({ pageSize, page: 1 }),
   setTotalCount: (totalCount) => set({ totalCount }),
 
+  /** Derive a client-side filtered sales list from current filters. */
   filteredSales: () => {
     const { sales, filters } = get();
     return sales.filter((s) => {
@@ -103,76 +72,6 @@ export const useSaleStore = create<SaleState>((set, get) => ({
       if (filters.dateTo && s.sale_date > filters.dateTo) return false;
       return true;
     });
-  },
-
-  // Cart
-  cart: { ...defaultCart },
-
-  addToCart: (item) =>
-    set((state) => {
-      const existing = state.cart.items.find((i) => i.variant_id === item.variant_id);
-      if (existing) {
-        return {
-          cart: {
-            ...state.cart,
-            items: state.cart.items.map((i) =>
-              i.variant_id === item.variant_id
-                ? { ...i, quantity: i.quantity + item.quantity, subtotal: (i.quantity + item.quantity) * i.unit_price }
-                : i
-            ),
-          },
-        };
-      }
-      return { cart: { ...state.cart, items: [...state.cart.items, item] } };
-    }),
-
-  updateCartQty: (variantId, qty) =>
-    set((state) => ({
-      cart: {
-        ...state.cart,
-        items: state.cart.items.map((i) =>
-          i.variant_id === variantId
-            ? { ...i, quantity: qty, subtotal: qty * i.unit_price }
-            : i
-        ),
-      },
-    })),
-
-  removeFromCart: (variantId) =>
-    set((state) => ({
-      cart: {
-        ...state.cart,
-        items: state.cart.items.filter((i) => i.variant_id !== variantId),
-      },
-    })),
-
-  clearCart: () => set({ cart: { ...defaultCart } }),
-
-  setCartCustomer: (id, name) =>
-    set((state) => ({ cart: { ...state.cart, customerId: id, customerName: name } })),
-
-  setCartDiscount: (discount) =>
-    set((state) => ({ cart: { ...state.cart, discount } })),
-
-  setCartPaymentType: (type_) =>
-    set((state) => ({
-      cart: {
-        ...state.cart,
-        paymentType: type_,
-        installment: type_ === "cash" ? null : state.cart.installment,
-      },
-    })),
-
-  setCartNotes: (notes) =>
-    set((state) => ({ cart: { ...state.cart, notes } })),
-
-  setCartInstallment: (config) =>
-    set((state) => ({ cart: { ...state.cart, installment: config } })),
-
-  cartSubtotal: () => get().cart.items.reduce((sum, i) => sum + i.subtotal, 0),
-  cartTotal: () => {
-    const subtotal = get().cart.items.reduce((sum, i) => sum + i.subtotal, 0);
-    return subtotal - get().cart.discount;
   },
 }));
 

@@ -19,6 +19,7 @@ import {
   XAxis,
   YAxis,
   Tooltip,
+  Legend,
   ResponsiveContainer,
   CartesianGrid,
 } from "recharts";
@@ -203,10 +204,15 @@ export function DashboardPage() {
                       />
                     }
                   />
+                  <Legend
+                    verticalAlign="top"
+                    align="right"
+                    wrapperStyle={{ fontSize: 11 }}
+                  />
                   <Area
                     type="monotone"
                     dataKey="total"
-                    name="Sales"
+                    name="Daily Sales (₱)"
                     stroke="var(--chart-1)"
                     strokeWidth={2}
                     fill="url(#salesGradient)"
@@ -263,11 +269,17 @@ export function DashboardPage() {
                       />
                     }
                   />
+                  <Legend
+                    verticalAlign="top"
+                    align="right"
+                    wrapperStyle={{ fontSize: 11 }}
+                  />
                   <Bar
                     dataKey="total"
-                    name="Collections"
+                    name="Daily Collections (₱)"
                     fill="url(#collectionsGradient)"
                     radius={barRadius}
+                    label={{ position: "top", fontSize: 10, fill: "var(--muted-foreground)" }}
                   />
                 </BarChart>
               </ResponsiveContainer>

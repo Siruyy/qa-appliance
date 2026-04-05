@@ -1,5 +1,7 @@
 import { Component, type ReactNode, type ErrorInfo } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { AlertTriangle } from "lucide-react";
 
 interface Props {
   children: ReactNode;
@@ -22,7 +24,7 @@ export class ErrorBoundary extends Component<Props, State> {
   }
 
   componentDidCatch(error: Error, info: ErrorInfo) {
-    console.error("ErrorBoundary caught:", error, info);
+    console.error("ErrorBoundary caught:", error, info.componentStack);
   }
 
   handleReset = () => {
@@ -32,19 +34,27 @@ export class ErrorBoundary extends Component<Props, State> {
   render() {
     if (this.state.hasError) {
       return (
-        <div className="flex flex-col items-center justify-center h-64 gap-4">
-          <p className="text-destructive font-medium">
-            {this.props.fallbackMessage ||
-              "Something went wrong. Please try again."}
-          </p>
-          {this.state.error && (
-            <p className="text-xs text-muted-foreground max-w-md text-center">
-              {this.state.error.message}
-            </p>
-          )}
-          <Button variant="outline" onClick={this.handleReset}>
-            Try Again
-          </Button>
+        <div className="flex items-center justify-center min-h-[60vh] p-6">
+          <Card className="max-w-lg w-full">
+            <CardHeader className="flex flex-row items-center gap-3">
+              <AlertTriangle className="h-6 w-6 text-destructive shrink-0" />
+              <CardTitle>
+                {this.props.fallbackMessage || "Something went wrong"}
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <p className="text-sm text-muted-foreground">
+                An unexpected error occurred while rendering this page. You can
+                try again or refresh the browser.
+              </p>
+              {this.state.error && (
+                <pre className="rounded-md bg-muted p-3 text-xs overflow-auto max-h-40">
+                  {this.state.error.message}
+                </pre>
+              )}
+              <Button onClick={this.handleReset}>Retry</Button>
+            </CardContent>
+          </Card>
         </div>
       );
     }

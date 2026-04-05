@@ -201,6 +201,7 @@ export function AccountsPage() {
                     <DropdownMenu>
                       <DropdownMenuTrigger
                         className="inline-flex items-center justify-center h-8 w-8 rounded-md hover:bg-accent"
+                        title="Account actions"
                         onClick={(e) => e.stopPropagation()}
                       >
                         <MoreHorizontal className="h-4 w-4" />
