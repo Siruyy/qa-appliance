@@ -1,19 +1,22 @@
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useRef, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { useSettingsStore } from "@/stores/settingsStore";
 import { toast } from "sonner";
 import { CategoryManagement } from "./CategoryManagement";
 import { DatabaseBackupRestore } from "./DatabaseBackupRestore";
+import { Check, Loader2 } from "lucide-react";
+
+const AUTO_SAVE_DELAY = 1500;
 
 export function SettingsPage() {
   const { settings, loading, loadSettings, updateSettingsBatch } =
     useSettingsStore();
   const [form, setForm] = useState(settings);
-  const [saving, setSaving] = useState(false);
+  const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved">("idle");
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     if (Object.keys(settings).length === 0) loadSettings();
@@ -23,16 +26,45 @@ export function SettingsPage() {
     setForm(settings);
   }, [settings]);
 
-  const handleChange = (key: string, value: string) => {
-    setForm((prev) => ({ ...prev, [key]: value }));
-  };
-
-  // Warn on unsaved changes when navigating away
   const isDirty = useMemo(
     () => JSON.stringify(form) !== JSON.stringify(settings),
     [form, settings]
   );
 
+  const doSave = useCallback(async (formData: Record<string, string>) => {
+    setSaveStatus("saving");
+    try {
+      const pairs: [string, string][] = Object.entries(formData).map(([k, v]) => [k, v]);
+      await updateSettingsBatch(pairs);
+      setSaveStatus("saved");
+      setTimeout(() => setSaveStatus("idle"), 2000);
+    } catch (err) {
+      toast.error("Failed to save: " + String(err));
+      setSaveStatus("idle");
+    }
+  }, [updateSettingsBatch]);
+
+  const handleChange = (key: string, value: string) => {
+    const next = { ...form, [key]: value };
+    setForm(next);
+
+    // Debounced auto-save
+    if (timerRef.current) clearTimeout(timerRef.current);
+    timerRef.current = setTimeout(() => {
+      if (JSON.stringify(next) !== JSON.stringify(settings)) {
+        doSave(next);
+      }
+    }, AUTO_SAVE_DELAY);
+  };
+
+  // Cleanup timer on unmount
+  useEffect(() => {
+    return () => {
+      if (timerRef.current) clearTimeout(timerRef.current);
+    };
+  }, []);
+
+  // Warn on unsaved changes when navigating away
   useEffect(() => {
     if (!isDirty) return;
     const handler = (e: BeforeUnloadEvent) => {
@@ -41,22 +73,6 @@ export function SettingsPage() {
     window.addEventListener("beforeunload", handler);
     return () => window.removeEventListener("beforeunload", handler);
   }, [isDirty]);
-
-  const handleSave = async () => {
-    setSaving(true);
-    try {
-      const pairs: [string, string][] = Object.entries(form).map(([k, v]) => [
-        k,
-        v,
-      ]);
-      await updateSettingsBatch(pairs);
-      toast.success("Settings saved");
-    } catch (err) {
-      toast.error("Failed to save: " + String(err));
-    } finally {
-      setSaving(false);
-    }
-  };
 
   if (loading) {
     return (
@@ -229,14 +245,23 @@ export function SettingsPage() {
         </CardContent>
       </Card>
 
-            {/* Save button */}
-      <div className="flex items-center justify-end gap-3">
-        {isDirty && (
-          <span className="text-sm text-muted-foreground">Unsaved changes</span>
+      {/* Auto-save indicator */}
+      <div className="flex items-center justify-end gap-2 text-sm text-muted-foreground h-8">
+        {saveStatus === "saving" && (
+          <>
+            <Loader2 className="h-4 w-4 animate-spin" />
+            <span>Saving…</span>
+          </>
         )}
-        <Button onClick={handleSave} disabled={saving || !isDirty}>
-          {saving ? "Saving…" : "Save Settings"}
-        </Button>
+        {saveStatus === "saved" && (
+          <>
+            <Check className="h-4 w-4 text-[var(--success)]" />
+            <span className="text-[var(--success)]">Saved</span>
+          </>
+        )}
+        {saveStatus === "idle" && isDirty && (
+          <span>Unsaved changes — will auto-save</span>
+        )}
       </div>
 
       <Separator />
