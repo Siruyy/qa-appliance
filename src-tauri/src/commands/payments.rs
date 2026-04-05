@@ -4,6 +4,7 @@ use crate::db::connection::DbState;
 use crate::models::payment::{Payment, RecordPaymentPayload};
 use crate::models::PaginatedResult;
 use crate::utils::constants::CENTAVO_TOLERANCE;
+use crate::utils::query::{build_where, paginated_query};
 use crate::commands::audit_log::insert_audit;
 
 #[tauri::command]
@@ -19,51 +20,35 @@ pub fn get_payments(
     let conn = db.0.lock().map_err(|e| e.to_string())?;
 
     let mut conditions: Vec<String> = Vec::new();
+    let mut param_values: Vec<Box<dyn rusqlite::types::ToSql>> = Vec::new();
 
     if let Some(ref from) = from_date {
         if !from.is_empty() {
-            conditions.push(format!("pay.payment_date >= ?{}", conditions.len() + 1));
+            conditions.push(format!("pay.payment_date >= ?{}", param_values.len() + 1));
+            param_values.push(Box::new(from.clone()));
         }
     }
     if let Some(ref to) = to_date {
         if !to.is_empty() {
-            conditions.push(format!("pay.payment_date <= ?{}", conditions.len() + 1));
+            conditions.push(format!("pay.payment_date <= ?{}", param_values.len() + 1));
+            param_values.push(Box::new(format!("{}T23:59:59", to)));
         }
     }
-    if customer_id.is_some() {
-        conditions.push(format!("ia.customer_id = ?{}", conditions.len() + 1));
+    if let Some(cid) = customer_id {
+        conditions.push(format!("ia.customer_id = ?{}", param_values.len() + 1));
+        param_values.push(Box::new(cid));
     }
     if let Some(ref s) = search {
         if !s.is_empty() {
-            conditions.push(format!("c.name LIKE ?{}", conditions.len() + 1));
+            conditions.push(format!("c.name LIKE ?{}", param_values.len() + 1));
+            param_values.push(Box::new(format!("%{}%", s)));
         }
     }
 
-    let where_clause = if conditions.is_empty() {
-        String::new()
-    } else {
-        format!("WHERE {}", conditions.join(" AND "))
-    };
+    let where_clause = build_where(&conditions);
+    let params: Vec<&dyn rusqlite::types::ToSql> =
+        param_values.iter().map(|p| p.as_ref()).collect();
 
-    // Build params in insertion order for reuse
-    let make_params = || -> Vec<Box<dyn rusqlite::types::ToSql>> {
-        let mut p: Vec<Box<dyn rusqlite::types::ToSql>> = Vec::new();
-        if let Some(ref from) = from_date {
-            if !from.is_empty() { p.push(Box::new(from.clone())); }
-        }
-        if let Some(ref to) = to_date {
-            if !to.is_empty() { p.push(Box::new(format!("{}T23:59:59", to))); }
-        }
-        if let Some(cid) = customer_id {
-            p.push(Box::new(cid));
-        }
-        if let Some(ref s) = search {
-            if !s.is_empty() { p.push(Box::new(format!("%{}%", s))); }
-        }
-        p
-    };
-
-    // COUNT query
     let count_sql = format!(
         "SELECT COUNT(DISTINCT pay.id)
          FROM payments pay
@@ -72,18 +57,8 @@ pub fn get_payments(
          {}",
         where_clause
     );
-    let filter_params = make_params();
-    let filter_values: Vec<&dyn rusqlite::types::ToSql> = filter_params.iter().map(|p| p.as_ref()).collect();
-    let total: u64 = conn
-        .query_row(&count_sql, filter_values.as_slice(), |row| row.get(0))
-        .unwrap_or(0);
 
-    let pagination = match limit {
-        Some(l) => format!("LIMIT {} OFFSET {}", l, offset.unwrap_or(0)),
-        None => String::new(),
-    };
-
-    let sql = format!(
+    let data_sql = format!(
         "SELECT pay.id, pay.account_id, pay.schedule_id, c.name AS customer_name,
                 COALESCE(
                     GROUP_CONCAT(DISTINCT p.name || COALESCE(' ' || v.attributes, '')),
@@ -99,33 +74,24 @@ pub fn get_payments(
          LEFT JOIN products p ON p.id = v.product_id
          {}
          GROUP BY pay.id
-         ORDER BY pay.payment_date DESC, pay.id DESC {}",
-        where_clause, pagination
+         ORDER BY pay.payment_date DESC, pay.id DESC",
+        where_clause
     );
 
-    let query_params = make_params();
-    let mut stmt = conn.prepare(&sql).map_err(|e| e.to_string())?;
-    let query_values: Vec<&dyn rusqlite::types::ToSql> = query_params.iter().map(|p| p.as_ref()).collect();
-
-    let rows = stmt
-        .query_map(query_values.as_slice(), |row| {
-            Ok(Payment {
-                id: row.get(0)?,
-                account_id: row.get(1)?,
-                schedule_id: row.get(2)?,
-                customer_name: row.get(3)?,
-                product_summary: row.get(4)?,
-                amount: row.get(5)?,
-                payment_date: row.get(6)?,
-                payment_type: row.get(7)?,
-                notes: row.get(8)?,
-                created_at: row.get(9)?,
-            })
+    paginated_query(&conn, &count_sql, &data_sql, &params, limit, offset, |row| {
+        Ok(Payment {
+            id: row.get(0)?,
+            account_id: row.get(1)?,
+            schedule_id: row.get(2)?,
+            customer_name: row.get(3)?,
+            product_summary: row.get(4)?,
+            amount: row.get(5)?,
+            payment_date: row.get(6)?,
+            payment_type: row.get(7)?,
+            notes: row.get(8)?,
+            created_at: row.get(9)?,
         })
-        .map_err(|e| e.to_string())?;
-
-    let payments: Vec<Payment> = rows.collect::<Result<Vec<_>, _>>().map_err(|e| format!("Row read error: {}", e))?;
-    Ok(PaginatedResult { items: payments, total })
+    })
 }
 
 #[tauri::command]

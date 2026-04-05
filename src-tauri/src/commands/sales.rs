@@ -3,6 +3,7 @@ use tauri::State;
 use crate::db::connection::DbState;
 use crate::models::sale::*;
 use crate::models::PaginatedResult;
+use crate::utils::query::{build_where, paginated_query};
 use crate::commands::audit_log::insert_audit;
 
 /// List sales with optional search and date range filtering
@@ -20,99 +21,66 @@ pub fn get_sales(
     let conn = db.0.lock().map_err(|e| e.to_string())?;
 
     let mut conditions = Vec::new();
+    let mut param_values: Vec<Box<dyn rusqlite::types::ToSql>> = Vec::new();
 
     if include_voided != Some(true) {
         conditions.push("s.status = 'completed'".to_string());
     }
 
-    // Collect filter values as strings for reuse in both COUNT and data queries
-    let mut filter_vals: Vec<String> = Vec::new();
-
     if let Some(ref q) = search {
         conditions.push("(c.name LIKE ?1 OR CAST(s.id AS TEXT) LIKE ?1)".to_string());
-        filter_vals.push(format!("%{}%", q));
+        param_values.push(Box::new(format!("%{}%", q)));
     }
     if let Some(ref pt) = payment_type {
-        let idx = filter_vals.len() + 1;
+        let idx = param_values.len() + 1;
         conditions.push(format!("s.payment_type = ?{}", idx));
-        filter_vals.push(pt.clone());
+        param_values.push(Box::new(pt.clone()));
     }
     if let Some(ref from) = date_from {
-        let idx = filter_vals.len() + 1;
+        let idx = param_values.len() + 1;
         conditions.push(format!("s.sale_date >= ?{}", idx));
-        filter_vals.push(from.clone());
+        param_values.push(Box::new(from.clone()));
     }
     if let Some(ref to) = date_to {
-        let idx = filter_vals.len() + 1;
+        let idx = param_values.len() + 1;
         conditions.push(format!("s.sale_date <= ?{}", idx));
-        filter_vals.push(to.clone());
+        param_values.push(Box::new(to.clone()));
     }
 
-    let where_clause = if conditions.is_empty() {
-        String::new()
-    } else {
-        format!("WHERE {}", conditions.join(" AND "))
-    };
+    let where_clause = build_where(&conditions);
+    let params: Vec<&dyn rusqlite::types::ToSql> =
+        param_values.iter().map(|p| p.as_ref()).collect();
 
-    // COUNT query
     let count_sql = format!(
         "SELECT COUNT(*) FROM sales s LEFT JOIN customers c ON s.customer_id = c.id {}",
         where_clause
     );
-    let filter_params: Vec<Box<dyn rusqlite::types::ToSql>> = filter_vals
-        .iter()
-        .map(|v| Box::new(v.clone()) as Box<dyn rusqlite::types::ToSql>)
-        .collect();
-    let filter_values: Vec<&dyn rusqlite::types::ToSql> =
-        filter_params.iter().map(|p| p.as_ref()).collect();
-    let total: u64 = conn
-        .query_row(&count_sql, filter_values.as_slice(), |row| row.get(0))
-        .unwrap_or(0);
 
-    // Pagination clause
-    let pagination = match limit {
-        Some(l) => format!("LIMIT {} OFFSET {}", l, offset.unwrap_or(0)),
-        None => String::new(),
-    };
-
-    let sql = format!(
+    let data_sql = format!(
         "SELECT s.id, s.customer_id, s.sale_date, s.subtotal, s.discount, s.total,
                 s.payment_type, s.status, s.notes, s.created_at,
                 c.name as customer_name
          FROM sales s
          LEFT JOIN customers c ON s.customer_id = c.id
-         {} ORDER BY s.sale_date DESC, s.id DESC {}",
-        where_clause, pagination
+         {} ORDER BY s.sale_date DESC, s.id DESC",
+        where_clause
     );
 
-    let query_params: Vec<Box<dyn rusqlite::types::ToSql>> = filter_vals
-        .iter()
-        .map(|v| Box::new(v.clone()) as Box<dyn rusqlite::types::ToSql>)
-        .collect();
-    let query_values: Vec<&dyn rusqlite::types::ToSql> =
-        query_params.iter().map(|p| p.as_ref()).collect();
-    let mut stmt = conn.prepare(&sql).map_err(|e| e.to_string())?;
-
-    let rows = stmt
-        .query_map(query_values.as_slice(), |row| {
-            Ok(Sale {
-                id: row.get(0)?,
-                customer_id: row.get(1)?,
-                sale_date: row.get(2)?,
-                subtotal: row.get(3)?,
-                discount: row.get(4)?,
-                total: row.get(5)?,
-                payment_type: row.get(6)?,
-                status: row.get(7)?,
-                notes: row.get(8)?,
-                created_at: row.get(9)?,
-                customer_name: row.get(10)?,
-            })
+    paginated_query(&conn, &count_sql, &data_sql, &params, limit, offset, |row| {
+        Ok(Sale {
+            id: row.get(0)?,
+            customer_id: row.get(1)?,
+            sale_date: row.get(2)?,
+            subtotal: row.get(3)?,
+            discount: row.get(4)?,
+            total: row.get(5)?,
+            payment_type: row.get(6)?,
+            status: row.get(7)?,
+            notes: row.get(8)?,
+            created_at: row.get(9)?,
+            customer_name: row.get(10)?,
         })
-        .map_err(|e| e.to_string())?;
-
-    let sales: Vec<Sale> = rows.collect::<Result<Vec<_>, _>>().map_err(|e| format!("Row read error: {}", e))?;
-    Ok(PaginatedResult { items: sales, total })
+    })
 }
 
 /// Get full sale details with items and optional installment account

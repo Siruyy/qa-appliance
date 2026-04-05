@@ -7,6 +7,7 @@ use crate::models::account::{
 use crate::models::PaginatedResult;
 use crate::services::penalty;
 use crate::utils::constants::CENTAVO_TOLERANCE;
+use crate::utils::query::{build_where, paginated_query};
 use crate::utils::validation::optional_text;
 use crate::commands::audit_log::insert_audit;
 
@@ -22,7 +23,6 @@ pub fn get_accounts(
     let conn = db.0.lock().map_err(|e| e.to_string())?;
 
     let mut conditions: Vec<String> = Vec::new();
-    // Track string param values so we can rebuild for both COUNT and data queries
     let mut string_params: Vec<String> = Vec::new();
 
     if let Some(ref status) = status_filter {
@@ -53,13 +53,14 @@ pub fn get_accounts(
         }
     }
 
-    let where_clause = if conditions.is_empty() {
-        String::new()
-    } else {
-        format!("WHERE {}", conditions.join(" AND "))
-    };
+    let where_clause = build_where(&conditions);
+    let params_boxed: Vec<Box<dyn rusqlite::types::ToSql>> = string_params
+        .iter()
+        .map(|v| Box::new(v.clone()) as Box<dyn rusqlite::types::ToSql>)
+        .collect();
+    let params: Vec<&dyn rusqlite::types::ToSql> =
+        params_boxed.iter().map(|p| p.as_ref()).collect();
 
-    // COUNT using a lighter query (no product JOINs needed for counting)
     let count_sql = format!(
         "SELECT COUNT(DISTINCT ia.id)
          FROM installment_accounts ia
@@ -67,22 +68,8 @@ pub fn get_accounts(
          {}",
         where_clause
     );
-    let filter_params: Vec<Box<dyn rusqlite::types::ToSql>> = string_params
-        .iter()
-        .map(|v| Box::new(v.clone()) as Box<dyn rusqlite::types::ToSql>)
-        .collect();
-    let filter_values: Vec<&dyn rusqlite::types::ToSql> =
-        filter_params.iter().map(|p| p.as_ref()).collect();
-    let total: u64 = conn
-        .query_row(&count_sql, filter_values.as_slice(), |row| row.get(0))
-        .unwrap_or(0);
 
-    let pagination = match limit {
-        Some(l) => format!("LIMIT {} OFFSET {}", l, offset.unwrap_or(0)),
-        None => String::new(),
-    };
-
-    let sql = format!(
+    let data_sql = format!(
         "SELECT ia.id, ia.sale_id, ia.customer_id, c.name AS customer_name,
                 COALESCE(
                     GROUP_CONCAT(DISTINCT p.name || COALESCE(' ' || v.attributes, '')),
@@ -109,48 +96,35 @@ pub fn get_accounts(
          GROUP BY ia.id
          ORDER BY
             CASE ia.status WHEN 'open' THEN 0 WHEN 'defaulted' THEN 1 ELSE 2 END,
-            ia.updated_at DESC {}",
-        where_clause, pagination
+            ia.updated_at DESC",
+        where_clause
     );
 
-    let query_params: Vec<Box<dyn rusqlite::types::ToSql>> = string_params
-        .iter()
-        .map(|v| Box::new(v.clone()) as Box<dyn rusqlite::types::ToSql>)
-        .collect();
-    let mut stmt = conn.prepare(&sql).map_err(|e| e.to_string())?;
-    let query_values: Vec<&dyn rusqlite::types::ToSql> =
-        query_params.iter().map(|p| p.as_ref()).collect();
-
-    let rows = stmt
-        .query_map(query_values.as_slice(), |row| {
-            Ok(InstallmentAccount {
-                id: row.get(0)?,
-                sale_id: row.get(1)?,
-                customer_id: row.get(2)?,
-                customer_name: row.get(3)?,
-                product_summary: row.get(4)?,
-                principal: row.get(5)?,
-                down_payment: row.get(6)?,
-                interest_rate: row.get(7)?,
-                penalty_rate: row.get(8)?,
-                balance_remaining: row.get(9)?,
-                has_schedule: row.get(10)?,
-                term_months: row.get(11)?,
-                monthly_amount: row.get(12)?,
-                start_date: row.get(13)?,
-                status: row.get(14)?,
-                last_penalty_date: row.get(15)?,
-                next_due_date: row.get(16)?,
-                is_overdue: row.get(17)?,
-                notes: row.get(18)?,
-                created_at: row.get(19)?,
-                updated_at: row.get(20)?,
-            })
+    paginated_query(&conn, &count_sql, &data_sql, &params, limit, offset, |row| {
+        Ok(InstallmentAccount {
+            id: row.get(0)?,
+            sale_id: row.get(1)?,
+            customer_id: row.get(2)?,
+            customer_name: row.get(3)?,
+            product_summary: row.get(4)?,
+            principal: row.get(5)?,
+            down_payment: row.get(6)?,
+            interest_rate: row.get(7)?,
+            penalty_rate: row.get(8)?,
+            balance_remaining: row.get(9)?,
+            has_schedule: row.get(10)?,
+            term_months: row.get(11)?,
+            monthly_amount: row.get(12)?,
+            start_date: row.get(13)?,
+            status: row.get(14)?,
+            last_penalty_date: row.get(15)?,
+            next_due_date: row.get(16)?,
+            is_overdue: row.get(17)?,
+            notes: row.get(18)?,
+            created_at: row.get(19)?,
+            updated_at: row.get(20)?,
         })
-        .map_err(|e| e.to_string())?;
-
-    let accounts: Vec<InstallmentAccount> = rows.collect::<Result<Vec<_>, _>>().map_err(|e| format!("Row read error: {}", e))?;
-    Ok(PaginatedResult { items: accounts, total })
+    })
 }
 
 #[tauri::command]
