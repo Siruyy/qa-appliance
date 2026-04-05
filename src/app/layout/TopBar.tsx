@@ -1,5 +1,6 @@
 import { useLocation, Link } from "react-router-dom";
 import { Settings as SettingsIcon, Sun, Moon, Monitor } from "lucide-react";
+import { NotificationBell } from "@/components/NotificationBell";
 import { format } from "date-fns";
 import { useState, useEffect } from "react";
 import { useUIStore } from "@/stores/uiStore";
@@ -48,6 +49,7 @@ export function TopBar() {
         <span className="text-sm text-muted-foreground">
           {format(now, "EEEE, MMMM d, yyyy · h:mm a")}
         </span>
+        <NotificationBell />
         <DropdownMenu>
           <DropdownMenuTrigger className="inline-flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground" aria-label="Toggle theme">
             {theme === "dark" ? (
