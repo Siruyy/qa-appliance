@@ -20,6 +20,7 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { formatDateTime, formatAttributes } from "@/lib/formatters";
 import { useCurrency } from "@/hooks/useCurrency";
+import { paymentTypeVariant, saleStatusVariant } from "@/lib/badgeVariants";
 import type { SaleDetail } from "@/types/sale";
 import { useSales } from "@/hooks/useSales";
 import { Loader2 } from "lucide-react";
@@ -95,13 +96,13 @@ export function SaleDetailModal({ open, onOpenChange, saleId, onVoided }: SaleDe
               </div>
               <div>
                 <span className="text-muted-foreground">Payment: </span>
-                <Badge variant={sale.payment_type === "cash" ? "default" : "secondary"}>
+                <Badge variant={paymentTypeVariant[sale.payment_type] ?? "secondary"}>
                   {sale.payment_type}
                 </Badge>
               </div>
               <div>
                 <span className="text-muted-foreground">Status: </span>
-                <Badge variant={sale.status === "voided" ? "destructive" : "default"}>
+                <Badge variant={saleStatusVariant[sale.status] ?? "default"}>
                   {sale.status}
                 </Badge>
               </div>

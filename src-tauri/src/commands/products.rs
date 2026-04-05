@@ -3,6 +3,7 @@ use tauri::State;
 
 use crate::db::connection::DbState;
 use crate::models::product::*;
+use crate::utils::constants::DEFAULT_LOW_STOCK_THRESHOLD;
 use crate::utils::validation::{require_text, optional_text};
 use crate::models::PaginatedResult;
 
@@ -400,7 +401,7 @@ pub fn get_variants_for_product(db: State<'_, DbState>, product_id: i64) -> Resu
 pub fn create_variant(db: State<'_, DbState>, payload: CreateVariantPayload) -> Result<ProductVariant, String> {
     let conn = db.0.lock().map_err(|e| e.to_string())?;
     let attr_json = payload.attributes.map(|a| serde_json::to_string(&a).unwrap_or_default());
-    let threshold = payload.low_stock_threshold.unwrap_or(2);
+    let threshold = payload.low_stock_threshold.unwrap_or(DEFAULT_LOW_STOCK_THRESHOLD);
 
     conn.execute(
         "INSERT INTO product_variants (product_id, sku, attributes, cost_price, selling_price, stock_qty, low_stock_threshold)

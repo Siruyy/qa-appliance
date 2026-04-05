@@ -3,6 +3,7 @@ use tauri::State;
 use crate::db::connection::DbState;
 use crate::models::payment::{Payment, RecordPaymentPayload};
 use crate::models::PaginatedResult;
+use crate::utils::constants::CENTAVO_TOLERANCE;
 
 #[tauri::command]
 pub fn get_payments(
@@ -200,7 +201,7 @@ pub fn record_payment(
         return Err(format!("Cannot record payment: account status is '{}'", status));
     }
 
-    if payload.amount > balance + 0.01 {
+    if payload.amount > balance + CENTAVO_TOLERANCE {
         return Err(format!(
             "Payment amount (₱{:.2}) exceeds remaining balance (₱{:.2})",
             payload.amount, balance
@@ -331,7 +332,7 @@ fn apply_payment_to_schedule(
     let new_paid = amount_paid + amount;
     let remaining = amount_due - new_paid;
 
-    let new_status = if remaining <= 0.01 {
+    let new_status = if remaining <= CENTAVO_TOLERANCE {
         "paid"
     } else {
         "partial"
@@ -344,7 +345,7 @@ fn apply_payment_to_schedule(
     .map_err(|e| format!("Failed to update schedule entry: {}", e))?;
 
     // If there's overflow, apply to next entry
-    if remaining < -0.01 {
+    if remaining < -CENTAVO_TOLERANCE {
         let overflow = -remaining;
         let next_id: Option<i64> = conn
             .query_row(
@@ -388,7 +389,7 @@ fn auto_apply_to_schedule(
         .collect();
 
     for (entry_id, amount_due, amount_paid) in entries {
-        if remaining_amount <= 0.01 {
+        if remaining_amount <= CENTAVO_TOLERANCE {
             break;
         }
 
@@ -404,7 +405,7 @@ fn auto_apply_to_schedule(
         };
 
         let new_paid = amount_paid + apply;
-        let new_status = if (amount_due - new_paid).abs() < 0.01 {
+        let new_status = if (amount_due - new_paid).abs() < CENTAVO_TOLERANCE {
             "paid"
         } else {
             "partial"

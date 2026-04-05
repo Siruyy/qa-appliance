@@ -22,6 +22,7 @@ import { useReportStore } from "@/stores/reportStore";
 import { useClientPagination } from "@/hooks/useClientPagination";
 import { formatDate, formatProductSummary } from "@/lib/formatters";
 import { useCurrency } from "@/hooks/useCurrency";
+import { paymentTypeVariant, collectionTypeVariant } from "@/lib/badgeVariants";
 import type { CustomerHistoryReport } from "@/types/report";
 import type { Customer } from "@/types/customer";
 import type { PaginatedResult } from "@/types/shared";
@@ -154,7 +155,7 @@ function SalesSection({ sales, formatCurrency }: { sales: CustomerHistoryReport[
                   <TableCell className="max-w-[250px] truncate">{s.items_summary}</TableCell>
                   <TableCell className="text-right">{formatCurrency(s.total)}</TableCell>
                   <TableCell>
-                    <Badge variant={s.payment_type === "cash" ? "default" : "secondary"}>
+                    <Badge variant={paymentTypeVariant[s.payment_type] ?? "secondary"}>
                       {s.payment_type}
                     </Badge>
                   </TableCell>
@@ -199,7 +200,7 @@ function PaymentsSection({ payments, formatCurrency }: { payments: CustomerHisto
                   <TableCell className="max-w-[250px] truncate">{formatProductSummary(p.product_summary)}</TableCell>
                   <TableCell className="text-right">{formatCurrency(p.amount)}</TableCell>
                   <TableCell>
-                    <Badge variant={p.type === "regular" ? "default" : "secondary"}>
+                    <Badge variant={collectionTypeVariant[p.type] ?? "default"}>
                       {p.type}
                     </Badge>
                   </TableCell>

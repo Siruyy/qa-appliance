@@ -26,6 +26,7 @@ import {
 } from "@/components/ui/table";
 import { formatDate } from "@/lib/formatters";
 import { useCurrency } from "@/hooks/useCurrency";
+import { paymentTypeVariant, saleStatusVariant } from "@/lib/badgeVariants";
 import { useSaleStore } from "@/stores/saleStore";
 import { useSales } from "@/hooks/useSales";
 import { SaleDetailModal } from "./SaleDetailModal";
@@ -183,7 +184,7 @@ export function SalesHistoryPage() {
                   <TableCell>{formatDate(sale.sale_date)}</TableCell>
                   <TableCell>{sale.customer_name ?? "Walk-in"}</TableCell>
                   <TableCell>
-                    <Badge variant={sale.payment_type === "cash" ? "default" : "secondary"}>
+                    <Badge variant={paymentTypeVariant[sale.payment_type] ?? "secondary"}>
                       {sale.payment_type}
                     </Badge>
                   </TableCell>
@@ -191,7 +192,7 @@ export function SalesHistoryPage() {
                     {formatCurrency(sale.total)}
                   </TableCell>
                   <TableCell>
-                    <Badge variant={sale.status === "voided" ? "destructive" : "outline"}>
+                    <Badge variant={saleStatusVariant[sale.status] ?? "default"}>
                       {sale.status}
                     </Badge>
                   </TableCell>

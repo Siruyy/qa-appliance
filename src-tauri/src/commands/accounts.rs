@@ -6,6 +6,7 @@ use crate::models::account::{
 };
 use crate::models::PaginatedResult;
 use crate::services::penalty;
+use crate::utils::constants::CENTAVO_TOLERANCE;
 use crate::utils::validation::optional_text;
 
 #[tauri::command]
@@ -309,7 +310,7 @@ pub fn mark_account_paid(db: State<DbState>, id: i64) -> Result<(), String> {
         )
         .map_err(|_| format!("Account {} not found", id))?;
 
-    if balance > 0.01 {
+    if balance > CENTAVO_TOLERANCE {
         return Err(format!(
             "Cannot mark as paid: account still has ₱{:.2} remaining balance",
             balance

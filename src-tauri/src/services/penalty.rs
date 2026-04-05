@@ -1,6 +1,7 @@
 use rusqlite::Connection;
 
 use crate::models::account::PenaltyApplied;
+use crate::utils::constants::PENALTY_COOLDOWN_DAYS;
 use crate::utils::date::{today_iso, days_since};
 
 /// Check all open accounts for overdue schedule entries and apply penalties where needed.
@@ -79,17 +80,17 @@ pub fn check_and_apply_penalties(conn: &Connection) -> Result<Vec<PenaltyApplied
                     |row| row.get(0),
                 )
                 .unwrap_or(0);
-            // Must have overdue entries AND respect 30-day cooldown to prevent daily penalties
+            // Must have overdue entries AND respect cooldown to prevent daily penalties
             overdue_count > 0
                 && match &last_penalty_date {
                     None => true,
-                    Some(date) => days_since(date, &today) >= 30,
+                    Some(date) => days_since(date, &today) >= PENALTY_COOLDOWN_DAYS,
                 }
         } else {
-            // Open-ended: penalize if last_penalty_date is NULL or >= 30 days ago
+            // Open-ended: penalize if last_penalty_date is NULL or >= cooldown days ago
             match &last_penalty_date {
                 None => true,
-                Some(date) => days_since(date, &today) >= 30,
+                Some(date) => days_since(date, &today) >= PENALTY_COOLDOWN_DAYS,
             }
         };
 

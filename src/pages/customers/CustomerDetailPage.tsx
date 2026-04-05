@@ -17,6 +17,7 @@ import { toast } from "sonner";
 import { useCustomers } from "@/hooks/useCustomers";
 import { formatDate } from "@/lib/formatters";
 import { useCurrency } from "@/hooks/useCurrency";
+import { saleStatusVariant, paymentTypeVariant } from "@/lib/badgeVariants";
 import type { CustomerDetail } from "@/types/customer";
 
 import { Button } from "@/components/ui/button";
@@ -208,13 +209,13 @@ export function CustomerDetailPage() {
                     {formatCurrency(s.total)}
                   </TableCell>
                   <TableCell>
-                    <Badge variant="outline" className="capitalize">
+                    <Badge variant={paymentTypeVariant[s.payment_type] ?? "outline"} className="capitalize">
                       {s.payment_type}
                     </Badge>
                   </TableCell>
                   <TableCell>
                     <Badge
-                      variant={s.status === "voided" ? "destructive" : "secondary"}
+                      variant={saleStatusVariant[s.status] ?? "secondary"}
                     >
                       {s.status}
                     </Badge>

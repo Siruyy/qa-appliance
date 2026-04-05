@@ -1,6 +1,7 @@
 import { formatDate } from "@/lib/formatters";
 import { useCurrency } from "@/hooks/useCurrency";
 import type { PaymentScheduleEntry } from "@/types/account";
+import { scheduleStatusVariant } from "@/lib/badgeVariants";
 import { Badge } from "@/components/ui/badge";
 import {
   Table,
@@ -16,13 +17,6 @@ interface ScheduleTableProps {
   onSelectEntry?: (entry: PaymentScheduleEntry) => void;
   selectedId?: number | null;
 }
-
-const statusVariant: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
-  paid: "default",
-  partial: "secondary",
-  pending: "outline",
-  overdue: "destructive",
-};
 
 export function ScheduleTable({ schedule, onSelectEntry, selectedId }: ScheduleTableProps) {
   if (schedule.length === 0) {
@@ -66,7 +60,7 @@ export function ScheduleTable({ schedule, onSelectEntry, selectedId }: ScheduleT
                 {remaining > 0.01 ? formatCurrency(remaining) : "—"}
               </TableCell>
               <TableCell>
-                <Badge variant={statusVariant[entry.status] ?? "outline"}>
+                <Badge variant={scheduleStatusVariant[entry.status] ?? "outline"}>
                   {entry.status.toUpperCase()}
                 </Badge>
               </TableCell>

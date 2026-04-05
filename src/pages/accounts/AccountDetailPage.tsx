@@ -7,6 +7,7 @@ import { useAccounts } from "@/hooks/useAccounts";
 import type { AccountDetail } from "@/types/account";
 import { formatDate, formatProductSummary } from "@/lib/formatters";
 import { useCurrency } from "@/hooks/useCurrency";
+import { accountStatusVariant } from "@/lib/badgeVariants";
 
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -26,12 +27,6 @@ import {
 import { ScheduleTable } from "./ScheduleTable";
 import { PaymentHistoryTable } from "./PaymentHistoryTable";
 import { RecordPaymentModal } from "./RecordPaymentModal";
-
-const statusVariant: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
-  open: "default",
-  paid: "secondary",
-  defaulted: "destructive",
-};
 
 export function AccountDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -185,7 +180,7 @@ export function AccountDetailPage() {
         <div>
           <p className="text-xs text-muted-foreground">Status</p>
           <Badge
-            variant={account.is_overdue ? "destructive" : statusVariant[account.status] ?? "outline"}
+            variant={account.is_overdue ? "destructive" : accountStatusVariant[account.status] ?? "outline"}
             className="mt-1"
           >
             {account.is_overdue ? "OVERDUE" : account.status.toUpperCase()}

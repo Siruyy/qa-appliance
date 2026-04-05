@@ -15,6 +15,7 @@ import { useAccounts } from "@/hooks/useAccounts";
 import { useAccountStore } from "@/stores/accountStore";
 import { formatDate, formatProductSummary } from "@/lib/formatters";
 import { useCurrency } from "@/hooks/useCurrency";
+import { accountStatusVariant } from "@/lib/badgeVariants";
 
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -40,11 +41,6 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { TableSkeleton } from "@/components/TableSkeleton";
-const statusVariant: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
-  open: "default",
-  paid: "secondary",
-  defaulted: "destructive",
-};
 
 export function AccountsPage() {
   const navigate = useNavigate();
@@ -190,7 +186,7 @@ export function AccountsPage() {
                     {a.next_due_date ? formatDate(a.next_due_date) : "—"}
                   </TableCell>
                   <TableCell>
-                    <Badge variant={a.is_overdue ? "destructive" : statusVariant[a.status] ?? "outline"}>
+                    <Badge variant={a.is_overdue ? "destructive" : accountStatusVariant[a.status] ?? "outline"}>
                       {a.is_overdue ? "OVERDUE" : a.status.toUpperCase()}
                     </Badge>
                   </TableCell>
