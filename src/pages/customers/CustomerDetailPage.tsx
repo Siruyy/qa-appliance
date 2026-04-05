@@ -46,6 +46,12 @@ export function CustomerDetailPage() {
   const [editing, setEditing] = useState(false);
   const { format: formatCurrency } = useCurrency();
 
+  const ITEMS_PER_PAGE = 10;
+  const [salesPage, setSalesPage] = useState(1);
+  const [paymentsPage, setPaymentsPage] = useState(1);
+  const paginatedSales = useMemo(() => (detail?.sales ?? []).slice(0, salesPage * ITEMS_PER_PAGE), [detail?.sales, salesPage]);
+  const paginatedPayments = useMemo(() => (detail?.payments ?? []).slice(0, paymentsPage * ITEMS_PER_PAGE), [detail?.payments, paymentsPage]);
+
   const fetchDetail = useCallback(async () => {
     if (!id) return;
     setLoading(true);
@@ -103,12 +109,6 @@ export function CustomerDetailPage() {
 
   const openAccounts = accounts.filter((a) => a.status === "open");
   const closedAccounts = accounts.filter((a) => a.status !== "open");
-
-  const ITEMS_PER_PAGE = 10;
-  const [salesPage, setSalesPage] = useState(1);
-  const [paymentsPage, setPaymentsPage] = useState(1);
-  const paginatedSales = useMemo(() => sales.slice(0, salesPage * ITEMS_PER_PAGE), [sales, salesPage]);
-  const paginatedPayments = useMemo(() => payments.slice(0, paymentsPage * ITEMS_PER_PAGE), [payments, paymentsPage]);
 
   return (
     <div className="space-y-6">

@@ -79,7 +79,7 @@ export function AuditLogViewer() {
         </div>
 
         {loading ? (
-          <TableSkeleton rows={8} cols={5} />
+          <Table><TableSkeleton rows={8} cols={5} /></Table>
         ) : entries.length === 0 ? (
           <p className="text-center text-muted-foreground py-8">
             No audit entries found.

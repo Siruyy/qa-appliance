@@ -45,7 +45,7 @@ export function SalesSummaryTab() {
       .finally(() => setLoading(false));
   }, [dateFrom, dateTo]);
 
-  if (loading) return <TableSkeleton cols={6} />;
+  if (loading) return <Table><TableSkeleton cols={6} /></Table>;
   if (!data) return null;
 
   return (

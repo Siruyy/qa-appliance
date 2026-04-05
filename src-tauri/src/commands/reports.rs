@@ -17,7 +17,7 @@ pub fn get_sales_summary(
     // Detail rows
     let mut stmt = db.prepare(
         "SELECT s.id, s.sale_date, COALESCE(c.name, 'Walk-in') as customer_name,
-                COALESCE(GROUP_CONCAT(DISTINCT p.name || ' (×' || si.quantity || ')', ', '), '') as items_summary,
+                COALESCE(GROUP_CONCAT(DISTINCT p.name || ' (×' || si.quantity || ')'), '') as items_summary,
                 s.total, s.payment_type, s.status
          FROM sales s
          LEFT JOIN customers c ON c.id = s.customer_id

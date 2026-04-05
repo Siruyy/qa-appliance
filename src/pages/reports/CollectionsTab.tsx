@@ -45,7 +45,7 @@ export function CollectionsTab() {
       .finally(() => setLoading(false));
   }, [dateFrom, dateTo]);
 
-  if (loading) return <TableSkeleton cols={5} />;
+  if (loading) return <Table><TableSkeleton cols={5} /></Table>;
   if (!data) return null;
 
   return (

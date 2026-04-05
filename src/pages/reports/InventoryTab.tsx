@@ -44,7 +44,7 @@ export function InventoryTab() {
       .finally(() => setLoading(false));
   }, [categoryId]);
 
-  if (loading) return <TableSkeleton cols={7} />;
+  if (loading) return <Table><TableSkeleton cols={7} /></Table>;
   if (!data) return null;
 
   return (

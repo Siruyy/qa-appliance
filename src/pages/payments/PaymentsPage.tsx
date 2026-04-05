@@ -163,14 +163,11 @@ export function PaymentsPage() {
               <TableHead>Notes</TableHead>
             </TableRow>
           </TableHeader>
+          {loading ? (
+            <TableSkeleton cols={6} />
+          ) : (
           <TableBody>
-            {loading ? (
-              <TableRow>
-                <TableCell colSpan={6}>
-                  <TableSkeleton cols={6} />
-                </TableCell>
-              </TableRow>
-            ) : payments.length === 0 ? (
+            {payments.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={6}>
                   <EmptyState
@@ -205,6 +202,7 @@ export function PaymentsPage() {
               ))
             )}
           </TableBody>
+          )}
         </Table>
       </div>
       <Pagination

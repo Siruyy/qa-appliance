@@ -100,7 +100,7 @@ export function CustomerHistoryTab() {
         <p className="py-8 text-center text-muted-foreground">Select a customer to view history</p>
       )}
 
-      {loading && <TableSkeleton cols={6} />}
+      {loading && <Table><TableSkeleton cols={6} /></Table>}
 
       {data && !loading && (
         <>

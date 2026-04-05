@@ -46,7 +46,7 @@ export function ReceivablesTab() {
       .finally(() => setLoading(false));
   }, [statusFilter]);
 
-  if (loading) return <TableSkeleton cols={6} />;
+  if (loading) return <Table><TableSkeleton cols={6} /></Table>;
   if (!data) return null;
 
   return (

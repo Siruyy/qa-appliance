@@ -39,14 +39,15 @@ export function VariantRow({ variant, onEdit, onAdjustStock, onArchive }: Varian
   return (
     <TableRow className="bg-muted/30">
       <TableCell />
-      <TableCell className="pl-8 text-sm text-muted-foreground">
+      <TableCell />
+      <TableCell className="pl-4 text-sm text-muted-foreground">
         <span className="font-mono text-xs">{variant.sku || "No SKU"}</span>
         <span className="ml-2">{attrs}</span>
       </TableCell>
-      <TableCell />
       <TableCell className="text-right text-sm">
         {formatCurrency(variant.selling_price)}
       </TableCell>
+      <TableCell />
       <TableCell className="text-right tabular-nums text-sm">
         {variant.stock_qty}
       </TableCell>

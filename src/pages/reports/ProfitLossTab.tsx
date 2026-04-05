@@ -41,7 +41,7 @@ export function ProfitLossTab() {
       .finally(() => setLoading(false));
   }, [dateFrom, dateTo]);
 
-  if (loading) return <TableSkeleton cols={4} />;
+  if (loading) return <Table><TableSkeleton cols={4} /></Table>;
   if (!data) return null;
 
   return (
