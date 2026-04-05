@@ -17,6 +17,9 @@ pub fn run() {
         .manage(DbState(Mutex::new(conn)))
         .invoke_handler(tauri::generate_handler![
             commands::db::ping,
+            commands::db::backup_database,
+            commands::db::restore_database,
+            commands::db::get_database_path,
             commands::products::get_categories,
             commands::products::create_category,
             commands::products::update_category,

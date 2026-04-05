@@ -8,7 +8,7 @@ use super::migrations;
 pub struct DbState(pub Mutex<Connection>);
 
 /// Resolve the path to the SQLite database file.
-fn db_path() -> PathBuf {
+pub fn db_path() -> PathBuf {
     let base = dirs::data_dir()
         .unwrap_or_else(|| PathBuf::from("."))
         .join("QualityAppliance");

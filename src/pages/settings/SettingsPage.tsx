@@ -7,6 +7,7 @@ import { Separator } from "@/components/ui/separator";
 import { useSettingsStore } from "@/stores/settingsStore";
 import { toast } from "sonner";
 import { CategoryManagement } from "./CategoryManagement";
+import { DatabaseBackupRestore } from "./DatabaseBackupRestore";
 
 export function SettingsPage() {
   const { settings, loading, loadSettings, updateSettingsBatch } =
@@ -242,6 +243,11 @@ export function SettingsPage() {
 
       {/* Category Management */}
       <CategoryManagement />
+
+      <Separator />
+
+      {/* Database Backup & Restore */}
+      <DatabaseBackupRestore />
     </div>
   );
 }
