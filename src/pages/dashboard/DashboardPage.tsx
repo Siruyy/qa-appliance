@@ -153,6 +153,7 @@ export function DashboardPage() {
                 No sales data yet
               </p>
             ) : (
+              <div role="img" aria-label="Sales trend chart for the last 30 days">
               <ResponsiveContainer width="100%" height={240}>
                 <AreaChart data={data.sales_last_30_days} {...animationProps}>
                   <defs>
@@ -196,6 +197,7 @@ export function DashboardPage() {
                   />
                 </AreaChart>
               </ResponsiveContainer>
+              </div>
             )}
           </CardContent>
         </Card>
@@ -213,6 +215,7 @@ export function DashboardPage() {
                 No collection data yet
               </p>
             ) : (
+                            <div role="img" aria-label="Collections chart for the last 30 days">
               <ResponsiveContainer width="100%" height={240}>
                 <BarChart data={data.collections_last_30_days} {...animationProps}>
                   <defs>
@@ -252,6 +255,7 @@ export function DashboardPage() {
                   />
                 </BarChart>
               </ResponsiveContainer>
+              </div>
             )}
           </CardContent>
         </Card>

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -25,6 +25,21 @@ export function SettingsPage() {
   const handleChange = (key: string, value: string) => {
     setForm((prev) => ({ ...prev, [key]: value }));
   };
+
+  // Warn on unsaved changes when navigating away
+  const isDirty = useMemo(
+    () => JSON.stringify(form) !== JSON.stringify(settings),
+    [form, settings]
+  );
+
+  useEffect(() => {
+    if (!isDirty) return;
+    const handler = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+    };
+    window.addEventListener("beforeunload", handler);
+    return () => window.removeEventListener("beforeunload", handler);
+  }, [isDirty]);
 
   const handleSave = async () => {
     setSaving(true);
@@ -213,9 +228,12 @@ export function SettingsPage() {
         </CardContent>
       </Card>
 
-      {/* Save button */}
-      <div className="flex justify-end">
-        <Button onClick={handleSave} disabled={saving}>
+            {/* Save button */}
+      <div className="flex items-center justify-end gap-3">
+        {isDirty && (
+          <span className="text-sm text-muted-foreground">Unsaved changes</span>
+        )}
+        <Button onClick={handleSave} disabled={saving || !isDirty}>
           {saving ? "Saving…" : "Save Settings"}
         </Button>
       </div>
