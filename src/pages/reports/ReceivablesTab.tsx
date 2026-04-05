@@ -26,7 +26,7 @@ import { formatProductSummary } from "@/lib/formatters";
 import type { ReceivablesReport } from "@/types/report";
 import { toast } from "sonner";
 
-const PIE_COLORS = ["#2563eb", "#f59e0b", "#ef4444", "#10b981", "#6366f1"];
+const PIE_COLORS = ["var(--chart-1)", "var(--chart-3)", "var(--chart-4)", "var(--chart-2)", "var(--chart-5)"];
 
 export function ReceivablesTab() {
   const { statusFilter } = useReportStore();

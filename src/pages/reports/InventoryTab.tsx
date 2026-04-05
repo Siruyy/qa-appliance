@@ -65,7 +65,7 @@ export function InventoryTab() {
               <XAxis dataKey="category" tick={{ fontSize: 11 }} />
               <YAxis tick={{ fontSize: 11 }} />
               <Tooltip formatter={(v) => formatCurrency(Number(v))} />
-              <Bar dataKey="total_cost_value" fill="#2563eb" name="Cost Value" />
+              <Bar dataKey="total_cost_value" fill="var(--chart-1)" name="Cost Value" />
             </BarChart>
           </ResponsiveContainer>
         </div>

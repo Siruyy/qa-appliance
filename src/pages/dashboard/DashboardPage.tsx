@@ -28,6 +28,7 @@ import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import type { DashboardData } from "@/types/report";
 import { KpiCard } from "@/components/KpiCard";
+import { ShoppingCart, TrendingUp, Wallet, AlertTriangle } from "lucide-react";
 
 export function DashboardPage() {
   const { fetchDashboard } = useDashboard();
@@ -80,7 +81,8 @@ export function DashboardPage() {
               className="cursor-pointer"
               onClick={() => navigate("/accounts")}
             >
-              ⚠ {data.overdue_accounts_count} overdue account
+              <AlertTriangle className="h-3.5 w-3.5 inline-block mr-1" />
+              {data.overdue_accounts_count} overdue account
               {data.overdue_accounts_count > 1 ? "s" : ""} (
               {formatCurrency(data.overdue_total)})
             </Badge>
@@ -88,10 +90,11 @@ export function DashboardPage() {
           {data.low_stock_count > 0 && (
             <Badge
               variant="outline"
-              className="border-yellow-500 text-yellow-700 cursor-pointer"
+              className="border-amber-500 text-amber-700 dark:text-amber-400 cursor-pointer"
               onClick={() => navigate("/inventory")}
             >
-              ⚠ {data.low_stock_count} low stock item
+              <AlertTriangle className="h-3.5 w-3.5 inline-block mr-1" />
+              {data.low_stock_count} low stock item
               {data.low_stock_count > 1 ? "s" : ""}
             </Badge>
           )}
@@ -104,6 +107,8 @@ export function DashboardPage() {
           title="Today's Sales"
           value={formatCurrency(data.today_sales_total)}
           sub={`${data.today_sales_count} transaction${data.today_sales_count !== 1 ? "s" : ""}`}
+          icon={ShoppingCart}
+          color="success"
         />
         <KpiCard
           title="This Month"
@@ -113,17 +118,23 @@ export function DashboardPage() {
               ? `${Number(monthChange) >= 0 ? "+" : ""}${monthChange}% vs last month`
               : `${data.month_sales_count} transactions`
           }
+          icon={TrendingUp}
+          color="default"
         />
         <KpiCard
           title="Total Receivables"
           value={formatCurrency(data.total_receivables)}
           sub={`${data.open_accounts_count} open account${data.open_accounts_count !== 1 ? "s" : ""}`}
+          icon={Wallet}
+          color="warning"
         />
         <KpiCard
           title="Overdue"
           value={formatCurrency(data.overdue_total)}
           sub={`${data.overdue_accounts_count} account${data.overdue_accounts_count !== 1 ? "s" : ""}`}
           alert={data.overdue_accounts_count > 0}
+          icon={AlertTriangle}
+          color={data.overdue_accounts_count > 0 ? "danger" : "default"}
         />
       </div>
 
@@ -158,7 +169,7 @@ export function DashboardPage() {
                   <Line
                     type="monotone"
                     dataKey="total"
-                    stroke="#2563EB"
+                    stroke="var(--chart-1)"
                     strokeWidth={2}
                     dot={false}
                   />
@@ -196,7 +207,7 @@ export function DashboardPage() {
                     formatter={(v) => formatCurrency(Number(v))}
                     labelFormatter={(l) => formatDate(String(l))}
                   />
-                  <Bar dataKey="total" fill="#10B981" radius={[2, 2, 0, 0]} />
+                  <Bar dataKey="total" fill="var(--chart-2)" radius={[2, 2, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             )}

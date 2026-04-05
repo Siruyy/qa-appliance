@@ -62,8 +62,8 @@ export function ProfitLossTab() {
               <YAxis tick={{ fontSize: 11 }} tickFormatter={(v) => `₱${(v / 1000).toFixed(0)}k`} />
               <Tooltip formatter={(v) => formatCurrency(Number(v))} />
               <Legend />
-              <Bar dataKey="revenue" fill="#2563eb" name="Revenue" />
-              <Bar dataKey="cogs" fill="#f59e0b" name="COGS" />
+              <Bar dataKey="revenue" fill="var(--chart-1)" name="Revenue" />
+              <Bar dataKey="cogs" fill="var(--chart-3)" name="COGS" />
             </BarChart>
           </ResponsiveContainer>
         </div>

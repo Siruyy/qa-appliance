@@ -64,7 +64,7 @@ export function CollectionsTab() {
               <XAxis dataKey="date" tick={{ fontSize: 11 }} />
               <YAxis tick={{ fontSize: 11 }} tickFormatter={(v) => `₱${(v / 1000).toFixed(0)}k`} />
               <Tooltip formatter={(v) => formatCurrency(Number(v))} />
-              <Bar dataKey="total" fill="#10b981" name="Collections" />
+              <Bar dataKey="total" fill="var(--chart-2)" name="Collections" />
             </BarChart>
           </ResponsiveContainer>
         </div>

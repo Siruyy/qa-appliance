@@ -8,9 +8,9 @@ interface Props {
 }
 
 const statusColors: Record<string, string> = {
-  open: "bg-blue-100 text-blue-700",
-  paid: "bg-green-100 text-green-700",
-  defaulted: "bg-red-100 text-red-700",
+  open: "bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-200",
+  paid: "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-200",
+  defaulted: "bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-200",
 };
 
 export function AccountMiniCard({ account, onClick }: Props) {

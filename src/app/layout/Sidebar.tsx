@@ -52,9 +52,9 @@ function NavItem({
           "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors",
           collapsed && "justify-center px-2",
           isActive
-            ? "border-l-[3px] border-[var(--sidebar-primary)] bg-[var(--sidebar-primary)] text-white"
+            ? "border-l-[3px] border-emerald-500 bg-[var(--sidebar-accent)] text-[var(--sidebar-accent-foreground)]"
             : "border-l-[3px] border-transparent text-[var(--sidebar-foreground)] hover:bg-[var(--sidebar-accent)] hover:text-[var(--sidebar-accent-foreground)]",
-          accent && !isActive && "text-blue-300"
+          accent && !isActive && "text-emerald-400"
         )
       }
     >
@@ -81,7 +81,7 @@ export function Sidebar() {
           sidebarCollapsed && "justify-center px-0"
         )}
       >
-        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-[var(--sidebar-primary)] text-[var(--sidebar-primary-foreground)] font-bold text-sm">
+        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-emerald-600 text-white font-bold text-sm">
           QA
         </div>
         {!sidebarCollapsed && (

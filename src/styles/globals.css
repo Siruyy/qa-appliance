@@ -5,7 +5,7 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
-    --font-heading: 'Inter', sans-serif;
+    --font-heading: 'Lexend', 'Inter', sans-serif;
     --font-sans: 'Inter', sans-serif;
     --color-sidebar-ring: var(--sidebar-ring);
     --color-sidebar-border: var(--sidebar-border);
@@ -54,44 +54,44 @@
 }
 
 :root {
-    /* shadcn semantic tokens — blue primary theme */
-    --background: #F9FAFB;
-    --foreground: #111827;
+    /* Industrial Slate theme */
+    --background: #F8FAFC;
+    --foreground: #0F172A;
     --card: #FFFFFF;
-    --card-foreground: #111827;
+    --card-foreground: #0F172A;
     --popover: #FFFFFF;
-    --popover-foreground: #111827;
-    --primary: #2563EB;
+    --popover-foreground: #0F172A;
+    --primary: #334155;
     --primary-foreground: #FFFFFF;
     --secondary: #F1F5F9;
     --secondary-foreground: #1E293B;
     --muted: #F1F5F9;
-    --muted-foreground: #6B7280;
-    --accent: #EFF6FF;
-    --accent-foreground: #1E293B;
+    --muted-foreground: #64748B;
+    --accent: #F0FDF4;
+    --accent-foreground: #065F46;
     --destructive: #DC2626;
-    --border: #E5E7EB;
-    --input: #E5E7EB;
-    --ring: #2563EB;
-    --chart-1: #2563EB;
-    --chart-2: #16A34A;
+    --border: #E2E8F0;
+    --input: #E2E8F0;
+    --ring: #334155;
+    --chart-1: #334155;
+    --chart-2: #059669;
     --chart-3: #D97706;
     --chart-4: #DC2626;
     --chart-5: #0284C7;
     --radius: 0.5rem;
 
-    /* Sidebar — dark slate */
-    --sidebar: #1E293B;
+    /* Sidebar — deep slate */
+    --sidebar: #0F172A;
     --sidebar-foreground: #CBD5E1;
-    --sidebar-primary: #2563EB;
+    --sidebar-primary: #334155;
     --sidebar-primary-foreground: #FFFFFF;
-    --sidebar-accent: #334155;
+    --sidebar-accent: #1E293B;
     --sidebar-accent-foreground: #F1F5F9;
-    --sidebar-border: #334155;
-    --sidebar-ring: #2563EB;
+    --sidebar-border: #1E293B;
+    --sidebar-ring: #334155;
 
     /* App-specific semantic colors */
-    --success: #16A34A;
+    --success: #059669;
     --success-foreground: #FFFFFF;
     --success-bg: #F0FDF4;
     --warning: #D97706;
@@ -101,6 +101,9 @@
     --danger-bg: #FEF2F2;
     --info: #0284C7;
     --info-bg: #F0F9FF;
+    /* Emerald accent for CTAs */
+    --cta: #059669;
+    --cta-foreground: #FFFFFF;
     /* Legacy aliases kept for compatibility */
     --color-success: var(--success);
     --color-success-bg: var(--success-bg);
@@ -119,45 +122,47 @@
     --card-foreground: #F1F5F9;
     --popover: #1E293B;
     --popover-foreground: #F1F5F9;
-    --primary: #3B82F6;
-    --primary-foreground: #FFFFFF;
+    --primary: #94A3B8;
+    --primary-foreground: #0F172A;
     --secondary: #334155;
     --secondary-foreground: #CBD5E1;
     --muted: #1E293B;
     --muted-foreground: #94A3B8;
-    --accent: #1E3A5F;
-    --accent-foreground: #93C5FD;
+    --accent: #064E3B;
+    --accent-foreground: #6EE7B7;
     --destructive: #EF4444;
     --border: #334155;
     --input: #334155;
-    --ring: #3B82F6;
-    --chart-1: #3B82F6;
-    --chart-2: #22C55E;
-    --chart-3: #F59E0B;
-    --chart-4: #EF4444;
+    --ring: #94A3B8;
+    --chart-1: #94A3B8;
+    --chart-2: #34D399;
+    --chart-3: #FBBF24;
+    --chart-4: #F87171;
     --chart-5: #38BDF8;
 
-    /* Sidebar — even darker in dark mode */
+    /* Sidebar — deepest slate in dark mode */
     --sidebar: #020617;
     --sidebar-foreground: #94A3B8;
-    --sidebar-primary: #3B82F6;
-    --sidebar-primary-foreground: #FFFFFF;
+    --sidebar-primary: #475569;
+    --sidebar-primary-foreground: #F1F5F9;
     --sidebar-accent: #0F172A;
     --sidebar-accent-foreground: #CBD5E1;
     --sidebar-border: #1E293B;
-    --sidebar-ring: #3B82F6;
+    --sidebar-ring: #94A3B8;
 
     /* App-specific semantic colors (dark variants) */
-    --success: #22C55E;
+    --success: #34D399;
     --success-foreground: #FFFFFF;
     --success-bg: #052E16;
-    --warning: #F59E0B;
+    --warning: #FBBF24;
     --warning-foreground: #FFFFFF;
     --warning-bg: #1C1002;
-    --danger: #EF4444;
+    --danger: #F87171;
     --danger-bg: #1C0A0A;
     --info: #38BDF8;
     --info-bg: #082F49;
+    --cta: #34D399;
+    --cta-foreground: #052E16;
 }
 
 @layer base {
@@ -192,5 +197,10 @@
   }
   ::-webkit-scrollbar-thumb:hover {
     background: #94A3B8;
+  }
+
+  /* Heading typography */
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-heading);
   }
 }

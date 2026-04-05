@@ -1,20 +1,35 @@
+import { lazy, Suspense } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
-import { DashboardPage } from "@/pages/dashboard/DashboardPage";
-import { InventoryPage } from "@/pages/inventory/InventoryPage";
-import { CustomersPage } from "@/pages/customers/CustomersPage";
-import { CustomerDetailPage } from "@/pages/customers/CustomerDetailPage";
-import { NewSalePage } from "@/pages/sales/NewSalePage";
-import { SalesHistoryPage } from "@/pages/sales/SalesHistoryPage";
-import { AccountsPage } from "@/pages/accounts/AccountsPage";
-import { AccountDetailPage } from "@/pages/accounts/AccountDetailPage";
-import { PaymentsPage } from "@/pages/payments/PaymentsPage";
-import { ReportsPage } from "@/pages/reports/ReportsPage";
-import { ImportExportPage } from "@/pages/import-export/ImportExportPage";
-import { SettingsPage } from "@/pages/settings/SettingsPage";
+import { Loader2 } from "lucide-react";
+
+const DashboardPage = lazy(() => import("@/pages/dashboard/DashboardPage").then(m => ({ default: m.DashboardPage })));
+const InventoryPage = lazy(() => import("@/pages/inventory/InventoryPage").then(m => ({ default: m.InventoryPage })));
+const CustomersPage = lazy(() => import("@/pages/customers/CustomersPage").then(m => ({ default: m.CustomersPage })));
+const CustomerDetailPage = lazy(() => import("@/pages/customers/CustomerDetailPage").then(m => ({ default: m.CustomerDetailPage })));
+const NewSalePage = lazy(() => import("@/pages/sales/NewSalePage").then(m => ({ default: m.NewSalePage })));
+const SalesHistoryPage = lazy(() => import("@/pages/sales/SalesHistoryPage").then(m => ({ default: m.SalesHistoryPage })));
+const AccountsPage = lazy(() => import("@/pages/accounts/AccountsPage").then(m => ({ default: m.AccountsPage })));
+const AccountDetailPage = lazy(() => import("@/pages/accounts/AccountDetailPage").then(m => ({ default: m.AccountDetailPage })));
+const PaymentsPage = lazy(() => import("@/pages/payments/PaymentsPage").then(m => ({ default: m.PaymentsPage })));
+const ReportsPage = lazy(() => import("@/pages/reports/ReportsPage").then(m => ({ default: m.ReportsPage })));
+const ImportExportPage = lazy(() => import("@/pages/import-export/ImportExportPage").then(m => ({ default: m.ImportExportPage })));
+const SettingsPage = lazy(() => import("@/pages/settings/SettingsPage").then(m => ({ default: m.SettingsPage })));
+
+function PageLoader() {
+  return (
+    <div className="flex items-center justify-center h-64">
+      <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+    </div>
+  );
+}
 
 function Wrap({ children }: { children: React.ReactNode }) {
-  return <ErrorBoundary>{children}</ErrorBoundary>;
+  return (
+    <ErrorBoundary>
+      <Suspense fallback={<PageLoader />}>{children}</Suspense>
+    </ErrorBoundary>
+  );
 }
 
 export function AppRouter() {

@@ -65,7 +65,7 @@ export function SalesSummaryTab() {
               <XAxis dataKey="date" tick={{ fontSize: 11 }} />
               <YAxis tick={{ fontSize: 11 }} tickFormatter={(v) => `₱${(v / 1000).toFixed(0)}k`} />
               <Tooltip formatter={(v) => formatCurrency(Number(v))} />
-              <Line type="monotone" dataKey="total" stroke="#2563eb" strokeWidth={2} dot={false} />
+              <Line type="monotone" dataKey="total" stroke="var(--chart-1)" strokeWidth={2} dot={false} />
             </LineChart>
           </ResponsiveContainer>
         </div>

@@ -40,7 +40,7 @@ export const useImportExportStore = create<ImportExportState>((set) => ({
   setImporting: (v) => set({ importing: v }),
 
   logs: [],
-  setLogs: (logs) => set({ logs }),
+  setLogs: (logs) => set({ logs: logs.slice(-100) }),
 
   resetImport: () =>
     set({

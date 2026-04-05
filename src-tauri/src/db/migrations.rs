@@ -34,6 +34,10 @@ pub fn run(conn: &Connection) -> Result<()> {
         migrate_v4(conn)?;
     }
 
+    if version < 5 {
+        migrate_v5(conn)?;
+    }
+
     Ok(())
 }
 
@@ -1276,5 +1280,21 @@ fn migrate_v4(conn: &Connection) -> Result<()> {
 
     conn.execute_batch("INSERT INTO schema_migrations (version) VALUES (4);")?;
     println!("[db] Applied migration v4 — comprehensive demo seed data");
+    Ok(())
+}
+
+/// V5 — Additional indexes for frequently-filtered columns
+fn migrate_v5(conn: &Connection) -> Result<()> {
+    conn.execute_batch(
+        "
+        CREATE INDEX IF NOT EXISTS idx_sales_status ON sales(status);
+        CREATE INDEX IF NOT EXISTS idx_customers_active ON customers(is_active);
+        CREATE INDEX IF NOT EXISTS idx_variants_sku ON product_variants(sku);
+        CREATE INDEX IF NOT EXISTS idx_payments_account_date ON payments(account_id, payment_date);
+        CREATE INDEX IF NOT EXISTS idx_schedules_account_status ON payment_schedules(account_id, status);
+        INSERT INTO schema_migrations (version) VALUES (5);
+        "
+    )?;
+    println!("[db] Applied migration v5 — additional performance indexes");
     Ok(())
 }
