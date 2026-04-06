@@ -429,6 +429,12 @@ pub fn create_variant(db: State<'_, DbState>, payload: CreateVariantPayload) -> 
     .map_err(|e| e.to_string())?;
 
     let id = conn.last_insert_rowid();
+
+    let _ = conn.execute(
+        "INSERT INTO audit_log (action, entity_type, entity_id, details) VALUES (?1, ?2, ?3, ?4)",
+        params!["create", "variant", id, format!("Created variant SKU={}", payload.sku.as_deref().unwrap_or("N/A"))],
+    );
+
     conn.query_row(
         "SELECT id, product_id, sku, attributes, cost_price, selling_price,
                 stock_qty, low_stock_threshold, is_active, created_at, updated_at
@@ -491,6 +497,11 @@ pub fn update_variant(db: State<'_, DbState>, payload: UpdateVariantPayload) -> 
         return Err("Variant not found".into());
     }
 
+    let _ = conn.execute(
+        "INSERT INTO audit_log (action, entity_type, entity_id, details) VALUES (?1, ?2, ?3, ?4)",
+        params!["update", "variant", payload.id, format!("Updated variant #{}", payload.id)],
+    );
+
     conn.query_row(
         "SELECT id, product_id, sku, attributes, cost_price, selling_price,
                 stock_qty, low_stock_threshold, is_active, created_at, updated_at
@@ -509,6 +520,12 @@ pub fn archive_variant(db: State<'_, DbState>, id: i64) -> Result<(), String> {
         params![id],
     )
     .map_err(|e| e.to_string())?;
+
+    let _ = conn.execute(
+        "INSERT INTO audit_log (action, entity_type, entity_id, details) VALUES (?1, ?2, ?3, ?4)",
+        params!["archive", "variant", id, format!("Archived variant #{}", id)],
+    );
+
     Ok(())
 }
 
@@ -538,6 +555,16 @@ pub fn adjust_stock(db: State<'_, DbState>, id: i64, delta: i64) -> Result<Produ
         params![new_qty, id],
     )
     .map_err(|e| e.to_string())?;
+
+    let _ = conn.execute(
+        "INSERT INTO audit_log (action, entity_type, entity_id, details) VALUES (?1, ?2, ?3, ?4)",
+        params!["stock_adjust", "variant", id, format!("Stock adjusted by {} ({}→{})", delta, current_qty, new_qty)],
+    );
+
+    let _ = conn.execute(
+        "INSERT INTO stock_movements (variant_id, delta, reason, notes) VALUES (?1, ?2, ?3, ?4)",
+        params![id, delta, "adjustment", format!("Manual adjustment: {} → {}", current_qty, new_qty)],
+    );
 
     conn.query_row(
         "SELECT id, product_id, sku, attributes, cost_price, selling_price,

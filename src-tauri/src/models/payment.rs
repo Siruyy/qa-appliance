@@ -12,6 +12,9 @@ pub struct Payment {
     #[serde(rename = "type")]
     pub payment_type: String,
     pub notes: Option<String>,
+    pub is_reversed: bool,
+    pub reversed_at: Option<String>,
+    pub reversed_reason: Option<String>,
     pub created_at: String,
 }
 

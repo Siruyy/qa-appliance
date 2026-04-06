@@ -482,38 +482,51 @@ pub fn get_profit_loss_report(
     let db = state.0.lock().map_err(|e| e.to_string())?;
 
     // Revenue and COGS per category
+    // Revenue uses si.subtotal (post-item-discount) and we distribute the
+    // sale-level discount proportionally across items for accurate category breakdown.
     let mut stmt = db.prepare(
         "SELECT COALESCE(cat.name, 'Uncategorized') as category,
-                SUM(si.subtotal) as revenue,
-                SUM(si.quantity * si.cost_price_snapshot) as cogs
+                SUM(si.subtotal) as item_revenue,
+                SUM(si.quantity * si.cost_price_snapshot) as cogs,
+                SUM(
+                  CASE WHEN s.discount > 0 AND sale_totals.sale_subtotal > 0
+                    THEN si.subtotal * s.discount / sale_totals.sale_subtotal
+                    ELSE 0
+                  END
+                ) as allocated_discount
          FROM sales s
          JOIN sale_items si ON si.sale_id = s.id
          JOIN product_variants pv ON pv.id = si.variant_id
          JOIN products p ON p.id = pv.product_id
          LEFT JOIN categories cat ON cat.id = p.category_id
+         LEFT JOIN (
+           SELECT sale_id, SUM(subtotal) as sale_subtotal
+           FROM sale_items GROUP BY sale_id
+         ) sale_totals ON sale_totals.sale_id = s.id
          WHERE DATE(s.sale_date) BETWEEN ?1 AND ?2
            AND s.status = 'completed'
          GROUP BY cat.id
-         ORDER BY revenue DESC"
+         ORDER BY item_revenue DESC"
     ).map_err(|e| e.to_string())?;
 
-    let rows: Vec<(String, f64, f64)> = stmt.query_map(
+    let rows: Vec<(String, f64, f64, f64)> = stmt.query_map(
         rusqlite::params![from_date, to_date],
-        |row| Ok((row.get(0)?, row.get(1)?, row.get(2)?))
+        |row| Ok((row.get(0)?, row.get(1)?, row.get(2)?, row.get(3)?))
     ).map_err(|e| e.to_string())?
     .collect::<Result<Vec<_>, _>>().map_err(|e| e.to_string())?;
 
-    let revenue: f64 = rows.iter().map(|r| r.1).sum();
+    let revenue: f64 = rows.iter().map(|r| r.1 - r.3).sum(); // item revenue minus allocated discount
     let cogs: f64 = rows.iter().map(|r| r.2).sum();
     let gross_profit = revenue - cogs;
     let gross_margin_pct = if revenue > 0.0 { (gross_profit / revenue) * 100.0 } else { 0.0 };
 
-    let by_category: Vec<CategoryRevenue> = rows.iter().map(|(cat, rev, cost)| {
+    let by_category: Vec<CategoryRevenue> = rows.iter().map(|(cat, rev, cost, disc)| {
+        let net_rev = rev - disc;
         CategoryRevenue {
             category: cat.clone(),
-            revenue: *rev,
+            revenue: net_rev,
             cogs: *cost,
-            pct: if revenue > 0.0 { (*rev / revenue) * 100.0 } else { 0.0 },
+            pct: if revenue > 0.0 { (net_rev / revenue) * 100.0 } else { 0.0 },
         }
     }).collect();
 

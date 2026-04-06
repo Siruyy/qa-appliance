@@ -54,7 +54,7 @@ pub fn get_customers(
 
     // Data query
     let sql = format!(
-        "SELECT c.id, c.name, c.phone, c.address, c.notes, c.is_active,
+        "SELECT c.id, c.name, c.phone, c.address, c.notes, c.credit_limit, c.is_active,
                 COALESCE(acc.open_count, 0) AS open_accounts_count,
                 COALESCE(acc.total_bal, 0.0) AS total_balance,
                 c.created_at, c.updated_at
@@ -89,11 +89,12 @@ pub fn get_customers(
                 phone: row.get(2)?,
                 address: row.get(3)?,
                 notes: row.get(4)?,
-                is_active: row.get(5)?,
-                open_accounts_count: row.get(6)?,
-                total_balance: row.get(7)?,
-                created_at: row.get(8)?,
-                updated_at: row.get(9)?,
+                credit_limit: row.get(5)?,
+                is_active: row.get(6)?,
+                open_accounts_count: row.get(7)?,
+                total_balance: row.get(8)?,
+                created_at: row.get(9)?,
+                updated_at: row.get(10)?,
             })
         })
         .map_err(|e| e.to_string())?;
@@ -119,7 +120,7 @@ pub fn get_customer_by_id(
     // Customer + computed fields
     let customer = conn
         .query_row(
-            "SELECT c.id, c.name, c.phone, c.address, c.notes, c.is_active,
+            "SELECT c.id, c.name, c.phone, c.address, c.notes, c.credit_limit, c.is_active,
                     COALESCE(acc.open_count, 0), COALESCE(acc.total_bal, 0.0),
                     c.created_at, c.updated_at
              FROM customers c
@@ -140,11 +141,12 @@ pub fn get_customer_by_id(
                     phone: row.get(2)?,
                     address: row.get(3)?,
                     notes: row.get(4)?,
-                    is_active: row.get(5)?,
-                    open_accounts_count: row.get(6)?,
-                    total_balance: row.get(7)?,
-                    created_at: row.get(8)?,
-                    updated_at: row.get(9)?,
+                    credit_limit: row.get(5)?,
+                    is_active: row.get(6)?,
+                    open_accounts_count: row.get(7)?,
+                    total_balance: row.get(8)?,
+                    created_at: row.get(9)?,
+                    updated_at: row.get(10)?,
                 })
             },
         )
@@ -267,14 +269,14 @@ pub fn create_customer(
     let conn = db.0.lock().map_err(|e| e.to_string())?;
 
     conn.execute(
-        "INSERT INTO customers (name, phone, address, notes) VALUES (?1, ?2, ?3, ?4)",
-        params![name, phone, address, notes],
+        "INSERT INTO customers (name, phone, address, notes, credit_limit) VALUES (?1, ?2, ?3, ?4, ?5)",
+        params![name, phone, address, notes, payload.credit_limit],
     )
     .map_err(|e| e.to_string())?;
 
     let id = conn.last_insert_rowid();
     conn.query_row(
-        "SELECT id, name, phone, address, notes, is_active, 0, 0.0, created_at, updated_at
+        "SELECT id, name, phone, address, notes, credit_limit, is_active, 0, 0.0, created_at, updated_at
          FROM customers WHERE id = ?1",
         params![id],
         |row| {
@@ -284,11 +286,12 @@ pub fn create_customer(
                 phone: row.get(2)?,
                 address: row.get(3)?,
                 notes: row.get(4)?,
-                is_active: row.get(5)?,
-                open_accounts_count: row.get(6)?,
-                total_balance: row.get(7)?,
-                created_at: row.get(8)?,
-                updated_at: row.get(9)?,
+                credit_limit: row.get(5)?,
+                is_active: row.get(6)?,
+                open_accounts_count: row.get(7)?,
+                total_balance: row.get(8)?,
+                created_at: row.get(9)?,
+                updated_at: row.get(10)?,
             })
         },
     )
@@ -334,6 +337,12 @@ pub fn update_customer(
         param_values.push(Box::new(validated));
         idx += 1;
     }
+    // credit_limit: explicitly allow setting to NULL via a sentinel or passing None
+    if payload.credit_limit.is_some() {
+        sets.push(format!("credit_limit = ?{}", idx));
+        param_values.push(Box::new(payload.credit_limit));
+        idx += 1;
+    }
 
     if sets.is_empty() {
         return Err("No fields to update".into());
@@ -354,7 +363,7 @@ pub fn update_customer(
 
     // Return updated customer with computed fields
     conn.query_row(
-        "SELECT c.id, c.name, c.phone, c.address, c.notes, c.is_active,
+        "SELECT c.id, c.name, c.phone, c.address, c.notes, c.credit_limit, c.is_active,
                 COALESCE(acc.open_count, 0), COALESCE(acc.total_bal, 0.0),
                 c.created_at, c.updated_at
          FROM customers c
@@ -375,11 +384,12 @@ pub fn update_customer(
                 phone: row.get(2)?,
                 address: row.get(3)?,
                 notes: row.get(4)?,
-                is_active: row.get(5)?,
-                open_accounts_count: row.get(6)?,
-                total_balance: row.get(7)?,
-                created_at: row.get(8)?,
-                updated_at: row.get(9)?,
+                credit_limit: row.get(5)?,
+                is_active: row.get(6)?,
+                open_accounts_count: row.get(7)?,
+                total_balance: row.get(8)?,
+                created_at: row.get(9)?,
+                updated_at: row.get(10)?,
             })
         },
     )
@@ -415,6 +425,12 @@ pub fn archive_customer(db: State<'_, DbState>, id: i64) -> Result<(), String> {
         params![id],
     )
     .map_err(|e| e.to_string())?;
+
+    let _ = conn.execute(
+        "INSERT INTO audit_log (action, entity_type, entity_id, details) VALUES (?1, ?2, ?3, ?4)",
+        params!["archive", "customer", id, format!("Archived customer #{}", id)],
+    );
+
     Ok(())
 }
 
@@ -430,5 +446,11 @@ pub fn restore_customer(db: State<'_, DbState>, id: i64) -> Result<(), String> {
         params![id],
     )
     .map_err(|e| e.to_string())?;
+
+    let _ = conn.execute(
+        "INSERT INTO audit_log (action, entity_type, entity_id, details) VALUES (?1, ?2, ?3, ?4)",
+        params!["restore", "customer", id, format!("Restored customer #{}", id)],
+    );
+
     Ok(())
 }

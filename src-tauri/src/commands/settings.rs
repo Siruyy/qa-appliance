@@ -47,6 +47,7 @@ pub fn update_settings_batch(
 ) -> Result<(), String> {
     let mut db = state.0.lock().map_err(|e| e.to_string())?;
     let tx = db.transaction().map_err(|e| e.to_string())?;
+    let keys_changed: Vec<String> = pairs.iter().map(|(k, _)| k.clone()).collect();
     for (key, value) in &pairs {
         tx.execute(
             "INSERT INTO settings (key, value) VALUES (?1, ?2)
@@ -55,6 +56,10 @@ pub fn update_settings_batch(
         )
         .map_err(|e| e.to_string())?;
     }
+    let _ = tx.execute(
+        "INSERT INTO audit_log (action, entity_type, entity_id, details) VALUES (?1, ?2, ?3, ?4)",
+        params!["update", "settings", 0, format!("Updated settings: {}", keys_changed.join(", "))],
+    );
     tx.commit().map_err(|e| e.to_string())?;
     Ok(())
 }

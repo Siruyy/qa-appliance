@@ -78,6 +78,11 @@ pub fn run() {
             commands::settings::update_settings_batch,
             commands::dashboard::get_dashboard_data,
             commands::audit_log::get_audit_log,
+            commands::payments::void_payment,
+            commands::payments::waive_penalty,
+            commands::accounts::update_account_rebate_rate,
+            commands::accounts::restructure_account,
+            commands::stock_movements::get_stock_movements,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

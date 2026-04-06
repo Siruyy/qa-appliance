@@ -220,7 +220,8 @@ pub fn get_account_by_id(db: State<DbState>, id: i64) -> Result<AccountDetail, S
     // Fetch payments
     let mut payment_stmt = conn
         .prepare(
-            "SELECT id, amount, payment_date, type, notes
+            "SELECT id, amount, payment_date, type, notes,
+                    COALESCE(is_reversed, 0), reversed_at, reversed_reason
              FROM payments
              WHERE account_id = ?1
              ORDER BY payment_date DESC, id DESC",
@@ -235,6 +236,9 @@ pub fn get_account_by_id(db: State<DbState>, id: i64) -> Result<AccountDetail, S
                 payment_date: row.get(2)?,
                 payment_type: row.get(3)?,
                 notes: row.get(4)?,
+                is_reversed: row.get::<_, i32>(5)? != 0,
+                reversed_at: row.get(6)?,
+                reversed_reason: row.get(7)?,
             })
         })
         .map_err(|e| e.to_string())?
@@ -397,4 +401,138 @@ pub fn recalculate_balance(db: State<DbState>, account_id: i64) -> Result<f64, S
     }
 
     Ok(new_balance)
+}
+
+#[tauri::command]
+pub fn update_account_rebate_rate(
+    db: State<'_, DbState>,
+    account_id: i64,
+    rebate_rate: f64,
+) -> Result<(), String> {
+    let conn = db.0.lock().map_err(|e| e.to_string())?;
+
+    if rebate_rate < 0.0 || rebate_rate > 100.0 {
+        return Err("Rebate rate must be between 0 and 100".to_string());
+    }
+
+    let status: String = conn
+        .query_row(
+            "SELECT status FROM installment_accounts WHERE id = ?1",
+            rusqlite::params![account_id],
+            |row| row.get(0),
+        )
+        .map_err(|_| "Account not found".to_string())?;
+
+    if status != "open" {
+        return Err("Can only update rebate rate on open accounts".to_string());
+    }
+
+    conn.execute(
+        "UPDATE installment_accounts SET rebate_rate = ?1, updated_at = datetime('now') WHERE id = ?2",
+        rusqlite::params![rebate_rate, account_id],
+    )
+    .map_err(|e| e.to_string())?;
+
+    conn.execute(
+        "INSERT INTO audit_log (action, entity_type, entity_id, details) VALUES (?1, ?2, ?3, ?4)",
+        rusqlite::params![
+            "update_rebate_rate",
+            "installment_account",
+            account_id.to_string(),
+            format!("Updated rebate rate to {}%", rebate_rate)
+        ],
+    )
+    .map_err(|e| e.to_string())?;
+
+    Ok(())
+}
+
+#[tauri::command]
+pub fn restructure_account(
+    db: State<'_, DbState>,
+    account_id: i64,
+    new_term_months: i64,
+    new_monthly_rate: f64,
+) -> Result<(), String> {
+    let conn = db.0.lock().map_err(|e| e.to_string())?;
+
+    if new_term_months < 1 || new_term_months > 60 {
+        return Err("Term must be between 1 and 60 months".to_string());
+    }
+    if new_monthly_rate < 0.0 || new_monthly_rate > 20.0 {
+        return Err("Monthly rate must be between 0 and 20%".to_string());
+    }
+
+    // Get current account state
+    let (balance_remaining, status, down_payment): (f64, String, f64) = conn
+        .query_row(
+            "SELECT balance_remaining, status, down_payment FROM installment_accounts WHERE id = ?1",
+            rusqlite::params![account_id],
+            |row| Ok((row.get(0)?, row.get(1)?, row.get(2)?)),
+        )
+        .map_err(|_| "Account not found".to_string())?;
+
+    if status != "open" {
+        return Err("Can only restructure open accounts".to_string());
+    }
+
+    // Recalculate: new interest on remaining balance
+    let new_interest = balance_remaining * (new_monthly_rate / 100.0) * new_term_months as f64;
+    let new_total = balance_remaining + new_interest;
+    let new_monthly = new_total / new_term_months as f64;
+
+    // Update the account
+    conn.execute(
+        "UPDATE installment_accounts SET
+            term_months = ?1,
+            monthly_rate = ?2,
+            monthly_payment = ?3,
+            balance_remaining = ?4,
+            updated_at = datetime('now')
+         WHERE id = ?5",
+        rusqlite::params![new_term_months, new_monthly_rate, new_monthly, new_total, account_id],
+    )
+    .map_err(|e| e.to_string())?;
+
+    // Delete old unpaid schedule entries
+    conn.execute(
+        "DELETE FROM payment_schedules WHERE account_id = ?1 AND status = 'unpaid'",
+        rusqlite::params![account_id],
+    )
+    .map_err(|e| e.to_string())?;
+
+    // Generate new schedule entries starting from today using SQLite date math
+    let today = crate::utils::date::today_iso();
+    for i in 1..=new_term_months {
+        let due_date: String = conn
+            .query_row(
+                "SELECT date(?1, '+' || ?2 || ' months')",
+                rusqlite::params![today, i],
+                |row| row.get(0),
+            )
+            .map_err(|e| e.to_string())?;
+
+        conn.execute(
+            "INSERT INTO payment_schedules (account_id, month_number, due_date, amount_due, amount_paid, status)
+             VALUES (?1, ?2, ?3, ?4, 0, 'unpaid')",
+            rusqlite::params![account_id, i, due_date, new_monthly],
+        )
+        .map_err(|e| e.to_string())?;
+    }
+
+    conn.execute(
+        "INSERT INTO audit_log (action, entity_type, entity_id, details) VALUES (?1, ?2, ?3, ?4)",
+        rusqlite::params![
+            "restructure_account",
+            "installment_account",
+            account_id.to_string(),
+            format!(
+                "Restructured: {} months @ {}%/mo, new monthly ₱{:.2}, new balance ₱{:.2}",
+                new_term_months, new_monthly_rate, new_monthly, new_total
+            )
+        ],
+    )
+    .map_err(|e| e.to_string())?;
+
+    Ok(())
 }

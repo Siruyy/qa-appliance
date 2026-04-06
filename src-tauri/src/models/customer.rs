@@ -9,6 +9,7 @@ pub struct Customer {
     pub phone: Option<String>,
     pub address: Option<String>,
     pub notes: Option<String>,
+    pub credit_limit: Option<f64>,
     pub is_active: bool,
     pub open_accounts_count: i64,
     pub total_balance: f64,
@@ -67,6 +68,7 @@ pub struct CreateCustomerPayload {
     pub phone: Option<String>,
     pub address: Option<String>,
     pub notes: Option<String>,
+    pub credit_limit: Option<f64>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -76,4 +78,5 @@ pub struct UpdateCustomerPayload {
     pub phone: Option<String>,
     pub address: Option<String>,
     pub notes: Option<String>,
+    pub credit_limit: Option<f64>,
 }

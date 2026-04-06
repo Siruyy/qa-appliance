@@ -64,7 +64,9 @@ pub fn get_payments(
                     GROUP_CONCAT(DISTINCT p.name || COALESCE(' ' || v.attributes, '')),
                     'Unknown Product'
                 ) AS product_summary,
-                pay.amount, pay.payment_date, pay.type, pay.notes, pay.created_at
+                pay.amount, pay.payment_date, pay.type, pay.notes,
+                pay.is_reversed, pay.reversed_at, pay.reversed_reason,
+                pay.created_at
          FROM payments pay
          JOIN installment_accounts ia ON ia.id = pay.account_id
          JOIN customers c ON c.id = ia.customer_id
@@ -89,7 +91,10 @@ pub fn get_payments(
             payment_date: row.get(6)?,
             payment_type: row.get(7)?,
             notes: row.get(8)?,
-            created_at: row.get(9)?,
+            is_reversed: row.get(9)?,
+            reversed_at: row.get(10)?,
+            reversed_reason: row.get(11)?,
+            created_at: row.get(12)?,
         })
     })
 }
@@ -108,7 +113,9 @@ pub fn get_payments_for_account(
                         GROUP_CONCAT(DISTINCT p.name || COALESCE(' ' || v.attributes, '')),
                         'Unknown Product'
                     ) AS product_summary,
-                    pay.amount, pay.payment_date, pay.type, pay.notes, pay.created_at
+                    pay.amount, pay.payment_date, pay.type, pay.notes,
+                    pay.is_reversed, pay.reversed_at, pay.reversed_reason,
+                    pay.created_at
              FROM payments pay
              JOIN installment_accounts ia ON ia.id = pay.account_id
              JOIN customers c ON c.id = ia.customer_id
@@ -134,7 +141,10 @@ pub fn get_payments_for_account(
                 payment_date: row.get(6)?,
                 payment_type: row.get(7)?,
                 notes: row.get(8)?,
-                created_at: row.get(9)?,
+                is_reversed: row.get(9)?,
+                reversed_at: row.get(10)?,
+                reversed_reason: row.get(11)?,
+                created_at: row.get(12)?,
             })
         })
         .map_err(|e| e.to_string())?;
@@ -314,7 +324,9 @@ pub fn record_payment(
                          WHERE si2.sale_id = ia.sale_id),
                         'Unknown Product'
                     ),
-                    pay.amount, pay.payment_date, pay.type, pay.notes, pay.created_at
+                    pay.amount, pay.payment_date, pay.type, pay.notes,
+                    pay.is_reversed, pay.reversed_at, pay.reversed_reason,
+                    pay.created_at
              FROM payments pay
              JOIN installment_accounts ia ON ia.id = pay.account_id
              JOIN customers c ON c.id = ia.customer_id
@@ -331,7 +343,10 @@ pub fn record_payment(
                     payment_date: row.get(6)?,
                     payment_type: row.get(7)?,
                     notes: row.get(8)?,
-                    created_at: row.get(9)?,
+                    is_reversed: row.get(9)?,
+                    reversed_at: row.get(10)?,
+                    reversed_reason: row.get(11)?,
+                    created_at: row.get(12)?,
                 })
             },
         )
@@ -445,6 +460,147 @@ fn auto_apply_to_schedule(
 
         remaining_amount -= apply;
     }
+
+    Ok(())
+}
+
+#[tauri::command]
+pub fn void_payment(db: State<'_, DbState>, payment_id: i64, reason: String) -> Result<(), String> {
+    let conn = db.0.lock().map_err(|e| e.to_string())?;
+
+    let reason = reason.trim().to_string();
+    if reason.is_empty() {
+        return Err("Reason is required to void a payment".to_string());
+    }
+
+    let (amount, account_id, payment_type, is_reversed): (f64, Option<i64>, String, bool) = conn
+        .query_row(
+            "SELECT amount, account_id, type, is_reversed FROM payments WHERE id = ?1",
+            rusqlite::params![payment_id],
+            |row| Ok((row.get(0)?, row.get(1)?, row.get(2)?, row.get(3)?)),
+        )
+        .map_err(|_| "Payment not found".to_string())?;
+
+    if is_reversed {
+        return Err("Payment has already been voided".to_string());
+    }
+
+    if payment_type == "penalty" || payment_type == "rebate" {
+        return Err(format!("Cannot void a {} entry — use the appropriate action instead", payment_type));
+    }
+
+    let now = crate::utils::date::today_iso();
+    conn.execute(
+        "UPDATE payments SET is_reversed = 1, reversed_at = ?1, reversed_reason = ?2 WHERE id = ?3",
+        rusqlite::params![now, reason, payment_id],
+    )
+    .map_err(|e| e.to_string())?;
+
+    if let Some(acct_id) = account_id {
+        conn.execute(
+            "UPDATE installment_accounts SET balance_remaining = balance_remaining + ?1, status = 'open' WHERE id = ?2",
+            rusqlite::params![amount, acct_id],
+        )
+        .map_err(|e| e.to_string())?;
+
+        // Reverse schedule entries in LIFO order
+        let mut stmt = conn
+            .prepare(
+                "SELECT id, amount_due, amount_paid FROM payment_schedules
+                 WHERE account_id = ?1 AND status IN ('paid', 'partial')
+                 ORDER BY due_date DESC",
+            )
+            .map_err(|e| e.to_string())?;
+
+        let entries: Vec<(i64, f64, f64)> = stmt
+            .query_map(rusqlite::params![acct_id], |row| {
+                Ok((row.get(0)?, row.get(1)?, row.get(2)?))
+            })
+            .map_err(|e| e.to_string())?
+            .filter_map(|r| r.ok())
+            .collect();
+
+        let mut to_reverse = amount;
+        for (entry_id, _amount_due, amount_paid) in entries {
+            if to_reverse <= 0.0 { break; }
+            let deduct = if amount_paid <= to_reverse { amount_paid } else { to_reverse };
+            let new_paid = amount_paid - deduct;
+            let new_status = if new_paid <= 0.001 { "unpaid" } else { "partial" };
+
+            conn.execute(
+                "UPDATE payment_schedules SET amount_paid = ?1, status = ?2 WHERE id = ?3",
+                rusqlite::params![new_paid, new_status, entry_id],
+            )
+            .map_err(|e| e.to_string())?;
+
+            to_reverse -= deduct;
+        }
+    }
+
+    conn.execute(
+        "INSERT INTO audit_log (action, entity_type, entity_id, details) VALUES (?1, ?2, ?3, ?4)",
+        rusqlite::params![
+            "void_payment",
+            "payment",
+            payment_id.to_string(),
+            format!("Voided payment of ₱{:.2}. Reason: {}", amount, reason)
+        ],
+    )
+    .map_err(|e| e.to_string())?;
+
+    Ok(())
+}
+
+#[tauri::command]
+pub fn waive_penalty(db: State<'_, DbState>, payment_id: i64, reason: String) -> Result<(), String> {
+    let conn = db.0.lock().map_err(|e| e.to_string())?;
+
+    let reason = reason.trim().to_string();
+    if reason.is_empty() {
+        return Err("Reason is required to waive a penalty".to_string());
+    }
+
+    let (amount, account_id, payment_type, is_reversed): (f64, Option<i64>, String, bool) = conn
+        .query_row(
+            "SELECT amount, account_id, type, is_reversed FROM payments WHERE id = ?1",
+            rusqlite::params![payment_id],
+            |row| Ok((row.get(0)?, row.get(1)?, row.get(2)?, row.get(3)?)),
+        )
+        .map_err(|_| "Payment not found".to_string())?;
+
+    if payment_type != "penalty" {
+        return Err("This action is only available for penalty entries".to_string());
+    }
+    if is_reversed {
+        return Err("This penalty has already been waived".to_string());
+    }
+
+    let now = crate::utils::date::today_iso();
+    conn.execute(
+        "UPDATE payments SET is_reversed = 1, reversed_at = ?1, reversed_reason = ?2 WHERE id = ?3",
+        rusqlite::params![now, reason, payment_id],
+    )
+    .map_err(|e| e.to_string())?;
+
+    // Reduce balance by penalty amount (penalty added to balance, so subtract to undo)
+    if let Some(acct_id) = account_id {
+        conn.execute(
+            "UPDATE installment_accounts SET balance_remaining = balance_remaining - ?1 WHERE id = ?2",
+            rusqlite::params![amount, acct_id],
+        )
+        .map_err(|e| e.to_string())?;
+    }
+
+    conn.execute(
+        "INSERT INTO audit_log (action, entity_type, entity_id, details) VALUES (?1, ?2, ?3, ?4)",
+        rusqlite::params![
+            "waive_penalty",
+            "payment",
+            payment_id.to_string(),
+            format!("Waived penalty of ₱{:.2}. Reason: {}", amount, reason)
+        ],
+    )
+    .map_err(|e| e.to_string())?;
 
     Ok(())
 }
