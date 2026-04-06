@@ -10,6 +10,7 @@ import { formatDate, formatProductSummary } from "@/lib/formatters";
 import { useCurrency } from "@/hooks/useCurrency";
 import { accountStatusVariant } from "@/lib/badgeVariants";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
+import { HelpTip } from "@/components/help/HelpTip";
 import { useSettingsStore } from "@/stores/settingsStore";
 import { toInstallmentPlan, toStatementOfAccount } from "@/lib/export";
 
@@ -353,7 +354,7 @@ export function AccountDetailPage() {
           <p className="text-lg font-semibold">{formatCurrency(account.down_payment)}</p>
         </div>
         <div>
-          <p className="text-xs text-muted-foreground">Balance Remaining</p>
+          <p className="text-xs text-muted-foreground">Balance Remaining <HelpTip text="Running balance decremented by each payment. Use 'Recalculate' if it seems incorrect." /></p>
           <p className="text-lg font-semibold text-primary">
             {formatCurrency(account.balance_remaining)}
           </p>
@@ -464,7 +465,7 @@ export function AccountDetailPage() {
 
       {/* Payment Schedule */}
         <div>
-          <h2 className="text-lg font-semibold mb-3">Payment Schedule</h2>
+          <h2 className="text-lg font-semibold mb-3">Payment Schedule <HelpTip text="Fixed monthly payments with due dates. Green = paid, red = overdue." /></h2>
           <div className="rounded-md border">
             <ScheduleTable schedule={account.schedule} />
           </div>

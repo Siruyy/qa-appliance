@@ -29,6 +29,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { HelpTip } from "@/components/help/HelpTip";
+import { FirstTimeHint } from "@/components/help/FirstTimeHint";
 import { downloadCsv } from "@/lib/csv";
 import { toExcel } from "@/lib/export";
 import {
@@ -74,6 +76,7 @@ export function PaymentsPage() {
   const { format: formatCurrency } = useCurrency();
   return (
     <div className="space-y-6">
+      <FirstTimeHint />
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <CreditCard className="h-6 w-6" />
@@ -183,7 +186,7 @@ export function PaymentsPage() {
               <TableHead>Date</TableHead>
               <TableHead>Customer</TableHead>
               <TableHead>Product</TableHead>
-              <TableHead>Type</TableHead>
+              <TableHead>Type <HelpTip text="Regular = normal payment. Penalty = overdue charge. Advance = paid ahead. Down Payment = initial installment payment." /></TableHead>
               <TableHead className="text-right">Amount</TableHead>
               <TableHead>Notes</TableHead>
             </TableRow>

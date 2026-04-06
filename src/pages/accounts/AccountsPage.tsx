@@ -45,6 +45,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { TableSkeleton } from "@/components/TableSkeleton";
+import { HelpTip } from "@/components/help/HelpTip";
+import { FirstTimeHint } from "@/components/help/FirstTimeHint";
 import { downloadCsv } from "@/lib/csv";
 import { toExcel } from "@/lib/export";
 
@@ -90,6 +92,7 @@ export function AccountsPage() {
   const { format: formatCurrency } = useCurrency();
   return (
     <div className="space-y-6">
+      <FirstTimeHint />
       <PageHeader
         title="Accounts / Receivables"
         description="Track all open installment accounts."
@@ -174,10 +177,10 @@ export function AccountsPage() {
             <TableRow>
               <TableHead>Customer</TableHead>
               <TableHead>Product</TableHead>
-              <TableHead className="text-right">Balance</TableHead>
+              <TableHead className="text-right">Balance <HelpTip text="Live running balance — starts at total owed and decreases with each payment." /></TableHead>
               <TableHead>Type</TableHead>
               <TableHead>Next Due</TableHead>
-              <TableHead>Status</TableHead>
+              <TableHead>Status <HelpTip text="Open = payments remaining. Paid = settled. Overdue = missed payments. Defaulted = severely delinquent." /></TableHead>
               <TableHead className="w-12" />
             </TableRow>
           </TableHeader>
