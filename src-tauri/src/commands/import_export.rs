@@ -255,14 +255,19 @@ pub fn export_payments_data(
 
 #[tauri::command]
 pub fn export_all_data(state: State<'_, DbState>) -> Result<ExportAllData, String> {
-    let db = state.0.lock().map_err(|e| e.to_string())?;
+    let mut db = state.0.lock().map_err(|e| e.to_string())?;
 
-    let categories = query_categories(&db)?;
-    let products = query_products(&db)?;
-    let customers = query_customers(&db)?;
-    let sales = query_sales(&db)?;
-    let accounts = query_accounts(&db)?;
-    let payments = query_payments(&db, None, None)?;
+    // Use a transaction for a consistent snapshot across all queries
+    let tx = db.transaction().map_err(|e| e.to_string())?;
+
+    let categories = query_categories(&tx)?;
+    let products = query_products(&tx)?;
+    let customers = query_customers(&tx)?;
+    let sales = query_sales(&tx)?;
+    let accounts = query_accounts(&tx)?;
+    let payments = query_payments(&tx, None, None)?;
+
+    tx.commit().map_err(|e| e.to_string())?;
 
     Ok(ExportAllData {
         products,

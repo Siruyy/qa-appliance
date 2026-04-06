@@ -312,7 +312,7 @@ export function CustomersPage() {
       <Pagination
         page={page}
         pageSize={pageSize}
-        total={totalCount}
+        total={filters.search ? customers.length : totalCount}
         onPageChange={setPage}
       />
 

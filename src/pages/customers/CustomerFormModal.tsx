@@ -72,7 +72,7 @@ export function CustomerFormModal({ customer, onClose }: Props) {
 
   return (
     <Dialog open onOpenChange={() => { if (!isSubmitting) onClose(); }}>
-      <DialogContent className="max-w-[560px] max-h-[85vh] overflow-y-auto" onInteractOutside={(e) => { if (isSubmitting) e.preventDefault(); }}>
+      <DialogContent className="max-w-[560px] max-h-[85vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{isEdit ? "Edit Customer" : "Add Customer"}</DialogTitle>
         </DialogHeader>

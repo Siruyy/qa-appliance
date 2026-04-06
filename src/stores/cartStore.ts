@@ -62,18 +62,21 @@ export const useCartStore = create<CartStore>((set, get) => ({
       newItem.subtotal = calcItemSubtotal(newItem);
       const existing = state.cart.items.find((i) => i.variant_id === newItem.variant_id);
       if (existing) {
+        const newQty = existing.quantity + newItem.quantity;
+        if (newQty > existing.stock_qty) return state; // prevent exceeding stock
         return {
           cart: {
             ...state.cart,
             items: state.cart.items.map((i: CartItem) => {
               if (i.variant_id !== newItem.variant_id) return i;
-              const updated = { ...i, quantity: i.quantity + newItem.quantity };
+              const updated = { ...i, quantity: newQty };
               updated.subtotal = calcItemSubtotal(updated);
               return updated;
             }),
           },
         };
       }
+      if (newItem.quantity > newItem.stock_qty) return state; // prevent exceeding stock
       return { cart: { ...state.cart, items: [...state.cart.items, newItem] } };
     }),
 
@@ -84,7 +87,8 @@ export const useCartStore = create<CartStore>((set, get) => ({
         ...state.cart,
         items: state.cart.items.map((i: CartItem) => {
           if (i.variant_id !== variantId) return i;
-          const updated = { ...i, quantity: qty };
+          const clampedQty = Math.min(qty, i.stock_qty); // clamp to available stock
+          const updated = { ...i, quantity: clampedQty };
           updated.subtotal = calcItemSubtotal(updated);
           return updated;
         }),

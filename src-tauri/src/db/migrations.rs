@@ -50,6 +50,10 @@ pub fn run(conn: &Connection) -> Result<()> {
         migrate_v8(conn)?;
     }
 
+    if version < 9 {
+        migrate_v9(conn)?;
+    }
+
     Ok(())
 }
 
@@ -1411,5 +1415,51 @@ fn migrate_v8(conn: &Connection) -> Result<()> {
     )?;
 
     println!("[db] Applied migration v8 — credit limit, stock movements, payment reversal, grace period");
+    Ok(())
+}
+
+/// V9 — Performance indexes + low_stock_threshold setting
+fn migrate_v9(conn: &Connection) -> Result<()> {
+    conn.execute_batch(
+        "
+        -- Performance indexes for frequently queried relationships
+        CREATE INDEX IF NOT EXISTS idx_installment_accounts_customer_status
+            ON installment_accounts (customer_id, status);
+        CREATE INDEX IF NOT EXISTS idx_installment_accounts_sale_id
+            ON installment_accounts (sale_id);
+        CREATE INDEX IF NOT EXISTS idx_payments_account_id_type
+            ON payments (account_id, type);
+        CREATE INDEX IF NOT EXISTS idx_payments_payment_date
+            ON payments (payment_date);
+        CREATE INDEX IF NOT EXISTS idx_payment_schedules_account_status
+            ON payment_schedules (account_id, status);
+        CREATE INDEX IF NOT EXISTS idx_payment_schedules_due_date
+            ON payment_schedules (due_date);
+        CREATE INDEX IF NOT EXISTS idx_sales_customer_id
+            ON sales (customer_id);
+        CREATE INDEX IF NOT EXISTS idx_sales_status
+            ON sales (status);
+        CREATE INDEX IF NOT EXISTS idx_sale_items_sale_id
+            ON sale_items (sale_id);
+        CREATE INDEX IF NOT EXISTS idx_sale_items_variant_id
+            ON sale_items (variant_id);
+        CREATE INDEX IF NOT EXISTS idx_product_variants_product_id
+            ON product_variants (product_id);
+        CREATE INDEX IF NOT EXISTS idx_product_variants_sku
+            ON product_variants (sku) WHERE sku IS NOT NULL;
+        CREATE INDEX IF NOT EXISTS idx_stock_movements_variant_id
+            ON stock_movements (variant_id);
+        CREATE INDEX IF NOT EXISTS idx_audit_log_entity
+            ON audit_log (entity_type, entity_id);
+
+        -- Low stock threshold setting (global default, currently hardcoded)
+        INSERT OR IGNORE INTO settings (key, value) VALUES
+            ('low_stock_threshold', '5');
+
+        INSERT INTO schema_migrations (version) VALUES (9);
+        "
+    )?;
+
+    println!("[db] Applied migration v9 — performance indexes, low stock threshold setting");
     Ok(())
 }

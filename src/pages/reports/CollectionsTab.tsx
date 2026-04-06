@@ -51,11 +51,12 @@ export function CollectionsTab() {
 
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+      <div className="grid grid-cols-2 gap-4 md:grid-cols-5">
         <KpiCard label="Total Collected" value={data.total_collected} type="currency" />
         <KpiCard label="Transactions" value={data.transaction_count} type="number" />
         <KpiCard label="Cash Payments" value={data.cash_payments} type="currency" />
         <KpiCard label="Penalty Income" value={data.penalty_total} type="currency" />
+        <KpiCard label="Rebates Issued" value={data.rebate_total} type="currency" />
       </div>
 
       {/* Chart */}

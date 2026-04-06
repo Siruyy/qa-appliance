@@ -1,20 +1,38 @@
-/// Returns today's date as "YYYY-MM-DD" (UTC) without requiring the chrono crate.
+/// Philippines timezone offset: UTC+8 = 8 * 3600 seconds
+const PHT_OFFSET_SECS: u64 = 8 * 3600;
+
+/// Returns today's date as "YYYY-MM-DD" in Philippine Standard Time (UTC+8).
 pub fn today_iso() -> String {
     let now = std::time::SystemTime::now()
         .duration_since(std::time::UNIX_EPOCH)
         .expect("System clock before UNIX epoch")
-        .as_secs();
+        .as_secs() + PHT_OFFSET_SECS;
     let days = now / 86400;
     let (year, month, day) = days_to_ymd(days as i64 + 719468);
     format!("{:04}-{:02}-{:02}", year, month, day)
 }
 
-/// Returns the date N days ago as "YYYY-MM-DD" (UTC).
+/// Returns the current datetime as "YYYY-MM-DD HH:MM:SS" in PHT (UTC+8).
+pub fn now_pht_iso() -> String {
+    let now = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .expect("System clock before UNIX epoch")
+        .as_secs() + PHT_OFFSET_SECS;
+    let days = now / 86400;
+    let remainder = now % 86400;
+    let hours = remainder / 3600;
+    let minutes = (remainder % 3600) / 60;
+    let seconds = remainder % 60;
+    let (year, month, day) = days_to_ymd(days as i64 + 719468);
+    format!("{:04}-{:02}-{:02} {:02}:{:02}:{:02}", year, month, day, hours, minutes, seconds)
+}
+
+/// Returns the date N days ago as "YYYY-MM-DD" in PHT (UTC+8).
 pub fn days_ago_iso(n: u64) -> String {
     let now = std::time::SystemTime::now()
         .duration_since(std::time::UNIX_EPOCH)
         .expect("System clock before UNIX epoch")
-        .as_secs();
+        .as_secs() + PHT_OFFSET_SECS;
     let days = (now / 86400) as i64 - n as i64;
     let (year, month, day) = days_to_ymd(days + 719468);
     format!("{:04}-{:02}-{:02}", year, month, day)

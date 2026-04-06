@@ -233,7 +233,7 @@ export function PaymentsPage() {
       <Pagination
         page={page}
         pageSize={pageSize}
-        total={totalCount}
+        total={search ? payments.length : totalCount}
         onPageChange={setPage}
       />
     </div>

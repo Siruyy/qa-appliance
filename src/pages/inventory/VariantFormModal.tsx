@@ -99,7 +99,7 @@ export function VariantFormModal({ productId, variant, onClose }: Props) {
 
   return (
     <Dialog open onOpenChange={(open) => { if (!open && !isSubmitting) onClose(); }}>
-      <DialogContent className="sm:max-w-lg max-h-[85vh] overflow-y-auto" onInteractOutside={(e) => { if (isSubmitting) e.preventDefault(); }}>
+      <DialogContent className="sm:max-w-lg max-h-[85vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{isEdit ? "Edit Variant" : "New Variant"}</DialogTitle>
         </DialogHeader>

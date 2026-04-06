@@ -64,11 +64,28 @@ pub fn get_sales_summary(
         .collect();
     daily_totals.sort_by(|a, b| a.date.cmp(&b.date));
 
+    // Voided sales summary
+    let (voided_count, voided_total): (i64, f64) = db.query_row(
+        "SELECT COUNT(*), COALESCE(SUM(total), 0) FROM sales WHERE DATE(sale_date) BETWEEN ?1 AND ?2 AND status = 'voided'",
+        rusqlite::params![from_date, to_date],
+        |row| Ok((row.get(0)?, row.get(1)?)),
+    ).unwrap_or((0, 0.0));
+
+    // Discount total
+    let discount_total: f64 = db.query_row(
+        "SELECT COALESCE(SUM(discount), 0) FROM sales WHERE DATE(sale_date) BETWEEN ?1 AND ?2 AND status = 'completed'",
+        rusqlite::params![from_date, to_date],
+        |row| row.get(0),
+    ).unwrap_or(0.0);
+
     Ok(SalesSummaryReport {
         total_sales,
         transaction_count,
         cash_total,
         installment_total,
+        voided_count,
+        voided_total,
+        discount_total,
         daily_totals,
         sales,
     })
@@ -320,6 +337,10 @@ pub fn get_collections_report(
     let penalty_total: f64 = payments.iter()
         .filter(|p| p.payment_type == "penalty")
         .map(|p| p.amount).sum();
+    let rebate_total: f64 = payments.iter()
+        .filter(|p| p.payment_type == "rebate")
+        .map(|p| p.amount.abs())
+        .sum();
 
     let mut daily_map: HashMap<String, f64> = HashMap::new();
     for p in &payments {
@@ -336,6 +357,7 @@ pub fn get_collections_report(
         transaction_count,
         cash_payments,
         penalty_total,
+        rebate_total,
         daily_totals,
         payments,
     })

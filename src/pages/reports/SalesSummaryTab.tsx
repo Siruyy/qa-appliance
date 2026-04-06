@@ -58,6 +58,11 @@ export function SalesSummaryTab() {
         <KpiCard label="Cash Sales" value={data.cash_total} type="currency" />
         <KpiCard label="Installment Sales" value={data.installment_total} type="currency" />
       </div>
+      <div className="grid grid-cols-2 gap-4 md:grid-cols-3">
+        <KpiCard label="Discounts Given" value={data.discount_total} type="currency" />
+        <KpiCard label="Voided Sales" value={data.voided_count} type="number" />
+        <KpiCard label="Voided Amount" value={data.voided_total} type="currency" />
+      </div>
 
       {/* Chart */}
       {data.daily_totals.length > 0 && (

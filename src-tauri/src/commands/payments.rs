@@ -525,7 +525,7 @@ pub fn void_payment(db: State<'_, DbState>, payment_id: i64, reason: String) -> 
             if to_reverse <= 0.0 { break; }
             let deduct = if amount_paid <= to_reverse { amount_paid } else { to_reverse };
             let new_paid = amount_paid - deduct;
-            let new_status = if new_paid <= 0.001 { "unpaid" } else { "partial" };
+            let new_status = if new_paid <= 0.001 { "pending" } else { "partial" };
 
             conn.execute(
                 "UPDATE payment_schedules SET amount_paid = ?1, status = ?2 WHERE id = ?3",

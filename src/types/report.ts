@@ -76,6 +76,9 @@ export interface SalesSummaryReport {
   transaction_count: number;
   cash_total: number;
   installment_total: number;
+  voided_count: number;
+  voided_total: number;
+  discount_total: number;
   daily_totals: DailyTotal[];
   sales: SalesSummaryRow[];
 }
@@ -150,6 +153,7 @@ export interface CollectionsReport {
   transaction_count: number;
   cash_payments: number;
   penalty_total: number;
+  rebate_total: number;
   daily_totals: DailyTotal[];
   payments: CollectionsRow[];
 }

@@ -24,6 +24,9 @@ pub struct SalesSummaryReport {
     pub transaction_count: i64,
     pub cash_total: f64,
     pub installment_total: f64,
+    pub voided_count: i64,
+    pub voided_total: f64,
+    pub discount_total: f64,
     pub daily_totals: Vec<DailyTotal>,
     pub sales: Vec<SalesSummaryRow>,
 }
@@ -107,6 +110,7 @@ pub struct CollectionsReport {
     pub transaction_count: i64,
     pub cash_payments: f64,
     pub penalty_total: f64,
+    pub rebate_total: f64,
     pub daily_totals: Vec<DailyTotal>,
     pub payments: Vec<CollectionsRow>,
 }

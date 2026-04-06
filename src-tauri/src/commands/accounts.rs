@@ -321,11 +321,13 @@ pub fn update_account_notes(db: State<DbState>, id: i64, notes: String) -> Resul
 
 #[tauri::command]
 pub fn run_penalty_check(db: State<DbState>) -> Result<Vec<PenaltyApplied>, String> {
-    let conn = db.0.lock().map_err(|e| e.to_string())?;
-    let results = penalty::check_and_apply_penalties(&conn)?;
+    let mut conn = db.0.lock().map_err(|e| e.to_string())?;
+    let tx = conn.transaction().map_err(|e| e.to_string())?;
+    let results = penalty::check_and_apply_penalties(&tx)?;
     for p in &results {
-        let _ = insert_audit(&conn, "penalty_applied", "account", Some(p.account_id), Some(&format!("₱{:.2} penalty", p.penalty_amount)));
+        let _ = insert_audit(&tx, "penalty_applied", "account", Some(p.account_id), Some(&format!("₱{:.2} penalty", p.penalty_amount)));
     }
+    tx.commit().map_err(|e| e.to_string())?;
     Ok(results)
 }
 
@@ -464,7 +466,7 @@ pub fn restructure_account(
     }
 
     // Get current account state
-    let (balance_remaining, status, down_payment): (f64, String, f64) = conn
+    let (balance_remaining, status, _down_payment): (f64, String, f64) = conn
         .query_row(
             "SELECT balance_remaining, status, down_payment FROM installment_accounts WHERE id = ?1",
             rusqlite::params![account_id],
@@ -485,8 +487,8 @@ pub fn restructure_account(
     conn.execute(
         "UPDATE installment_accounts SET
             term_months = ?1,
-            monthly_rate = ?2,
-            monthly_payment = ?3,
+            interest_rate = ?2,
+            monthly_amount = ?3,
             balance_remaining = ?4,
             updated_at = datetime('now')
          WHERE id = ?5",
@@ -494,9 +496,9 @@ pub fn restructure_account(
     )
     .map_err(|e| e.to_string())?;
 
-    // Delete old unpaid schedule entries
+    // Delete old pending/overdue schedule entries (preserving paid history)
     conn.execute(
-        "DELETE FROM payment_schedules WHERE account_id = ?1 AND status = 'unpaid'",
+        "DELETE FROM payment_schedules WHERE account_id = ?1 AND status IN ('pending', 'overdue')",
         rusqlite::params![account_id],
     )
     .map_err(|e| e.to_string())?;
@@ -513,9 +515,9 @@ pub fn restructure_account(
             .map_err(|e| e.to_string())?;
 
         conn.execute(
-            "INSERT INTO payment_schedules (account_id, month_number, due_date, amount_due, amount_paid, status)
-             VALUES (?1, ?2, ?3, ?4, 0, 'unpaid')",
-            rusqlite::params![account_id, i, due_date, new_monthly],
+            "INSERT INTO payment_schedules (account_id, due_date, amount_due, amount_paid, status)
+             VALUES (?1, ?2, ?3, 0, 'pending')",
+            rusqlite::params![account_id, due_date, new_monthly],
         )
         .map_err(|e| e.to_string())?;
     }

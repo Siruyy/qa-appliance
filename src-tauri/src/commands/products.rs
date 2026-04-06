@@ -413,6 +413,34 @@ pub fn create_variant(db: State<'_, DbState>, payload: CreateVariantPayload) -> 
     let attr_json = payload.attributes.map(|a| serde_json::to_string(&a).unwrap_or_default());
     let threshold = payload.low_stock_threshold.unwrap_or(DEFAULT_LOW_STOCK_THRESHOLD);
 
+    // Validate prices
+    if payload.cost_price < 0.0 {
+        return Err("Cost price cannot be negative".to_string());
+    }
+    if payload.selling_price <= 0.0 {
+        return Err("Selling price must be greater than 0".to_string());
+    }
+    if payload.stock_qty < 0 {
+        return Err("Stock quantity cannot be negative".to_string());
+    }
+
+    // Check SKU uniqueness if provided
+    if let Some(ref sku) = payload.sku {
+        if !sku.is_empty() {
+            let sku_exists: bool = conn
+                .query_row(
+                    "SELECT EXISTS(SELECT 1 FROM product_variants WHERE sku = ?1 AND is_active = 1)",
+                    params![sku],
+                    |row| row.get(0),
+                )
+                .unwrap_or(false);
+
+            if sku_exists {
+                return Err(format!("SKU '{}' is already in use by another variant", sku));
+            }
+        }
+    }
+
     conn.execute(
         "INSERT INTO product_variants (product_id, sku, attributes, cost_price, selling_price, stock_qty, low_stock_threshold)
          VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)",
@@ -448,6 +476,33 @@ pub fn create_variant(db: State<'_, DbState>, payload: CreateVariantPayload) -> 
 #[tauri::command]
 pub fn update_variant(db: State<'_, DbState>, payload: UpdateVariantPayload) -> Result<ProductVariant, String> {
     let conn = db.0.lock().map_err(|e| e.to_string())?;
+
+    // Validate prices if provided
+    if let Some(cost) = payload.cost_price {
+        if cost < 0.0 { return Err("Cost price cannot be negative".to_string()); }
+    }
+    if let Some(sell) = payload.selling_price {
+        if sell <= 0.0 { return Err("Selling price must be greater than 0".to_string()); }
+    }
+    if let Some(qty) = payload.stock_qty {
+        if qty < 0 { return Err("Stock quantity cannot be negative".to_string()); }
+    }
+
+    // SKU uniqueness check if being changed
+    if let Some(ref sku) = payload.sku {
+        if !sku.is_empty() {
+            let sku_conflict: bool = conn
+                .query_row(
+                    "SELECT EXISTS(SELECT 1 FROM product_variants WHERE sku = ?1 AND id != ?2 AND is_active = 1)",
+                    params![sku, payload.id],
+                    |row| row.get(0),
+                )
+                .unwrap_or(false);
+            if sku_conflict {
+                return Err(format!("SKU '{}' is already in use by another variant", sku));
+            }
+        }
+    }
 
     let mut sets: Vec<String> = Vec::new();
     let mut values: Vec<Box<dyn rusqlite::types::ToSql>> = Vec::new();

@@ -320,6 +320,32 @@ pub fn create_sale(db: State<DbState>, payload: CreateSalePayload) -> Result<i64
             return Err("Down payment exceeds sale total".to_string());
         }
 
+        // Credit limit enforcement
+        if let Some(cust_id) = payload.customer_id {
+            let credit_limit: Option<f64> = tx.query_row(
+                "SELECT credit_limit FROM customers WHERE id = ?1",
+                rusqlite::params![cust_id],
+                |row| row.get(0),
+            ).ok();
+
+            if let Some(Some(limit)) = credit_limit.map(|v: f64| if v > 0.0 { Some(v) } else { None }) {
+                let existing_balance: f64 = tx.query_row(
+                    "SELECT COALESCE(SUM(balance_remaining), 0) FROM installment_accounts
+                     WHERE customer_id = ?1 AND status = 'open'",
+                    rusqlite::params![cust_id],
+                    |row| row.get(0),
+                ).unwrap_or(0.0);
+
+                let total_exposure = existing_balance + principal;
+                if total_exposure > limit + 0.01 {
+                    return Err(format!(
+                        "Credit limit exceeded. Limit: ₱{:.2}, Existing balance: ₱{:.2}, This sale: ₱{:.2}, Total: ₱{:.2}",
+                        limit, existing_balance, principal, total_exposure
+                    ));
+                }
+            }
+        }
+
         if let Some(ref start) = inst.start_date {
             crate::utils::validation::require_iso_date("start_date", start)?;
         }

@@ -80,7 +80,7 @@ export function ProductFormModal({ product, onClose }: Props) {
 
   return (
     <Dialog open onOpenChange={(open) => { if (!open && !isSubmitting) onClose(); }}>
-      <DialogContent className="sm:max-w-md" onInteractOutside={(e) => { if (isSubmitting) e.preventDefault(); }}>
+      <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>{isEdit ? "Edit Product" : "New Product"}</DialogTitle>
         </DialogHeader>

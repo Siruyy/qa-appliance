@@ -256,7 +256,7 @@ export function SalesHistoryPage() {
       <Pagination
         page={page}
         pageSize={pageSize}
-        total={totalCount}
+        total={filters.search ? sales.length : totalCount}
         onPageChange={setPage}
       />
     </div>

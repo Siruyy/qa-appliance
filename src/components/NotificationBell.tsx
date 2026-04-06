@@ -16,6 +16,8 @@ import {
 import { invoke } from "@/lib/invoke";
 import { useCurrency } from "@/hooks/useCurrency";
 import { formatDate } from "@/lib/formatters";
+import { useSettingsStore } from "@/stores/settingsStore";
+import { parseSettings } from "@/types/settings";
 
 interface OverdueAccountAlert {
   id: number;
@@ -73,12 +75,15 @@ export function NotificationBell() {
   const [lastChecked, setLastChecked] = useState<Date | null>(null);
   const { format: fmt } = useCurrency();
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const lowStockThreshold = useSettingsStore(
+    (s) => parseSettings(s.settings).low_stock_threshold
+  );
 
   const refresh = useCallback(async (manual = false) => {
     if (manual) setRefreshing(true);
     try {
       const result = await invoke<NotificationData>("get_dashboard_data", {
-        lowStockThreshold: 5,
+        lowStockThreshold,
       });
       setData(result);
       setLastChecked(new Date());
@@ -87,7 +92,7 @@ export function NotificationBell() {
     } finally {
       if (manual) setRefreshing(false);
     }
-  }, []);
+  }, [lowStockThreshold]);
 
   useEffect(() => {
     refresh();

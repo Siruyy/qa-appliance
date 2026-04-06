@@ -260,7 +260,7 @@ export function AccountsPage() {
       <Pagination
         page={page}
         pageSize={pageSize}
-        total={totalCount}
+        total={search ? accounts.length : totalCount}
         onPageChange={setPage}
       />
     </div>
