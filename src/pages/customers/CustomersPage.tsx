@@ -63,6 +63,8 @@ import {
 import { CustomerFormModal } from "./CustomerFormModal";
 import { downloadCsv } from "@/lib/csv";
 import { toExcel } from "@/lib/export";
+import { HelpTip } from "@/components/help/HelpTip";
+import { FirstTimeHint } from "@/components/help/FirstTimeHint";
 
 type ModalState =
   | { type: "none" }
@@ -142,6 +144,7 @@ export function CustomersPage() {
   const { format: formatCurrency } = useCurrency();
   return (
     <div className="space-y-6">
+      <FirstTimeHint />
       <PageHeader
         title="Customers"
         description="Customer profiles, contact info, and linked accounts."
@@ -242,7 +245,10 @@ export function CustomersPage() {
               <TableHead>Name</TableHead>
               <TableHead>Phone</TableHead>
               <TableHead>Address</TableHead>
-              <TableHead className="text-center">Open Accounts</TableHead>
+              <TableHead className="text-center">
+                Open Accounts
+                <HelpTip text="Number of active installment accounts with remaining balance for this customer." />
+              </TableHead>
               <TableHead className="text-right">Total Balance</TableHead>
               <TableHead className="w-[50px]" />
             </TableRow>

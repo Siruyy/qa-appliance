@@ -27,6 +27,8 @@ import { ProfitLossTab } from "./ProfitLossTab";
 import { AgingTab } from "./AgingTab";
 import { PageHeader } from "@/components/PageHeader";
 import { DatePicker } from "@/components/DatePicker";
+import { HelpTip } from "@/components/help/HelpTip";
+import { FirstTimeHint } from "@/components/help/FirstTimeHint";
 
 const TAB_CONFIG: { value: ReportTab; label: string }[] = [
   { value: "sales", label: "Sales Summary" },
@@ -186,10 +188,11 @@ export function ReportsPage() {
 
   return (
     <div className="space-y-6">
+      <FirstTimeHint />
       {/* Header */}
       <PageHeader
         title="Reports"
-        description="Generate and export business reports."
+        description={<>Generate and export business reports. <HelpTip text="Generate business reports across 7 categories. Use date filters for time-based reports and export as Excel, PDF, or CSV." /></>}
         actions={
           <div className="flex gap-2">
             <Button variant="outline" size="sm" onClick={() => handleExport("excel")} disabled={isExporting}>

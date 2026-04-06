@@ -11,6 +11,7 @@ import { DatabaseBackupRestore } from "./DatabaseBackupRestore";
 import { AuditLogViewer } from "./AuditLogViewer";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Check, Loader2 } from "lucide-react";
+import { FirstTimeHint } from "@/components/help/FirstTimeHint";
 
 const AUTO_SAVE_DELAY = 1500;
 
@@ -87,6 +88,7 @@ export function SettingsPage() {
 
   return (
     <div className="space-y-6">
+      <FirstTimeHint />
       <p className="text-muted-foreground">
         Configure store information, financial defaults, and app preferences.
       </p>
