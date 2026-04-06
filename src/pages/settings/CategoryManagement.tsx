@@ -30,6 +30,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { extractErrorMessage } from '@/lib/error';
 
 type EditingState = { type: "none" } | { type: "add" } | { type: "edit"; category: Category };
 
@@ -74,7 +75,7 @@ export function CategoryManagement() {
       }
       cancel();
     } catch (e) {
-      toast.error(String(e));
+      toast.error(extractErrorMessage(e));
     }
   };
 
@@ -88,7 +89,7 @@ export function CategoryManagement() {
       await deleteCategory(deleteTarget.id);
       toast.success(`"${deleteTarget.name}" deleted`);
     } catch (e) {
-      toast.error(String(e));
+      toast.error(extractErrorMessage(e));
     } finally {
       setDeleteTarget(null);
     }

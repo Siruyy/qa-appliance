@@ -25,6 +25,7 @@ import { useCurrency } from "@/hooks/useCurrency";
 import type { ProfitLossReport } from "@/types/report";
 import { TableSkeleton } from "@/components/TableSkeleton";
 import { toast } from "sonner";
+import { extractErrorMessage } from '@/lib/error';
 
 export function ProfitLossTab() {
   const { dateFrom, dateTo } = useReportStore();
@@ -37,7 +38,7 @@ export function ProfitLossTab() {
     setLoading(true);
     getProfitLossReport(dateFrom, dateTo)
       .then(setData)
-      .catch((e) => toast.error(String(e)))
+      .catch((e) => toast.error(extractErrorMessage(e)))
       .finally(() => setLoading(false));
   }, [dateFrom, dateTo, getProfitLossReport]);
 

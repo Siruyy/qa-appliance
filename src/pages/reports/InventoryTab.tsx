@@ -28,6 +28,7 @@ import { stockStatusVariant } from "@/lib/badgeVariants";
 import type { InventoryReport } from "@/types/report";
 import { TableSkeleton } from "@/components/TableSkeleton";
 import { toast } from "sonner";
+import { extractErrorMessage } from '@/lib/error';
 
 export function InventoryTab() {
   const { categoryId } = useReportStore();
@@ -40,7 +41,7 @@ export function InventoryTab() {
     setLoading(true);
     getInventoryValuationReport(categoryId ?? undefined)
       .then(setData)
-      .catch((e) => toast.error(String(e)))
+      .catch((e) => toast.error(extractErrorMessage(e)))
       .finally(() => setLoading(false));
   }, [categoryId, getInventoryValuationReport]);
 

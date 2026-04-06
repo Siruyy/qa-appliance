@@ -38,6 +38,7 @@ import {
 
 import { CustomerFormModal } from "./CustomerFormModal";
 import { AccountMiniCard } from "./AccountMiniCard";
+import { extractErrorMessage } from '@/lib/error';
 
 export function CustomerDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -64,7 +65,7 @@ export function CustomerDetailPage() {
       const data = await getCustomerById(Number(id));
       setDetail(data);
     } catch (error) {
-      toast.error(error as string);
+      toast.error(extractErrorMessage(error));
     } finally {
       setLoading(false);
     }
@@ -98,7 +99,7 @@ export function CustomerDetailPage() {
       toast.success("Customer archived");
       navigate("/customers");
     } catch (error) {
-      toast.error(error as string);
+      toast.error(extractErrorMessage(error));
     }
   };
 
@@ -108,7 +109,7 @@ export function CustomerDetailPage() {
       toast.success("Customer restored");
       await fetchDetail();
     } catch (error) {
-      toast.error(error as string);
+      toast.error(extractErrorMessage(error));
     }
   };
 

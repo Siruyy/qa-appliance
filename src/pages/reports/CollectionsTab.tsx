@@ -29,6 +29,7 @@ import { collectionTypeVariant } from "@/lib/badgeVariants";
 import type { CollectionsReport } from "@/types/report";
 import { TableSkeleton } from "@/components/TableSkeleton";
 import { toast } from "sonner";
+import { extractErrorMessage } from '@/lib/error';
 
 export function CollectionsTab() {
   const { dateFrom, dateTo } = useReportStore();
@@ -41,7 +42,7 @@ export function CollectionsTab() {
     setLoading(true);
     getCollectionsReport(dateFrom, dateTo)
       .then(setData)
-      .catch((e) => toast.error(String(e)))
+      .catch((e) => toast.error(extractErrorMessage(e)))
       .finally(() => setLoading(false));
   }, [dateFrom, dateTo, getCollectionsReport]);
 

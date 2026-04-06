@@ -29,6 +29,7 @@ import type { PaginatedResult } from "@/types/shared";
 import { TableSkeleton } from "@/components/TableSkeleton";
 import { toast } from "sonner";
 import { invoke } from "@/lib/invoke";
+import { extractErrorMessage } from '@/lib/error';
 
 interface CustomerOption {
   id: number;
@@ -66,7 +67,7 @@ export function CustomerHistoryTab() {
     setLoading(true);
     getCustomerHistoryReport(selectedCustomerId, dateFrom, dateTo)
       .then(setData)
-      .catch((e) => toast.error(String(e)))
+      .catch((e) => toast.error(extractErrorMessage(e)))
       .finally(() => setLoading(false));
   }, [selectedCustomerId, dateFrom, dateTo, getCustomerHistoryReport]);
 

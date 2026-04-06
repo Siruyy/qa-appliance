@@ -25,6 +25,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { extractErrorMessage } from '@/lib/error';
 
 interface Props {
   product?: Product;
@@ -73,13 +74,13 @@ export function ProductFormModal({ product, onClose }: Props) {
       }
       onClose();
     } catch (e) {
-      toast.error(String(e));
+      toast.error(extractErrorMessage(e));
     }
   };
 
   return (
-    <Dialog open onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="sm:max-w-md">
+    <Dialog open onOpenChange={(open) => { if (!open && !isSubmitting) onClose(); }}>
+      <DialogContent className="sm:max-w-md" onInteractOutside={(e) => { if (isSubmitting) e.preventDefault(); }}>
         <DialogHeader>
           <DialogTitle>{isEdit ? "Edit Product" : "New Product"}</DialogTitle>
         </DialogHeader>

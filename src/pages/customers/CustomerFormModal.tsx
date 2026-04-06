@@ -21,6 +21,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { extractErrorMessage } from '@/lib/error';
 
 interface Props {
   customer?: Customer;
@@ -65,13 +66,13 @@ export function CustomerFormModal({ customer, onClose }: Props) {
       }
       onClose();
     } catch (error) {
-      toast.error(error as string);
+      toast.error(extractErrorMessage(error));
     }
   };
 
   return (
-    <Dialog open onOpenChange={() => onClose()}>
-      <DialogContent className="max-w-[560px] max-h-[85vh] overflow-y-auto">
+    <Dialog open onOpenChange={() => { if (!isSubmitting) onClose(); }}>
+      <DialogContent className="max-w-[560px] max-h-[85vh] overflow-y-auto" onInteractOutside={(e) => { if (isSubmitting) e.preventDefault(); }}>
         <DialogHeader>
           <DialogTitle>{isEdit ? "Edit Customer" : "Add Customer"}</DialogTitle>
         </DialogHeader>

@@ -28,6 +28,7 @@ import { formatProductSummary } from "@/lib/formatters";
 import type { ReceivablesReport } from "@/types/report";
 import { TableSkeleton } from "@/components/TableSkeleton";
 import { toast } from "sonner";
+import { extractErrorMessage } from '@/lib/error';
 
 const PIE_COLORS = ["var(--chart-1)", "var(--chart-3)", "var(--chart-4)", "var(--chart-2)", "var(--chart-5)"];
 
@@ -42,7 +43,7 @@ export function ReceivablesTab() {
     setLoading(true);
     getReceivablesReport(statusFilter === "all" ? undefined : statusFilter)
       .then(setData)
-      .catch((e) => toast.error(String(e)))
+      .catch((e) => toast.error(extractErrorMessage(e)))
       .finally(() => setLoading(false));
   }, [statusFilter, getReceivablesReport]);
 

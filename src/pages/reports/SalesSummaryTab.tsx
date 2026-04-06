@@ -29,6 +29,7 @@ import { paymentTypeVariant, saleStatusVariant } from "@/lib/badgeVariants";
 import type { SalesSummaryReport } from "@/types/report";
 import { TableSkeleton } from "@/components/TableSkeleton";
 import { toast } from "sonner";
+import { extractErrorMessage } from '@/lib/error';
 
 export function SalesSummaryTab() {
   const { dateFrom, dateTo } = useReportStore();
@@ -41,7 +42,7 @@ export function SalesSummaryTab() {
     setLoading(true);
     getSalesSummary(dateFrom, dateTo)
       .then(setData)
-      .catch((e) => toast.error(String(e)))
+      .catch((e) => toast.error(extractErrorMessage(e)))
       .finally(() => setLoading(false));
   }, [dateFrom, dateTo, getSalesSummary]);
 

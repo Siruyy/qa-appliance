@@ -17,6 +17,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
+import { extractErrorMessage } from '@/lib/error';
 
 interface Props {
   productId: number;
@@ -92,13 +93,13 @@ export function VariantFormModal({ productId, variant, onClose }: Props) {
       }
       onClose();
     } catch (e) {
-      toast.error(String(e));
+      toast.error(extractErrorMessage(e));
     }
   };
 
   return (
-    <Dialog open onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="sm:max-w-lg max-h-[85vh] overflow-y-auto">
+    <Dialog open onOpenChange={(open) => { if (!open && !isSubmitting) onClose(); }}>
+      <DialogContent className="sm:max-w-lg max-h-[85vh] overflow-y-auto" onInteractOutside={(e) => { if (isSubmitting) e.preventDefault(); }}>
         <DialogHeader>
           <DialogTitle>{isEdit ? "Edit Variant" : "New Variant"}</DialogTitle>
         </DialogHeader>
