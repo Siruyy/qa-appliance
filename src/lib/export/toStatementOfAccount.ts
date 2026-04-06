@@ -3,6 +3,7 @@ import autoTable from "jspdf-autotable";
 import { save } from "@tauri-apps/plugin-dialog";
 import { writeFile } from "@tauri-apps/plugin-fs";
 import type { AccountDetail } from "@/types/account";
+import { formatProductSummary } from "@/lib/formatters";
 
 interface StoreInfo {
   name: string;
@@ -51,7 +52,6 @@ export async function toStatementOfAccount(account: AccountDetail, store: StoreI
   const leftDetails: [string, string][] = [
     ["Account #:", `#${account.id}`],
     ["Customer:", account.customer_name],
-    ["Product:", account.product_summary],
     ["Date Opened:", account.start_date ?? account.created_at.slice(0, 10)],
   ];
   const rightDetails: [string, string][] = [
@@ -75,7 +75,13 @@ export async function toStatementOfAccount(account: AccountDetail, store: StoreI
     y += 6;
   }
 
-  y = blockStart + 4 * 6 + 2;
+  // Product on its own full-width row to avoid overflow from long names/attributes
+  y = blockStart + Math.max(leftDetails.length, rightDetails.length) * 6;
+  doc.setFont("helvetica", "bold");
+  doc.text("Product:", leftX, y);
+  doc.setFont("helvetica", "normal");
+  doc.text(formatProductSummary(account.product_summary), colX, y, { maxWidth: pw - colX - 14 });
+  y += 8;
 
   // Balance / status highlight
   const statusColor = account.is_overdue ? OVERDUE_COLOR : HEADER_COLOR;
@@ -86,7 +92,7 @@ export async function toStatementOfAccount(account: AccountDetail, store: StoreI
   doc.setFont("helvetica", "bold");
   doc.text(`Balance Remaining: ${peso(account.balance_remaining)}`, leftX + 4, y + 8);
   const statusLabel = account.status.toUpperCase();
-  doc.text(statusLabel, pw - 14, y + 8, { align: "right" });
+  doc.text(statusLabel, pw - 18, y + 8, { align: "right" });
   doc.setTextColor(0, 0, 0);
   y += 18;
 
@@ -114,8 +120,18 @@ export async function toStatementOfAccount(account: AccountDetail, store: StoreI
     body: schedRows.map((r) => r.cells),
     styles: { fontSize: 8 },
     headStyles: { fillColor: HEADER_COLOR },
-    columnStyles: { 2: { halign: "right" }, 3: { halign: "right" } },
+    tableWidth: 182,
+    columnStyles: {
+      0: { cellWidth: 12 },
+      1: { cellWidth: 38 },
+      2: { halign: "center", cellWidth: 44 },
+      3: { halign: "center", cellWidth: 44 },
+      4: { halign: "center", cellWidth: 44 },
+    },
     didParseCell: (data) => {
+      if (data.section === "head" && data.column.index >= 2) {
+        data.cell.styles.halign = "center";
+      }
       if (data.column.index === 4 && data.section === "body") {
         const row = schedRows[data.row.index];
         if (row) {
@@ -184,7 +200,7 @@ export async function toStatementOfAccount(account: AccountDetail, store: StoreI
   }
 
   const path = await save({
-    defaultPath: `soa_account_${account.id}.pdf`,
+    defaultPath: `soa_${account.customer_name.replace(/[^a-z0-9]/gi, '_')}_acc${account.id}.pdf`,
     filters: [{ name: "PDF", extensions: ["pdf"] }],
   });
   if (!path) return;

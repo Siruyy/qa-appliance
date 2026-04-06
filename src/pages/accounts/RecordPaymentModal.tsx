@@ -89,7 +89,7 @@ export function RecordPaymentModal({
     if (submitting) return;
     setSubmitting(true);
     try {
-      await recordPayment({
+      const result = await recordPayment({
         account_id: values.account_id,
         schedule_id: applyMode === "specific" ? values.schedule_id : null,
         amount: values.amount,
@@ -97,6 +97,9 @@ export function RecordPaymentModal({
         notes: values.notes,
       });
       toast.success(`Payment of ${formatCurrency(values.amount)} recorded`);
+      if (result.rebate_credited > 0) {
+        toast.info(`🎉 Early payment rebate of ${formatCurrency(result.rebate_credited)} credited to this account!`);
+      }
       onOpenChange(false);
       form.reset({
         account_id: account.id,

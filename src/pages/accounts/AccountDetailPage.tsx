@@ -101,6 +101,7 @@ export function AccountDetailPage() {
         address: settings.store_address,
         phone: settings.store_phone,
       });
+      toast.success("Installment plan saved as PDF");
     } catch (err) {
       toast.error(`Export failed: ${extractErrorMessage(err)}`);
     } finally {
@@ -117,6 +118,7 @@ export function AccountDetailPage() {
         address: settings.store_address,
         phone: settings.store_phone,
       });
+      toast.success("Statement of account saved as PDF");
     } catch (err) {
       toast.error(`Export failed: ${extractErrorMessage(err)}`);
     } finally {

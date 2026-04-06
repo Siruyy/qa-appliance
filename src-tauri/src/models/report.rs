@@ -194,6 +194,24 @@ pub struct UpcomingDue {
 }
 
 #[derive(Debug, Serialize)]
+pub struct OverdueAccountAlert {
+    pub id: i64,
+    pub customer_name: String,
+    pub balance_remaining: f64,
+    pub days_overdue: i64,
+    pub product_summary: String,
+}
+
+#[derive(Debug, Serialize)]
+pub struct LowStockAlert {
+    pub variant_id: i64,
+    pub product_name: String,
+    pub attributes: String,
+    pub stock_qty: i64,
+    pub low_stock_threshold: i64,
+}
+
+#[derive(Debug, Serialize)]
 pub struct DashboardData {
     pub today_sales_total: f64,
     pub today_sales_count: i64,
@@ -209,6 +227,8 @@ pub struct DashboardData {
     pub collections_last_30_days: Vec<DailyCollection>,
     pub recent_sales: Vec<RecentSale>,
     pub upcoming_due: Vec<UpcomingDue>,
+    pub overdue_accounts: Vec<OverdueAccountAlert>,
+    pub low_stock_items: Vec<LowStockAlert>,
 }
 
 // Report 7: Customer Aging

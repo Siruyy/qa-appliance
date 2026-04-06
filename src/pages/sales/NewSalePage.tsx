@@ -247,6 +247,7 @@ export function NewSalePage() {
       });
 
       if (saleId) {
+        toast.success("Sale recorded successfully");
         clearCart();
         navigate("/sales");
       }

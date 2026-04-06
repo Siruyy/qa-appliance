@@ -110,7 +110,7 @@ export async function toCustomerStatement(detail: CustomerDetail, store: StoreIn
     foot: accounts.length > 0
       ? [["", "Total", peso(totalBorrowed), peso(totalPaid), peso(totalOutstanding), "", ""]]
       : undefined,
-    footStyles: { fillColor: [230, 230, 230], fontStyle: "bold", fontSize: 7 },
+    footStyles: { fillColor: [230, 230, 230], textColor: [0, 0, 0], fontStyle: "bold", fontSize: 7 },
   });
 
   y = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 10;
@@ -186,7 +186,7 @@ export async function toCustomerStatement(detail: CustomerDetail, store: StoreIn
   }
 
   const path = await save({
-    defaultPath: `customer_statement_${customer.id}.pdf`,
+    defaultPath: `customer_statement_${customer.name.replace(/[^a-z0-9]/gi, '_')}.pdf`,
     filters: [{ name: "PDF", extensions: ["pdf"] }],
   });
   if (!path) return;

@@ -3,6 +3,7 @@ import autoTable from "jspdf-autotable";
 import { save } from "@tauri-apps/plugin-dialog";
 import { writeFile } from "@tauri-apps/plugin-fs";
 import type { AccountDetail } from "@/types/account";
+import { formatProductSummary } from "@/lib/formatters";
 
 interface StoreInfo {
   name: string;
@@ -56,7 +57,7 @@ export async function toInstallmentPlan(account: AccountDetail, store: StoreInfo
   const details: [string, string][] = [
     ["Account #:", `#${account.id}`],
     ["Customer:", account.customer_name],
-    ["Product:", account.product_summary],
+    ["Product:", formatProductSummary(account.product_summary)],
     ["Date Opened:", account.start_date ?? account.created_at.slice(0, 10)],
     ["Principal Amount:", peso(account.principal)],
     ["Down Payment:", peso(account.down_payment)],
@@ -103,15 +104,38 @@ export async function toInstallmentPlan(account: AccountDetail, store: StoreInfo
     String(i + 1),
     entry.due_date,
     peso(entry.amount_due),
+    entry.amount_paid > 0 ? peso(entry.amount_paid) : "—",
+    entry.status.toUpperCase(),
   ]);
 
   autoTable(doc, {
     startY: y,
-    head: [["#", "Due Date", "Amount Due"]],
+    head: [["#", "Due Date", "Amount Due", "Amt Paid", "Status"]],
     body: schedRows,
     styles: { fontSize: 8 },
     headStyles: { fillColor: HEADER_COLOR },
-    columnStyles: { 2: { halign: "right" } },
+    tableWidth: 182,
+    columnStyles: {
+      0: { cellWidth: 12 },
+      1: { cellWidth: 38 },
+      2: { halign: "center", cellWidth: 45 },
+      3: { halign: "center", cellWidth: 45 },
+      4: { halign: "center", cellWidth: 42 },
+    },
+    didParseCell: (data) => {
+      if (data.section === "head" && data.column.index >= 2) {
+        data.cell.styles.halign = "center";
+      }
+      if (data.column.index === 4 && data.section === "body") {
+        const entry = account.schedule[data.row.index];
+        if (entry) {
+          if (entry.status === "paid") data.cell.styles.textColor = [22, 163, 74];
+          else if (entry.status === "overdue") data.cell.styles.textColor = [239, 68, 68];
+          else if (entry.status === "partial") data.cell.styles.textColor = [234, 179, 8];
+          data.cell.styles.fontStyle = "bold";
+        }
+      }
+    },
   });
 
   const afterTable = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY ?? y + 40;
@@ -137,7 +161,7 @@ export async function toInstallmentPlan(account: AccountDetail, store: StoreInfo
   doc.setTextColor(0, 0, 0);
 
   const path = await save({
-    defaultPath: `installment_plan_${account.id}.pdf`,
+    defaultPath: `installment_plan_${account.customer_name.replace(/[^a-z0-9]/gi, '_')}_acc${account.id}.pdf`,
     filters: [{ name: "PDF", extensions: ["pdf"] }],
   });
   if (!path) return;

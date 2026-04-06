@@ -15,6 +15,12 @@ pub struct Payment {
     pub created_at: String,
 }
 
+#[derive(Debug, Serialize)]
+pub struct RecordPaymentResult {
+    pub payment: Payment,
+    pub rebate_credited: f64,
+}
+
 #[derive(Debug, Deserialize)]
 pub struct RecordPaymentPayload {
     pub account_id: i64,

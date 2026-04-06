@@ -55,6 +55,8 @@ export function CustomerDetailPage() {
   const paginatedSales = useMemo(() => (detail?.sales ?? []).slice(0, salesPage * ITEMS_PER_PAGE), [detail?.sales, salesPage]);
   const paginatedPayments = useMemo(() => (detail?.payments ?? []).slice(0, paymentsPage * ITEMS_PER_PAGE), [detail?.payments, paymentsPage]);
 
+  const settings = useSettingsStore((s) => s.settings);
+
   const fetchDetail = useCallback(async () => {
     if (!id) return;
     setLoading(true);
@@ -89,7 +91,6 @@ export function CustomerDetailPage() {
   }
 
   const { customer, sales, accounts, payments } = detail;
-  const settings = useSettingsStore((s) => s.settings);
 
   const handleArchive = async () => {
     try {
@@ -118,6 +119,7 @@ export function CustomerDetailPage() {
         address: settings.store_address,
         phone: settings.store_phone,
       });
+      toast.success("Customer statement saved as PDF");
     } catch (err) {
       toast.error(`Export failed: ${String(err)}`);
     }

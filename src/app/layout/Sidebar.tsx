@@ -93,9 +93,14 @@ export function Sidebar() {
           QA
         </div>
         {!sidebarCollapsed && (
-          <span className="text-base font-semibold text-[var(--sidebar-accent-foreground)]">
-            Quality Appliance
-          </span>
+          <div className="flex flex-col leading-tight">
+            <span className="text-sm font-semibold text-[var(--sidebar-accent-foreground)] leading-tight">
+              Quality Appliance
+            </span>
+            <span className="text-[10px] text-[var(--sidebar-foreground)]/50 leading-tight">
+              Management System
+            </span>
+          </div>
         )}
       </div>
 
@@ -121,6 +126,15 @@ export function Sidebar() {
           <NavItem key={item.to} {...item} collapsed={sidebarCollapsed} />
         ))}
       </nav>
+
+      {/* Solvantra branding */}
+      {!sidebarCollapsed && (
+        <div className="px-4 pb-2 text-center">
+          <span className="text-[9px] text-[var(--sidebar-foreground)]/30 tracking-wide">
+            Powered by Solvantra
+          </span>
+        </div>
+      )}
 
       {/* Collapse Toggle */}
       <div className="border-t border-[var(--sidebar-border)] p-2">

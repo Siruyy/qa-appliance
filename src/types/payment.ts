@@ -14,6 +14,11 @@ export interface Payment {
   created_at: string;
 }
 
+export interface RecordPaymentResult {
+  payment: Payment;
+  rebate_credited: number;
+}
+
 export interface PaymentSchedule {
   id: number;
   account_id: number;

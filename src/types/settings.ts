@@ -34,7 +34,7 @@ export interface TypedSettings {
 /** Parse raw string settings into typed settings */
 export function parseSettings(raw: AppSettings): TypedSettings {
   return {
-    store_name: raw.store_name ?? 'Quality Appliance',
+    store_name: raw.store_name ?? 'Quality Appliance Management System',
     currency_symbol: raw.currency_symbol ?? '₱',
     default_interest_rate: parseFloat(raw.default_interest_rate) || 0,
     default_penalty_rate: parseFloat(raw.default_penalty_rate) || 0,

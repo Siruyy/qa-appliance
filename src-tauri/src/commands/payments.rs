@@ -1,7 +1,7 @@
 use tauri::State;
 
 use crate::db::connection::DbState;
-use crate::models::payment::{Payment, RecordPaymentPayload};
+use crate::models::payment::{Payment, RecordPaymentPayload, RecordPaymentResult};
 use crate::models::PaginatedResult;
 use crate::utils::constants::CENTAVO_TOLERANCE;
 use crate::utils::query::{build_where, paginated_query};
@@ -147,7 +147,7 @@ pub fn get_payments_for_account(
 pub fn record_payment(
     db: State<DbState>,
     payload: RecordPaymentPayload,
-) -> Result<Payment, String> {
+) -> Result<RecordPaymentResult, String> {
     let mut conn = db.0.lock().map_err(|e| e.to_string())?;
 
     // Validate amount
@@ -215,6 +215,7 @@ pub fn record_payment(
     }
 
     // 4. Auto-close if fully paid
+    let mut rebate_credited: f64 = 0.0;
     if new_balance <= 0.0 {
         tx.execute(
             "UPDATE installment_accounts SET status = 'paid', updated_at = datetime('now') WHERE id = ?1",
@@ -294,6 +295,8 @@ pub fn record_payment(
                         rusqlite::params![rebate_amount, payload.account_id],
                     )
                     .map_err(|e| e.to_string())?;
+
+                    rebate_credited = rebate_amount;
                 }
             }
         }
@@ -336,7 +339,7 @@ pub fn record_payment(
 
     let _ = insert_audit(&tx, "payment_recorded", "payment", Some(payment.id), Some(&format!("₱{:.2} for account #{}", payment.amount, payment.account_id)));
     tx.commit().map_err(|e| e.to_string())?;
-    Ok(payment)
+    Ok(RecordPaymentResult { payment, rebate_credited })
 }
 
 fn apply_payment_to_schedule(

@@ -32,7 +32,7 @@ export function TopBar() {
   const pathKey = Object.keys(pageTitles).find((key) =>
     location.pathname.startsWith(key)
   );
-  const title = pathKey ? pageTitles[pathKey] : "Quality Appliance";
+  const title = pathKey ? pageTitles[pathKey] : "Quality Appliance Management System";
 
   const [now, setNow] = useState(new Date());
   useEffect(() => {

@@ -3,7 +3,7 @@ import { invoke } from "@/lib/invoke";
 import { usePaymentStore } from "@/stores/paymentStore";
 import { toast } from "sonner";
 import { extractErrorMessage } from "@/lib/error";
-import type { Payment, RecordPaymentPayload } from "@/types/payment";
+import type { Payment, RecordPaymentPayload, RecordPaymentResult } from "@/types/payment";
 import type { PaginatedResult } from "@/types/shared";
 
 /** Hook for managing payment records with pagination and filtering. */
@@ -44,11 +44,11 @@ export function usePayments() {
   }, []);
 
   /** Record a new payment and refresh the payments list. */
-  const recordPayment = useCallback(async (payload: RecordPaymentPayload): Promise<Payment> => {
-    const payment = await invoke<Payment>("record_payment", { payload });
+  const recordPayment = useCallback(async (payload: RecordPaymentPayload): Promise<RecordPaymentResult> => {
+    const result = await invoke<RecordPaymentResult>("record_payment", { payload });
     // Refetch payments list so the store reflects the new payment
     await fetchPayments();
-    return payment;
+    return result;
   }, [fetchPayments]);
 
   return {

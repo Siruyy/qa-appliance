@@ -8,7 +8,7 @@ const defaultSettings: AppSettings = {
   default_term_months: "12",
   default_down_payment_pct: "20",
   low_stock_threshold: "5",
-  store_name: "Quality Appliance",
+  store_name: "Quality Appliance Management System",
   store_address: "",
   store_phone: "",
   currency_symbol: "₱",

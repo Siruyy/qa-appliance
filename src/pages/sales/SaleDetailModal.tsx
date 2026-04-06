@@ -68,6 +68,7 @@ export function SaleDetailModal({ open, onOpenChange, saleId, onVoided }: SaleDe
     setVoiding(false);
     setShowVoidConfirm(false);
     if (ok) {
+      toast.success("Sale voided and inventory restored");
       onOpenChange(false);
       onVoided();
     }
@@ -83,6 +84,7 @@ export function SaleDetailModal({ open, onOpenChange, saleId, onVoided }: SaleDe
         phone: settings.store_phone,
         footer: settings.receipt_footer,
       });
+      toast.success("Receipt saved as PDF");
     } catch (err) {
       toast.error(`PDF export failed: ${String(err)}`);
     } finally {

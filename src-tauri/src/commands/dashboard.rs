@@ -1,6 +1,7 @@
 use crate::db::connection::DbState;
 use crate::models::report::{
-    DailyCollection, DailySales, DashboardData, RecentSale, UpcomingDue,
+    DailyCollection, DailySales, DashboardData, LowStockAlert, OverdueAccountAlert, RecentSale,
+    UpcomingDue,
 };
 use crate::utils::date::{today_iso, days_ago_iso, first_of_month, prev_month_range};
 use rusqlite::params;
@@ -176,6 +177,74 @@ pub fn get_dashboard_data(
         upcoming_due.push(r.map_err(|e| e.to_string())?);
     }
 
+    // Named overdue accounts (top 5 by balance)
+    let mut stmt5 = db
+        .prepare(
+            "SELECT ia.id, c.name,
+                    ia.balance_remaining,
+                    CAST(JULIANDAY('now') - JULIANDAY(MIN(ps.due_date)) AS INTEGER) as days_overdue,
+                    COALESCE(GROUP_CONCAT(DISTINCT p.name), '') as product_summary
+             FROM installment_accounts ia
+             JOIN customers c ON c.id = ia.customer_id
+             JOIN payment_schedules ps ON ps.account_id = ia.id
+             LEFT JOIN sales sa ON sa.id = ia.sale_id
+             LEFT JOIN sale_items si ON si.sale_id = sa.id
+             LEFT JOIN product_variants pv ON pv.id = si.variant_id
+             LEFT JOIN products p ON p.id = pv.product_id
+             WHERE ia.status = 'open'
+               AND ps.status = 'pending'
+               AND DATE(ps.due_date) < ?1
+             GROUP BY ia.id
+             ORDER BY ia.balance_remaining DESC
+             LIMIT 5",
+        )
+        .map_err(|e| e.to_string())?;
+    let overdue_rows = stmt5
+        .query_map(params![today], |row| {
+            Ok(OverdueAccountAlert {
+                id: row.get(0)?,
+                customer_name: row.get(1)?,
+                balance_remaining: row.get(2)?,
+                days_overdue: row.get(3).unwrap_or(0),
+                product_summary: row.get(4)?,
+            })
+        })
+        .map_err(|e| e.to_string())?;
+    let mut overdue_accounts = Vec::new();
+    for r in overdue_rows {
+        overdue_accounts.push(r.map_err(|e| e.to_string())?);
+    }
+
+    // Named low stock variants (top 5 by scarcity — lowest qty relative to threshold)
+    let mut stmt6 = db
+        .prepare(
+            "SELECT pv.id, p.name, COALESCE(pv.attributes, '{}'),
+                    pv.stock_qty, pv.low_stock_threshold
+             FROM product_variants pv
+             JOIN products p ON p.id = pv.product_id
+             WHERE pv.is_active = 1
+               AND pv.stock_qty >= 0
+               AND pv.stock_qty <= ?1
+             ORDER BY pv.stock_qty ASC
+             LIMIT 5",
+        )
+        .map_err(|e| e.to_string())?;
+    let low_rows = stmt6
+        .query_map(params![threshold], |row| {
+            Ok(LowStockAlert {
+                variant_id: row.get(0)?,
+                product_name: row.get(1)?,
+                attributes: row.get(2)?,
+                stock_qty: row.get(3)?,
+                low_stock_threshold: row.get(4)?,
+            })
+        })
+        .map_err(|e| e.to_string())?;
+    let mut low_stock_items = Vec::new();
+    for r in low_rows {
+        low_stock_items.push(r.map_err(|e| e.to_string())?);
+    }
+
     Ok(DashboardData {
         today_sales_total,
         today_sales_count,
@@ -191,5 +260,7 @@ pub fn get_dashboard_data(
         collections_last_30_days,
         recent_sales,
         upcoming_due,
+        overdue_accounts,
+        low_stock_items,
     })
 }
