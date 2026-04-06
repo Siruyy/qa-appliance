@@ -46,6 +46,10 @@ pub fn run(conn: &Connection) -> Result<()> {
         migrate_v7(conn)?;
     }
 
+    if version < 8 {
+        migrate_v8(conn)?;
+    }
+
     Ok(())
 }
 
@@ -1358,5 +1362,54 @@ fn migrate_v7(conn: &Connection) -> Result<()> {
         "
     )?;
     println!("[db] Applied migration v7 — discount types, per-item discounts, rebate");
+    Ok(())
+}
+
+fn migrate_v8(conn: &Connection) -> Result<()> {
+    conn.execute_batch(
+        "
+        -- Customers: optional credit limit
+        ALTER TABLE customers ADD COLUMN credit_limit REAL DEFAULT NULL;
+
+        -- Stock movement history
+        CREATE TABLE IF NOT EXISTS stock_movements (
+            id              INTEGER PRIMARY KEY AUTOINCREMENT,
+            variant_id      INTEGER NOT NULL REFERENCES product_variants(id),
+            delta           INTEGER NOT NULL,
+            reason          TEXT NOT NULL,
+            reference_type  TEXT,
+            reference_id    INTEGER,
+            notes           TEXT,
+            created_at      TEXT NOT NULL DEFAULT (datetime('now'))
+        );
+        CREATE INDEX IF NOT EXISTS idx_stock_movements_variant ON stock_movements(variant_id);
+        CREATE INDEX IF NOT EXISTS idx_stock_movements_created ON stock_movements(created_at);
+
+        -- Payment reversal support
+        ALTER TABLE payments ADD COLUMN is_reversed INTEGER NOT NULL DEFAULT 0;
+        ALTER TABLE payments ADD COLUMN reversed_at TEXT;
+        ALTER TABLE payments ADD COLUMN reversed_reason TEXT;
+
+        -- Grace period and penalty cap settings
+        INSERT OR IGNORE INTO settings (key, value) VALUES
+            ('grace_period_days', '0'),
+            ('max_penalties_per_account', '0');
+
+        INSERT INTO schema_migrations (version) VALUES (8);
+        "
+    )?;
+
+    // Backfill stock_movements from existing sale_items (initial history)
+    conn.execute_batch(
+        "
+        INSERT INTO stock_movements (variant_id, delta, reason, reference_type, reference_id, created_at)
+        SELECT si.variant_id, -si.quantity, 'sale', 'sale', si.sale_id, s.created_at
+        FROM sale_items si
+        JOIN sales s ON s.id = si.sale_id
+        WHERE s.status = 'completed';
+        "
+    )?;
+
+    println!("[db] Applied migration v8 — credit limit, stock movements, payment reversal, grace period");
     Ok(())
 }

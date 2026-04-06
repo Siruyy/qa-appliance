@@ -543,6 +543,11 @@ pub fn confirm_import(
         params![import_type, filename, added, skipped, errored, error_details],
     ).map_err(|e| e.to_string())?;
 
+    let _ = db.execute(
+        "INSERT INTO audit_log (action, entity_type, entity_id, details) VALUES (?1, ?2, ?3, ?4)",
+        params!["import", &import_type, 0, format!("Imported {} (added={}, skipped={}, errors={})", filename, added, skipped, errored)],
+    );
+
     Ok(ImportResult { rows_added: added, rows_skipped: skipped, rows_errored: errored })
 }
 
@@ -595,7 +600,7 @@ fn import_product_row(db: &rusqlite::Connection, data: &HashMap<String, String>)
     if !variant_size.is_empty() {
         attrs.insert("size".to_string(), serde_json::Value::String(variant_size.clone()));
     }
-    let attrs_json = if attrs.is_empty() { None } else { Some(serde_json::to_string(&attrs).unwrap()) };
+    let attrs_json = if attrs.is_empty() { None } else { Some(serde_json::to_string(&attrs).map_err(|e| format!("Failed to serialize attributes: {}", e))?) };
 
     // Find existing variant by product_id + attributes
     let existing_variant: Option<i64> = db.query_row(

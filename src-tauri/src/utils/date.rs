@@ -2,7 +2,7 @@
 pub fn today_iso() -> String {
     let now = std::time::SystemTime::now()
         .duration_since(std::time::UNIX_EPOCH)
-        .unwrap()
+        .expect("System clock before UNIX epoch")
         .as_secs();
     let days = now / 86400;
     let (year, month, day) = days_to_ymd(days as i64 + 719468);
@@ -13,7 +13,7 @@ pub fn today_iso() -> String {
 pub fn days_ago_iso(n: u64) -> String {
     let now = std::time::SystemTime::now()
         .duration_since(std::time::UNIX_EPOCH)
-        .unwrap()
+        .expect("System clock before UNIX epoch")
         .as_secs();
     let days = (now / 86400) as i64 - n as i64;
     let (year, month, day) = days_to_ymd(days + 719468);
@@ -26,15 +26,15 @@ pub fn first_of_month(date: &str) -> String {
 }
 
 /// Returns (prev_month_start, prev_month_end) strings given today's date.
-pub fn prev_month_range(today: &str) -> (String, String) {
-    let y: i32 = today[..4].parse().unwrap();
-    let m: u32 = today[5..7].parse().unwrap();
+pub fn prev_month_range(today: &str) -> Result<(String, String), String> {
+    let y: i32 = today.get(..4).ok_or("Invalid date format")?.parse().map_err(|_| "Invalid year in date".to_string())?;
+    let m: u32 = today.get(5..7).ok_or("Invalid date format")?.parse().map_err(|_| "Invalid month in date".to_string())?;
     let (py, pm) = if m == 1 { (y - 1, 12u32) } else { (y, m - 1) };
     let last_day = days_in_month(py, pm);
-    (
+    Ok((
         format!("{:04}-{:02}-01", py, pm),
         format!("{:04}-{:02}-{:02}", py, pm, last_day),
-    )
+    ))
 }
 
 /// Returns the number of days elapsed between two "YYYY-MM-DD" strings.

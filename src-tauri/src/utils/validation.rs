@@ -83,3 +83,35 @@ pub fn require_iso_date(field: &str, value: &str) -> Result<(), String> {
     }
     Ok(())
 }
+
+/// Validate that a numeric value is strictly positive (> 0).
+pub fn require_positive(field: &str, value: f64) -> Result<f64, String> {
+    if value <= 0.0 {
+        return Err(format!("{} must be greater than 0", field));
+    }
+    Ok(value)
+}
+
+/// Validate that a numeric value is non-negative (>= 0).
+pub fn require_non_negative(field: &str, value: f64) -> Result<f64, String> {
+    if value < 0.0 {
+        return Err(format!("{} must not be negative", field));
+    }
+    Ok(value)
+}
+
+/// Validate that a numeric value falls within a range [min, max].
+pub fn require_range(field: &str, value: f64, min: f64, max: f64) -> Result<f64, String> {
+    if value < min || value > max {
+        return Err(format!("{} must be between {} and {}", field, min, max));
+    }
+    Ok(value)
+}
+
+/// Validate that an integer is positive (> 0).
+pub fn require_positive_int(field: &str, value: i64) -> Result<i64, String> {
+    if value <= 0 {
+        return Err(format!("{} must be greater than 0", field));
+    }
+    Ok(value)
+}

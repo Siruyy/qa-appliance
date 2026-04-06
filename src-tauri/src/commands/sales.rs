@@ -302,6 +302,13 @@ pub fn create_sale(db: State<DbState>, payload: CreateSalePayload) -> Result<i64
         if updated == 0 {
             return Err(format!("Insufficient stock for variant {}", item.variant_id));
         }
+
+        // Record stock movement for sale
+        let _ = tx.execute(
+            "INSERT INTO stock_movements (variant_id, delta, reason, reference_type, reference_id)
+             VALUES (?1, ?2, 'sale', 'sale', ?3)",
+            rusqlite::params![item.variant_id, -(item.quantity as i64), sale_id],
+        );
     }
 
     // 3. Handle installment account
@@ -420,7 +427,7 @@ pub fn void_sale(db: State<DbState>, id: i64) -> Result<(), String> {
             rusqlite::params![id],
             |row| row.get(0),
         )
-        .unwrap_or(false);
+        .map_err(|e| format!("Failed to check payments: {}", e))?;
 
     if has_payments {
         return Err("Cannot void sale with recorded payments. Reverse payments first.".to_string());
@@ -437,6 +444,25 @@ pub fn void_sale(db: State<DbState>, id: i64) -> Result<(), String> {
         rusqlite::params![id],
     )
     .map_err(|e| e.to_string())?;
+
+    // Record stock movements for voided sale items
+    {
+        let mut item_stmt = tx
+            .prepare("SELECT variant_id, quantity FROM sale_items WHERE sale_id = ?1")
+            .map_err(|e| e.to_string())?;
+        let items: Vec<(i64, i64)> = item_stmt
+            .query_map(rusqlite::params![id], |row| Ok((row.get(0)?, row.get(1)?)))
+            .map_err(|e| e.to_string())?
+            .filter_map(|r| r.ok())
+            .collect();
+        for (vid, qty) in items {
+            let _ = tx.execute(
+                "INSERT INTO stock_movements (variant_id, delta, reason, reference_type, reference_id)
+                 VALUES (?1, ?2, 'void', 'sale', ?3)",
+                rusqlite::params![vid, qty, id],
+            );
+        }
+    }
 
     // Soft-delete installment data — set status to 'voided' instead of hard DELETE
     tx.execute(
