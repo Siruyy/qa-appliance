@@ -4,6 +4,7 @@ use crate::utils::date::{add_months_to_date, today_iso};
 use calamine::{open_workbook, Reader, Xlsx};
 use rusqlite::params;
 use std::collections::HashMap;
+use std::io::BufRead;
 use tauri::State;
 
 // ── Helper: parse attributes JSON for color/size ─────
@@ -281,6 +282,69 @@ pub fn export_all_data(state: State<'_, DbState>) -> Result<ExportAllData, Strin
 
 // ── Import Helpers ───────────────────────────────────
 
+fn read_import_rows(file_path: &str) -> Result<(Vec<String>, Vec<Vec<String>>), String> {
+    if file_path.ends_with(".csv") {
+        read_csv_rows(file_path)
+    } else {
+        read_excel_rows(file_path)
+    }
+}
+
+fn read_csv_rows(file_path: &str) -> Result<(Vec<String>, Vec<Vec<String>>), String> {
+    let file = std::fs::File::open(file_path).map_err(|e| format!("Cannot open file: {}", e))?;
+    let reader = std::io::BufReader::new(file);
+    let mut lines = reader.lines();
+
+    let header_line = lines.next().ok_or("File is empty")?.map_err(|e| format!("Read error: {}", e))?;
+    let headers: Vec<String> = parse_csv_line(&header_line)
+        .iter()
+        .map(|s| s.trim().to_lowercase())
+        .collect();
+
+    let mut data_rows = Vec::new();
+    for line_result in lines {
+        let line = line_result.map_err(|e| format!("Read error: {}", e))?;
+        let values = parse_csv_line(&line);
+        if values.iter().all(|v| v.is_empty()) {
+            continue;
+        }
+        data_rows.push(values);
+    }
+
+    Ok((headers, data_rows))
+}
+
+fn parse_csv_line(line: &str) -> Vec<String> {
+    let mut fields = Vec::new();
+    let mut current = String::new();
+    let mut in_quotes = false;
+    let mut chars = line.chars().peekable();
+
+    while let Some(ch) = chars.next() {
+        if in_quotes {
+            if ch == '"' {
+                if chars.peek() == Some(&'"') {
+                    current.push('"');
+                    chars.next();
+                } else {
+                    in_quotes = false;
+                }
+            } else {
+                current.push(ch);
+            }
+        } else if ch == '"' {
+            in_quotes = true;
+        } else if ch == ',' {
+            fields.push(current.trim().to_string());
+            current = String::new();
+        } else {
+            current.push(ch);
+        }
+    }
+    fields.push(current.trim().to_string());
+    fields
+}
+
 fn read_excel_rows(file_path: &str) -> Result<(Vec<String>, Vec<Vec<String>>), String> {
     let mut workbook: Xlsx<_> = open_workbook(file_path).map_err(|e| format!("Cannot open file: {}", e))?;
 
@@ -337,7 +401,7 @@ pub fn preview_import(
     import_type: String,
     file_path: String,
 ) -> Result<ImportPreview, String> {
-    let (headers, data_rows) = read_excel_rows(&file_path)?;
+    let (headers, data_rows) = read_import_rows(&file_path)?;
 
     match import_type.as_str() {
         "products" => preview_products(&state, &headers, &data_rows),
@@ -401,6 +465,7 @@ fn preview_customers(
     for (i, row) in data_rows.iter().enumerate() {
         let data = row_to_map(headers, row);
         let row_number = i + 2;
+        let mut row_errors = Vec::new();
         let name = get_field(&data, "name");
 
         if name.is_empty() {
@@ -412,8 +477,21 @@ fn preview_customers(
             continue;
         }
 
-        // Check for duplicate
+        // Validate phone format if provided
         let phone = get_field(&data, "phone");
+        if !phone.is_empty() {
+            let digits: String = phone.chars().filter(|c| c.is_ascii_digit()).collect();
+            if digits.len() < 7 || digits.len() > 13 {
+                row_errors.push("phone must be 7-13 digits".to_string());
+            }
+        }
+
+        if !row_errors.is_empty() {
+            errors.push(ImportErrorRow { row_number, data, errors: row_errors });
+            continue;
+        }
+
+        // Check for duplicate
         let existing: bool = if phone.is_empty() {
             db.query_row(
                 "SELECT COUNT(*) > 0 FROM customers WHERE name = ?1",
@@ -474,6 +552,22 @@ fn preview_balances(
             row_errors.push("term_months is required".to_string());
         }
 
+        // Validate interest_rate and penalty_rate ranges
+        let interest = get_field(&data, "interest_rate");
+        if !interest.is_empty() {
+            let v = interest.parse::<f64>().unwrap_or(-1.0);
+            if v < 0.0 || v > 100.0 {
+                row_errors.push("interest_rate must be between 0 and 100".to_string());
+            }
+        }
+        let penalty = get_field(&data, "penalty_rate");
+        if !penalty.is_empty() {
+            let v = penalty.parse::<f64>().unwrap_or(-1.0);
+            if v < 0.0 || v > 100.0 {
+                row_errors.push("penalty_rate must be between 0 and 100".to_string());
+            }
+        }
+
         if row_errors.is_empty() {
             valid.push(ImportValidRow { row_number, data });
         } else {
@@ -495,70 +589,92 @@ pub fn confirm_import(
     // Re-run preview to get valid rows
     let preview = preview_import(state.clone(), import_type.clone(), file_path.clone())?;
 
-    let db = state.0.lock().map_err(|e| e.to_string())?;
-    let mut added: i64 = 0;
+    let mut db = state.0.lock().map_err(|e| e.to_string())?;
     let skipped = preview.skip_rows.len() as i64;
     let errored = preview.error_rows.len() as i64;
+
+    // Run all inserts inside a transaction so partial failures roll back
+    let tx = db.transaction().map_err(|e| e.to_string())?;
+    let mut added: i64 = 0;
+    let mut imported_ids: Vec<i64> = Vec::new();
+    let mut runtime_errors: Vec<String> = Vec::new();
 
     match import_type.as_str() {
         "products" => {
             for row in &preview.valid_rows {
-                if let Err(e) = import_product_row(&db, &row.data) {
-                    eprintln!("[import] product row {} failed: {}", row.row_number, e);
-                    continue;
+                match import_product_row(&tx, &row.data) {
+                    Ok(id) => { imported_ids.push(id); added += 1; }
+                    Err(e) => { runtime_errors.push(format!("Row {}: {}", row.row_number, e)); }
                 }
-                added += 1;
             }
         }
         "customers" => {
             for row in &preview.valid_rows {
-                if let Err(e) = import_customer_row(&db, &row.data) {
-                    eprintln!("[import] customer row {} failed: {}", row.row_number, e);
-                    continue;
+                match import_customer_row(&tx, &row.data) {
+                    Ok(id) => { imported_ids.push(id); added += 1; }
+                    Err(e) => { runtime_errors.push(format!("Row {}: {}", row.row_number, e)); }
                 }
-                added += 1;
             }
         }
         "balances" => {
             for row in &preview.valid_rows {
-                if let Err(e) = import_balance_row(&db, &row.data) {
-                    eprintln!("[import] balance row {} failed: {}", row.row_number, e);
-                    continue;
+                match import_balance_row(&tx, &row.data) {
+                    Ok(id) => { imported_ids.push(id); added += 1; }
+                    Err(e) => { runtime_errors.push(format!("Row {}: {}", row.row_number, e)); }
                 }
-                added += 1;
             }
         }
         _ => return Err(format!("Unknown import type: {}", import_type)),
     }
 
-    // Record in import_logs
-    let filename = file_path.rsplit('/').next().unwrap_or(&file_path).to_string();
-    let error_details = if !preview.error_rows.is_empty() {
-        let details: Vec<serde_json::Value> = preview.error_rows.iter().map(|e| {
-            serde_json::json!({ "row": e.row_number, "message": e.errors.join("; ") })
-        }).collect();
-        Some(serde_json::to_string(&details).unwrap_or_default())
-    } else {
+    if !runtime_errors.is_empty() && added == 0 {
+        // All rows failed — rollback
+        tx.rollback().map_err(|e| e.to_string())?;
+        return Err(format!("All rows failed: {}", runtime_errors.join("; ")));
+    }
+
+    // Record in import_logs (inside the same transaction)
+    let filename = file_path.rsplit('/').next()
+        .and_then(|s| s.rsplit('\\').next())
+        .unwrap_or(&file_path)
+        .to_string();
+
+    let mut all_error_details: Vec<serde_json::Value> = preview.error_rows.iter().map(|e| {
+        serde_json::json!({ "row": e.row_number, "message": e.errors.join("; ") })
+    }).collect();
+    for re in &runtime_errors {
+        all_error_details.push(serde_json::json!({ "runtime": re }));
+    }
+    let error_details = if all_error_details.is_empty() {
         None
+    } else {
+        Some(serde_json::to_string(&all_error_details).unwrap_or_default())
     };
 
-    db.execute(
-        "INSERT INTO import_logs (import_type, filename, rows_added, rows_skipped, rows_errored, error_details)
-         VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
-        params![import_type, filename, added, skipped, errored, error_details],
+    let ids_json = serde_json::to_string(&imported_ids).unwrap_or_default();
+
+    tx.execute(
+        "INSERT INTO import_logs (import_type, filename, rows_added, rows_skipped, rows_errored, error_details, imported_ids)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)",
+        params![import_type, filename, added, skipped, errored + runtime_errors.len() as i64, error_details, ids_json],
     ).map_err(|e| e.to_string())?;
 
-    let _ = db.execute(
+    let _ = tx.execute(
         "INSERT INTO audit_log (action, entity_type, entity_id, details) VALUES (?1, ?2, ?3, ?4)",
         params!["import", &import_type, 0, format!("Imported {} (added={}, skipped={}, errors={})", filename, added, skipped, errored)],
     );
 
+    tx.commit().map_err(|e| e.to_string())?;
+
     Ok(ImportResult { rows_added: added, rows_skipped: skipped, rows_errored: errored })
 }
 
-fn import_product_row(db: &rusqlite::Connection, data: &HashMap<String, String>) -> Result<(), String> {
+fn import_product_row(db: &rusqlite::Connection, data: &HashMap<String, String>) -> Result<i64, String> {
     let category_name = get_field(data, "category");
     let product_name = get_field(data, "product_name");
+    let brand = get_field(data, "brand");
+    let model = get_field(data, "model");
+    let description = get_field(data, "description");
     let variant_color = get_field(data, "variant_color");
     let variant_size = get_field(data, "variant_size");
     let sku = get_field(data, "sku");
@@ -581,17 +697,37 @@ fn import_product_row(db: &rusqlite::Connection, data: &HashMap<String, String>)
         }
     };
 
-    // Find or create product
+    // Find or create product (with optional brand/model/description)
     let product_id: i64 = match db.query_row(
         "SELECT id FROM products WHERE category_id = ?1 AND name = ?2",
         params![category_id, product_name],
         |row| row.get(0),
     ) {
-        Ok(id) => id,
+        Ok(id) => {
+            // Update brand/model/description if provided
+            if !brand.is_empty() || !model.is_empty() || !description.is_empty() {
+                let brand_opt = if brand.is_empty() { None } else { Some(brand) };
+                let model_opt = if model.is_empty() { None } else { Some(model) };
+                let desc_opt = if description.is_empty() { None } else { Some(description) };
+                db.execute(
+                    "UPDATE products SET
+                     brand = COALESCE(?1, brand),
+                     model = COALESCE(?2, model),
+                     description = COALESCE(?3, description),
+                     updated_at = datetime('now')
+                     WHERE id = ?4",
+                    params![brand_opt, model_opt, desc_opt, id],
+                ).map_err(|e| e.to_string())?;
+            }
+            id
+        }
         Err(_) => {
+            let brand_opt = if brand.is_empty() { None } else { Some(brand) };
+            let model_opt = if model.is_empty() { None } else { Some(model) };
+            let desc_opt = if description.is_empty() { None } else { Some(description) };
             db.execute(
-                "INSERT INTO products (category_id, name) VALUES (?1, ?2)",
-                params![category_id, product_name],
+                "INSERT INTO products (category_id, name, brand, model, description) VALUES (?1, ?2, ?3, ?4, ?5)",
+                params![category_id, product_name, brand_opt, model_opt, desc_opt],
             ).map_err(|e| e.to_string())?;
             db.last_insert_rowid()
         }
@@ -622,6 +758,7 @@ fn import_product_row(db: &rusqlite::Connection, data: &HashMap<String, String>)
              updated_at = datetime('now') WHERE id = ?6",
             params![cost_price, selling_price, stock_qty, threshold, sku, variant_id],
         ).map_err(|e| e.to_string())?;
+        Ok(variant_id)
     } else {
         // Insert new
         let sku_val = if sku.is_empty() { None } else { Some(sku) };
@@ -630,12 +767,11 @@ fn import_product_row(db: &rusqlite::Connection, data: &HashMap<String, String>)
              VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)",
             params![product_id, sku_val, attrs_json, cost_price, selling_price, stock_qty, threshold],
         ).map_err(|e| e.to_string())?;
+        Ok(db.last_insert_rowid())
     }
-
-    Ok(())
 }
 
-fn import_customer_row(db: &rusqlite::Connection, data: &HashMap<String, String>) -> Result<(), String> {
+fn import_customer_row(db: &rusqlite::Connection, data: &HashMap<String, String>) -> Result<i64, String> {
     let name = get_field(data, "name");
     let phone = {
         let v = get_field(data, "phone");
@@ -655,10 +791,10 @@ fn import_customer_row(db: &rusqlite::Connection, data: &HashMap<String, String>
         params![name, phone, address, notes],
     ).map_err(|e| e.to_string())?;
 
-    Ok(())
+    Ok(db.last_insert_rowid())
 }
 
-fn import_balance_row(db: &rusqlite::Connection, data: &HashMap<String, String>) -> Result<(), String> {
+fn import_balance_row(db: &rusqlite::Connection, data: &HashMap<String, String>) -> Result<i64, String> {
     let customer_name = get_field(data, "customer_name");
     let customer_phone = get_field(data, "customer_phone");
     let product_description = get_field(data, "product_description");
@@ -773,7 +909,148 @@ fn import_balance_row(db: &rusqlite::Connection, data: &HashMap<String, String>)
         ).map_err(|e| e.to_string())?;
     }
 
+    Ok(account_id)
+}
+
+// ── Template Download ───────────────────────────────
+
+#[tauri::command]
+pub fn get_import_template_columns(import_type: String) -> Result<Vec<String>, String> {
+    match import_type.as_str() {
+        "products" => Ok(vec![
+            "category".into(), "product_name".into(), "brand".into(), "model".into(),
+            "description".into(), "variant_color".into(), "variant_size".into(), "sku".into(),
+            "cost_price".into(), "selling_price".into(), "stock_qty".into(), "low_stock_threshold".into(),
+        ]),
+        "customers" => Ok(vec![
+            "name".into(), "phone".into(), "address".into(), "notes".into(),
+        ]),
+        "balances" => Ok(vec![
+            "customer_name".into(), "customer_phone".into(), "product_description".into(),
+            "original_amount".into(), "balance_remaining".into(), "interest_rate".into(),
+            "penalty_rate".into(), "term_months".into(), "monthly_amount".into(),
+            "start_date".into(), "notes".into(),
+        ]),
+        _ => Err(format!("Unknown import type: {}", import_type)),
+    }
+}
+
+#[tauri::command]
+pub fn generate_import_template(import_type: String, file_path: String) -> Result<(), String> {
+    let columns = get_import_template_columns(import_type.clone())?;
+
+    if file_path.ends_with(".csv") {
+        // Generate CSV template
+        let header = columns.join(",");
+        std::fs::write(&file_path, format!("{}\n", header))
+            .map_err(|e| format!("Failed to write CSV template: {}", e))?;
+    } else {
+        // Generate CSV-based template (user can open in Excel)
+        let header = columns.join(",");
+        std::fs::write(&file_path, format!("{}\n", header))
+            .map_err(|e| format!("Failed to write template: {}", e))?;
+    }
+
     Ok(())
+}
+
+// ── Undo Import ─────────────────────────────────────
+
+#[tauri::command]
+pub fn undo_import(state: State<'_, DbState>, import_log_id: i64) -> Result<String, String> {
+    let mut db = state.0.lock().map_err(|e| e.to_string())?;
+
+    // Read the import log entry
+    let (import_type, imported_ids_json): (String, Option<String>) = db.query_row(
+        "SELECT import_type, imported_ids FROM import_logs WHERE id = ?1",
+        params![import_log_id],
+        |row| Ok((row.get(0)?, row.get(1)?)),
+    ).map_err(|e| format!("Import log not found: {}", e))?;
+
+    let imported_ids: Vec<i64> = match &imported_ids_json {
+        Some(json) => serde_json::from_str(json).unwrap_or_default(),
+        None => return Err("This import has no tracked IDs and cannot be undone".to_string()),
+    };
+
+    if imported_ids.is_empty() {
+        return Err("No imported records to undo".to_string());
+    }
+
+    let tx = db.transaction().map_err(|e| e.to_string())?;
+    let mut removed = 0;
+
+    match import_type.as_str() {
+        "products" => {
+            // IDs are variant IDs — soft delete them
+            for id in &imported_ids {
+                let changed = tx.execute(
+                    "UPDATE product_variants SET is_active = 0, updated_at = datetime('now') WHERE id = ?1",
+                    params![id],
+                ).unwrap_or(0);
+                removed += changed;
+            }
+        }
+        "customers" => {
+            for id in &imported_ids {
+                // Only soft-delete if customer has no sales
+                let has_sales: bool = tx.query_row(
+                    "SELECT COUNT(*) > 0 FROM sales WHERE customer_id = ?1",
+                    params![id],
+                    |row| row.get(0),
+                ).unwrap_or(true);
+
+                if has_sales {
+                    let changed = tx.execute(
+                        "UPDATE customers SET is_active = 0, updated_at = datetime('now') WHERE id = ?1",
+                        params![id],
+                    ).unwrap_or(0);
+                    removed += changed;
+                } else {
+                    let changed = tx.execute("DELETE FROM customers WHERE id = ?1", params![id]).unwrap_or(0);
+                    removed += changed;
+                }
+            }
+        }
+        "balances" => {
+            // IDs are account IDs — remove entire chain (payments, schedules, account, sale_items, sale)
+            for id in &imported_ids {
+                let sale_id: Option<i64> = tx.query_row(
+                    "SELECT sale_id FROM installment_accounts WHERE id = ?1",
+                    params![id],
+                    |row| row.get(0),
+                ).ok();
+
+                tx.execute("DELETE FROM payments WHERE account_id = ?1", params![id]).ok();
+                tx.execute("DELETE FROM payment_schedules WHERE account_id = ?1", params![id]).ok();
+                tx.execute("DELETE FROM installment_accounts WHERE id = ?1", params![id]).ok();
+
+                if let Some(sid) = sale_id {
+                    tx.execute("DELETE FROM sale_items WHERE sale_id = ?1", params![sid]).ok();
+                    tx.execute("DELETE FROM sales WHERE id = ?1", params![sid]).ok();
+                }
+                removed += 1;
+            }
+        }
+        _ => {
+            tx.rollback().map_err(|e| e.to_string())?;
+            return Err(format!("Unknown import type: {}", import_type));
+        }
+    }
+
+    // Mark import log as undone
+    tx.execute(
+        "UPDATE import_logs SET rows_added = 0, error_details = COALESCE(error_details || ' [UNDONE]', '[UNDONE]') WHERE id = ?1",
+        params![import_log_id],
+    ).map_err(|e| e.to_string())?;
+
+    let _ = tx.execute(
+        "INSERT INTO audit_log (action, entity_type, entity_id, details) VALUES (?1, ?2, ?3, ?4)",
+        params!["undo_import", &import_type, import_log_id, format!("Undid import #{}, removed {} records", import_log_id, removed)],
+    );
+
+    tx.commit().map_err(|e| e.to_string())?;
+
+    Ok(format!("Undone: {} records removed/deactivated", removed))
 }
 
 // ── Import Logs ──────────────────────────────────────
@@ -784,7 +1061,7 @@ pub fn list_import_logs(state: State<'_, DbState>, limit: Option<i64>) -> Result
     let limit = limit.unwrap_or(10);
 
     let mut stmt = db.prepare(
-        "SELECT id, import_type, filename, rows_added, rows_skipped, rows_errored, error_details, imported_at
+        "SELECT id, import_type, filename, rows_added, rows_skipped, rows_errored, error_details, imported_at, imported_ids
          FROM import_logs ORDER BY imported_at DESC LIMIT ?1"
     ).map_err(|e| e.to_string())?;
 
@@ -798,6 +1075,7 @@ pub fn list_import_logs(state: State<'_, DbState>, limit: Option<i64>) -> Result
             rows_errored: row.get(5)?,
             error_details: row.get(6)?,
             imported_at: row.get(7)?,
+            imported_ids: row.get(8)?,
         })
     }).map_err(|e| e.to_string())?;
 

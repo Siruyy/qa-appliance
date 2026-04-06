@@ -41,6 +41,7 @@ export interface ImportLog {
   rows_errored: number;
   error_details: string | null;
   imported_at: string;
+  imported_ids: string | null;
 }
 
 // ── Export Data Shapes ──────────────────────────────────

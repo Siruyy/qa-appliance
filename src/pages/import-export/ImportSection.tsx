@@ -1,5 +1,5 @@
 import { useState, useCallback } from "react";
-import { open } from "@tauri-apps/plugin-dialog";
+import { open, save } from "@tauri-apps/plugin-dialog";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import {
@@ -14,13 +14,17 @@ import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
 import { extractErrorMessage } from "@/lib/error";
 import { useImportExportStore } from "@/stores/importExportStore";
-import { previewImport, confirmImport } from "@/lib/importExport";
+import { previewImport, confirmImport, generateImportTemplate } from "@/lib/importExport";
 import { ImportPreviewDialog } from "./ImportPreviewDialog";
+import { Download } from "lucide-react";
 
 const templateHelp: Record<string, string[]> = {
   products: [
     "category",
     "product_name",
+    "brand",
+    "model",
+    "description",
     "variant_color",
     "variant_size",
     "sku",
@@ -38,7 +42,6 @@ const templateHelp: Record<string, string[]> = {
     "balance_remaining",
     "interest_rate",
     "penalty_rate",
-    "has_schedule",
     "term_months",
     "monthly_amount",
     "start_date",
@@ -64,7 +67,9 @@ export function ImportSection() {
   const handleSelectFile = useCallback(async () => {
     const filePath = await open({
       multiple: false,
-      filters: [{ name: "Excel Files", extensions: ["xlsx", "xls"] }],
+      filters: [
+        { name: "Spreadsheet Files", extensions: ["xlsx", "xls", "csv"] },
+      ],
     });
     if (filePath) {
       setSelectedFile(filePath as string);
@@ -100,12 +105,26 @@ export function ImportSection() {
     }
   }, [importType, selectedFile, setImporting, resetImport]);
 
+  const handleDownloadTemplate = useCallback(async () => {
+    const filePath = await save({
+      defaultPath: `${importType}_template.csv`,
+      filters: [{ name: "CSV Template", extensions: ["csv"] }],
+    });
+    if (!filePath) return;
+    try {
+      await generateImportTemplate(importType, filePath);
+      toast.success("Template saved successfully");
+    } catch (err) {
+      toast.error(`Template failed: ${extractErrorMessage(err)}`);
+    }
+  }, [importType]);
+
   return (
     <div className="space-y-4">
       <div>
         <h3 className="text-lg font-semibold">Import Data</h3>
         <p className="text-sm text-muted-foreground">
-          Import data from Excel files. Preview before confirming.
+          Import data from Excel (.xlsx) or CSV files. Preview before confirming.
         </p>
       </div>
 
@@ -153,9 +172,15 @@ export function ImportSection() {
         <Separator />
 
         <div>
-          <p className="text-sm font-medium mb-2">
-            Required columns for "{importType}" import:
-          </p>
+          <div className="flex items-center justify-between mb-2">
+            <p className="text-sm font-medium">
+              Required columns for "{importType}" import:
+            </p>
+            <Button variant="outline" size="sm" onClick={handleDownloadTemplate}>
+              <Download className="h-4 w-4 mr-1" />
+              Download Template
+            </Button>
+          </div>
           <div className="flex flex-wrap gap-1.5">
             {templateHelp[importType]?.map((col) => (
               <Badge key={col} variant="secondary" className="font-mono text-xs">

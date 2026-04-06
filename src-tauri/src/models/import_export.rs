@@ -47,6 +47,7 @@ pub struct ImportLog {
     pub rows_errored: i64,
     pub error_details: Option<String>,
     pub imported_at: String,
+    pub imported_ids: Option<String>,
 }
 
 // ── Export types ───────────────────────────────────────

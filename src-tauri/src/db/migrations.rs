@@ -58,6 +58,10 @@ pub fn run(conn: &Connection) -> Result<()> {
         migrate_v10(conn)?;
     }
 
+    if version < 11 {
+        migrate_v11(conn)?;
+    }
+
     Ok(())
 }
 
@@ -1472,9 +1476,14 @@ fn migrate_v9(conn: &Connection) -> Result<()> {
 ///        'voided' to payment_schedules.status, 'voided' to installment_accounts.status.
 ///        SQLite doesn't support ALTER CHECK, so we recreate the affected tables.
 fn migrate_v10(conn: &Connection) -> Result<()> {
-    conn.execute_batch(
+    // Must disable FK enforcement before dropping/recreating tables that reference each other.
+    // PRAGMA foreign_keys cannot be changed inside a transaction, so we do it here explicitly.
+    conn.execute_batch("PRAGMA foreign_keys = OFF;")?;
+
+    let result = conn.execute_batch(
         "
         -- 1) Recreate installment_accounts with 'voided' status
+        DROP TABLE IF EXISTS installment_accounts_new;
         CREATE TABLE installment_accounts_new (
             id                  INTEGER PRIMARY KEY AUTOINCREMENT,
             sale_id             INTEGER NOT NULL REFERENCES sales(id) ON DELETE RESTRICT,
@@ -1515,6 +1524,7 @@ fn migrate_v10(conn: &Connection) -> Result<()> {
             ON installment_accounts (sale_id);
 
         -- 2) Recreate payment_schedules with 'voided' status
+        DROP TABLE IF EXISTS payment_schedules_new;
         CREATE TABLE payment_schedules_new (
             id              INTEGER PRIMARY KEY AUTOINCREMENT,
             account_id      INTEGER NOT NULL REFERENCES installment_accounts(id) ON DELETE CASCADE,
@@ -1543,6 +1553,7 @@ fn migrate_v10(conn: &Connection) -> Result<()> {
             ON payment_schedules (due_date);
 
         -- 3) Recreate payments with 'rebate'/'waived_penalty' types
+        DROP TABLE IF EXISTS payments_new;
         CREATE TABLE payments_new (
             id            INTEGER PRIMARY KEY AUTOINCREMENT,
             account_id    INTEGER NOT NULL REFERENCES installment_accounts(id) ON DELETE RESTRICT,
@@ -1575,8 +1586,29 @@ fn migrate_v10(conn: &Connection) -> Result<()> {
 
         INSERT INTO schema_migrations (version) VALUES (10);
         "
-    )?;
+    );
+
+    // Always re-enable FK enforcement regardless of whether migration succeeded
+    conn.execute_batch("PRAGMA foreign_keys = ON;")?;
+
+    result?;
 
     println!("[db] Applied migration v10 — fix CHECK constraints for rebate, voided statuses");
+    Ok(())
+}
+
+/// V11 — Add imported_ids column to import_logs, brand/model to products
+fn migrate_v11(conn: &Connection) -> Result<()> {
+    conn.execute_batch(
+        "
+        ALTER TABLE import_logs ADD COLUMN imported_ids TEXT;
+        ALTER TABLE products ADD COLUMN brand TEXT;
+        ALTER TABLE products ADD COLUMN model TEXT;
+
+        INSERT INTO schema_migrations (version) VALUES (11);
+        "
+    )?;
+
+    println!("[db] Applied migration v11 — import_logs.imported_ids, products.brand/model");
     Ok(())
 }

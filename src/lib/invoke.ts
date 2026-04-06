@@ -37,6 +37,7 @@ const ALLOWED_COMMANDS = [
   "export_all_data", "export_products_data", "export_sales_data",
   "export_accounts_data", "export_customers_data", "export_payments_data",
   "preview_import", "confirm_import", "list_import_logs",
+  "get_import_template_columns", "generate_import_template", "undo_import",
   // Audit
   "get_audit_log",
 ] as const;

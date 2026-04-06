@@ -79,3 +79,25 @@ export async function fetchImportLogs(
 ): Promise<ImportLog[]> {
   return invoke<ImportLog[]>("list_import_logs", { limit: limit ?? null });
 }
+
+/** Get template columns for an import type. */
+export async function getImportTemplateColumns(
+  importType: string
+): Promise<string[]> {
+  return invoke<string[]>("get_import_template_columns", { importType });
+}
+
+/** Generate and save a template file. */
+export async function generateImportTemplate(
+  importType: string,
+  filePath: string
+): Promise<void> {
+  return invoke<void>("generate_import_template", { importType, filePath });
+}
+
+/** Undo a previous import by log ID. */
+export async function undoImport(
+  importLogId: number
+): Promise<string> {
+  return invoke<string>("undo_import", { importLogId });
+}
