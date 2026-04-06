@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { useCustomers } from "@/hooks/useCustomers";
 import {
   customerSchema,
+  parseCreditLimit,
   type CustomerFormData,
 } from "@/lib/validations/customer";
 import type { Customer } from "@/types/customer";
@@ -41,6 +42,7 @@ export function CustomerFormModal({ customer, onClose }: Props) {
       phone: customer?.phone ?? "",
       address: customer?.address ?? "",
       notes: customer?.notes ?? "",
+      credit_limit: customer?.credit_limit != null ? String(customer.credit_limit) : "",
     },
   });
 
@@ -51,6 +53,7 @@ export function CustomerFormModal({ customer, onClose }: Props) {
         phone: data.phone || undefined,
         address: data.address || undefined,
         notes: data.notes || undefined,
+        credit_limit: parseCreditLimit(data.credit_limit),
       };
 
       if (isEdit) {
@@ -119,6 +122,24 @@ export function CustomerFormModal({ customer, onClose }: Props) {
             {errors.notes && (
               <p className="text-sm text-destructive">{errors.notes.message}</p>
             )}
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="credit_limit">Credit Limit (₱)</Label>
+            <Input
+              id="credit_limit"
+              type="number"
+              min="0"
+              step="0.01"
+              {...register("credit_limit")}
+              placeholder="Leave blank for no limit"
+            />
+            {errors.credit_limit && (
+              <p className="text-sm text-destructive">{errors.credit_limit.message}</p>
+            )}
+            <p className="text-xs text-muted-foreground">
+              Maximum installment balance allowed. Leave blank for unlimited.
+            </p>
           </div>
 
           <DialogFooter>

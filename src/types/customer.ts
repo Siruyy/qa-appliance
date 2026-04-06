@@ -8,6 +8,7 @@ export interface Customer {
   phone: string | null;
   address: string | null;
   notes: string | null;
+  credit_limit: number | null;
   is_active: boolean;
   open_accounts_count: number;
   total_balance: number;
@@ -57,6 +58,7 @@ export interface CreateCustomerPayload {
   phone?: string;
   address?: string;
   notes?: string;
+  credit_limit?: number | null;
 }
 
 export interface UpdateCustomerPayload {
@@ -65,4 +67,5 @@ export interface UpdateCustomerPayload {
   phone?: string;
   address?: string;
   notes?: string;
+  credit_limit?: number | null;
 }

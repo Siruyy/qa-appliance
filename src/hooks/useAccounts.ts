@@ -74,6 +74,30 @@ export function useAccounts() {
     return invoke<number>("recalculate_balance", { accountId });
   }, []);
 
+  /** Void (reverse) a payment. */
+  const voidPayment = useCallback(async (paymentId: number, reason: string): Promise<void> => {
+    await invoke<void>("void_payment", { paymentId, reason });
+  }, []);
+
+  /** Waive a penalty entry. */
+  const waivePenalty = useCallback(async (paymentId: number, reason: string): Promise<void> => {
+    await invoke<void>("waive_penalty", { paymentId, reason });
+  }, []);
+
+  /** Update the rebate rate on an account. */
+  const updateAccountRebateRate = useCallback(async (accountId: number, rebateRate: number): Promise<void> => {
+    await invoke<void>("update_account_rebate_rate", { accountId, rebateRate });
+  }, []);
+
+  /** Restructure an account with new term and rate. */
+  const restructureAccount = useCallback(async (
+    accountId: number,
+    newTermMonths: number,
+    newMonthlyRate: number
+  ): Promise<void> => {
+    await invoke<void>("restructure_account", { accountId, newTermMonths, newMonthlyRate });
+  }, []);
+
   return {
     fetchAccounts,
     getAccountById,
@@ -83,5 +107,9 @@ export function useAccounts() {
     updateAccountNotes,
     runPenaltyCheck,
     recalculateBalance,
+    voidPayment,
+    waivePenalty,
+    updateAccountRebateRate,
+    restructureAccount,
   };
 }

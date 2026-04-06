@@ -11,6 +11,9 @@ export interface Payment {
   payment_date: string;
   type: PaymentRecordType;
   notes: string | null;
+  is_reversed: boolean;
+  reversed_at: string | null;
+  reversed_reason: string | null;
   created_at: string;
 }
 

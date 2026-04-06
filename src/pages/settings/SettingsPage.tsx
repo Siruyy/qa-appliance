@@ -293,6 +293,49 @@ export function SettingsPage() {
         </CardContent>
       </Card>
 
+      {/* Penalty Settings */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Penalty Settings</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid sm:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="grace_period_days">Grace Period (days)</Label>
+              <Input
+                id="grace_period_days"
+                type="number"
+                min="0"
+                value={form.grace_period_days ?? "0"}
+                onChange={(e) =>
+                  handleChange("grace_period_days", e.target.value)
+                }
+                className="w-32"
+              />
+              <p className="text-xs text-muted-foreground">
+                Days after due date before a penalty is applied. 0 = no grace period.
+              </p>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="max_penalties_per_account">Max Penalties per Account</Label>
+              <Input
+                id="max_penalties_per_account"
+                type="number"
+                min="0"
+                value={form.max_penalties_per_account ?? "0"}
+                onChange={(e) =>
+                  handleChange("max_penalties_per_account", e.target.value)
+                }
+                className="w-32"
+              />
+              <p className="text-xs text-muted-foreground">
+                Maximum number of penalties that can be applied per account. 0 = unlimited.
+              </p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Auto-save indicator */}
       <div className="flex items-center justify-end gap-2 text-sm text-muted-foreground h-8">
         {saveStatus === "saving" && (

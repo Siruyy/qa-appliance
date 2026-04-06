@@ -1,7 +1,7 @@
 import { extractErrorMessage } from "@/lib/error";
 import { useEffect, useState, useCallback } from "react";
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
-import { ArrowLeft, CreditCard, XCircle, NotebookPen, RefreshCw, FileText, FileSpreadsheet } from "lucide-react";
+import { ArrowLeft, CreditCard, XCircle, NotebookPen, RefreshCw, FileText, FileSpreadsheet, Settings2, Pencil } from "lucide-react";
 import { toast } from "sonner";
 
 import { useAccounts } from "@/hooks/useAccounts";
@@ -15,8 +15,18 @@ import { toInstallmentPlan, toStatementOfAccount } from "@/lib/export";
 
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -37,7 +47,7 @@ export function AccountDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { getAccountById, markAccountDefaulted, updateAccountNotes, recalculateBalance } = useAccounts();
+  const { getAccountById, markAccountDefaulted, updateAccountNotes, recalculateBalance, voidPayment, waivePenalty, updateAccountRebateRate, restructureAccount } = useAccounts();
   const { format: formatCurrency } = useCurrency();
   const settings = useSettingsStore((s) => s.settings);
 
@@ -50,6 +60,23 @@ export function AccountDetailPage() {
   const [recalculating, setRecalculating] = useState(false);
   const [exportingPlan, setExportingPlan] = useState(false);
   const [exportingSoa, setExportingSoa] = useState(false);
+
+  // Void payment state
+  const [voidingPaymentId, setVoidingPaymentId] = useState<number | null>(null);
+  const [voidReason, setVoidReason] = useState("");
+
+  // Waive penalty state
+  const [waivingPenaltyId, setWaivingPenaltyId] = useState<number | null>(null);
+  const [waiveReason, setWaiveReason] = useState("");
+
+  // Rebate rate edit state
+  const [editingRebate, setEditingRebate] = useState(false);
+  const [rebateRate, setRebateRate] = useState("");
+
+  // Restructure state
+  const [showRestructure, setShowRestructure] = useState(false);
+  const [restructureTerm, setRestructureTerm] = useState("");
+  const [restructureRate, setRestructureRate] = useState("");
 
   const loadAccount = useCallback(async () => {
     if (!id) return;
@@ -150,6 +177,73 @@ export function AccountDetailPage() {
     }
   };
 
+  const handleVoidPayment = async () => {
+    if (voidingPaymentId === null) return;
+    try {
+      await voidPayment(voidingPaymentId, voidReason || "Voided by staff");
+      toast.success("Payment voided successfully");
+      setVoidingPaymentId(null);
+      setVoidReason("");
+      await loadAccount();
+    } catch (err) {
+      toast.error(extractErrorMessage(err));
+    }
+  };
+
+  const handleWaivePenalty = async () => {
+    if (waivingPenaltyId === null) return;
+    try {
+      await waivePenalty(waivingPenaltyId, waiveReason || "Waived by staff");
+      toast.success("Penalty waived successfully");
+      setWaivingPenaltyId(null);
+      setWaiveReason("");
+      await loadAccount();
+    } catch (err) {
+      toast.error(extractErrorMessage(err));
+    }
+  };
+
+  const handleSaveRebateRate = async () => {
+    if (!account) return;
+    const rate = parseFloat(rebateRate);
+    if (isNaN(rate) || rate < 0 || rate > 100) {
+      toast.error("Rebate rate must be between 0 and 100");
+      return;
+    }
+    try {
+      await updateAccountRebateRate(account.id, rate);
+      toast.success(`Rebate rate updated to ${rate}%`);
+      setEditingRebate(false);
+      await loadAccount();
+    } catch (err) {
+      toast.error(extractErrorMessage(err));
+    }
+  };
+
+  const handleRestructure = async () => {
+    if (!account) return;
+    const term = parseInt(restructureTerm);
+    const rate = parseFloat(restructureRate);
+    if (isNaN(term) || term < 1) {
+      toast.error("Term must be at least 1 month");
+      return;
+    }
+    if (isNaN(rate) || rate < 0) {
+      toast.error("Interest rate must be 0 or higher");
+      return;
+    }
+    try {
+      await restructureAccount(account.id, term, rate);
+      toast.success("Account restructured successfully");
+      setShowRestructure(false);
+      setRestructureTerm("");
+      setRestructureRate("");
+      await loadAccount();
+    } catch (err) {
+      toast.error(extractErrorMessage(err));
+    }
+  };
+
   if (loading) {
     return (
       <div className="space-y-4">
@@ -219,6 +313,17 @@ export function AccountDetailPage() {
               <Button onClick={() => setShowPaymentModal(true)}>
                 <CreditCard className="mr-2 h-4 w-4" /> Record Payment
               </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  setRestructureTerm(String(account.term_months));
+                  setRestructureRate(String(account.interest_rate));
+                  setShowRestructure(true);
+                }}
+              >
+                <Settings2 className="mr-2 h-4 w-4" /> Restructure
+              </Button>
               <Button variant="destructive" onClick={() => setShowDefaultConfirm(true)}>
                 <XCircle className="mr-2 h-4 w-4" /> Mark Defaulted
               </Button>
@@ -270,12 +375,47 @@ export function AccountDetailPage() {
           <p className="text-xs text-muted-foreground">Penalty Rate</p>
           <p className="text-sm font-medium">{account.penalty_rate}%</p>
         </div>
-        {(account.rebate_rate ?? 0) > 0 && (
+        {account.status === "open" ? (
+          <div>
+            <p className="text-xs text-muted-foreground">Rebate Rate</p>
+            {editingRebate ? (
+              <div className="flex items-center gap-1 mt-1">
+                <Input
+                  type="number"
+                  min="0"
+                  max="100"
+                  step="0.5"
+                  value={rebateRate}
+                  onChange={(e) => setRebateRate(e.target.value)}
+                  className="h-7 w-20 text-sm"
+                />
+                <span className="text-xs">%</span>
+                <Button size="sm" variant="ghost" className="h-7 px-2 text-xs" onClick={handleSaveRebateRate}>Save</Button>
+                <Button size="sm" variant="ghost" className="h-7 px-2 text-xs" onClick={() => setEditingRebate(false)}>Cancel</Button>
+              </div>
+            ) : (
+              <div className="flex items-center gap-1">
+                <p className="text-sm font-medium text-green-600">{account.rebate_rate ?? 0}% of interest</p>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="h-5 w-5 p-0"
+                  onClick={() => {
+                    setRebateRate(String(account.rebate_rate ?? 0));
+                    setEditingRebate(true);
+                  }}
+                >
+                  <Pencil className="h-3 w-3" />
+                </Button>
+              </div>
+            )}
+          </div>
+        ) : (account.rebate_rate ?? 0) > 0 ? (
           <div>
             <p className="text-xs text-muted-foreground">Rebate Rate</p>
             <p className="text-sm font-medium text-green-600">{account.rebate_rate}% of interest</p>
           </div>
-        )}
+        ) : null}
         <div>
           <p className="text-xs text-muted-foreground">Type</p>
           <p className="text-sm font-medium">
@@ -336,7 +476,18 @@ export function AccountDetailPage() {
       <div>
         <h2 className="text-lg font-semibold mb-3">Payment History</h2>
         <div className="rounded-md border">
-          <PaymentHistoryTable payments={account.payments} />
+          <PaymentHistoryTable
+            payments={account.payments}
+            accountStatus={account.status}
+            onVoidPayment={(paymentId) => {
+              setVoidingPaymentId(paymentId);
+              setVoidReason("");
+            }}
+            onWaivePenalty={(penaltyId) => {
+              setWaivingPenaltyId(penaltyId);
+              setWaiveReason("");
+            }}
+          />
         </div>
       </div>
 
@@ -367,6 +518,119 @@ export function AccountDetailPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Void Payment Dialog */}
+      <Dialog open={voidingPaymentId !== null} onOpenChange={(open) => { if (!open) setVoidingPaymentId(null); }}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Void Payment</DialogTitle>
+            <DialogDescription>
+              This will reverse the payment and restore the balance. This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3 py-2">
+            <div className="space-y-2">
+              <Label htmlFor="void-reason">Reason for voiding</Label>
+              <Textarea
+                id="void-reason"
+                value={voidReason}
+                onChange={(e) => setVoidReason(e.target.value)}
+                placeholder="e.g., Customer overpayment, incorrect amount..."
+                rows={2}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setVoidingPaymentId(null)}>Cancel</Button>
+            <Button variant="destructive" onClick={handleVoidPayment}>
+              Void Payment
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Waive Penalty Dialog */}
+      <Dialog open={waivingPenaltyId !== null} onOpenChange={(open) => { if (!open) setWaivingPenaltyId(null); }}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Waive Penalty</DialogTitle>
+            <DialogDescription>
+              This will reverse the penalty charge and reduce the account balance accordingly.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3 py-2">
+            <div className="space-y-2">
+              <Label htmlFor="waive-reason">Reason for waiving</Label>
+              <Textarea
+                id="waive-reason"
+                value={waiveReason}
+                onChange={(e) => setWaiveReason(e.target.value)}
+                placeholder="e.g., Customer goodwill, first-time late..."
+                rows={2}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setWaivingPenaltyId(null)}>Cancel</Button>
+            <Button variant="default" onClick={handleWaivePenalty}>
+              Waive Penalty
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Restructure Account Dialog */}
+      <Dialog open={showRestructure} onOpenChange={setShowRestructure}>
+        <DialogContent className="sm:max-w-[480px]">
+          <DialogHeader>
+            <DialogTitle>Restructure Account</DialogTitle>
+            <DialogDescription>
+              Recalculate interest on the remaining balance ({formatCurrency(account.balance_remaining)}) with a new term and rate. 
+              Unpaid schedule entries will be replaced with new ones.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="space-y-2">
+              <Label htmlFor="restructure-term">New Term (months)</Label>
+              <Input
+                id="restructure-term"
+                type="number"
+                min="1"
+                max="60"
+                value={restructureTerm}
+                onChange={(e) => setRestructureTerm(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="restructure-rate">New Monthly Interest Rate (%)</Label>
+              <Input
+                id="restructure-rate"
+                type="number"
+                min="0"
+                max="20"
+                step="0.1"
+                value={restructureRate}
+                onChange={(e) => setRestructureRate(e.target.value)}
+              />
+            </div>
+            {restructureTerm && restructureRate && (
+              <div className="rounded-md bg-muted p-3 text-sm space-y-1">
+                <p className="font-medium">Preview</p>
+                <p>Remaining balance: {formatCurrency(account.balance_remaining)}</p>
+                <p>New interest: {formatCurrency(account.balance_remaining * (parseFloat(restructureRate) / 100) * parseInt(restructureTerm))}</p>
+                <p>New total: {formatCurrency(account.balance_remaining + account.balance_remaining * (parseFloat(restructureRate) / 100) * parseInt(restructureTerm))}</p>
+                <p>New monthly: {formatCurrency((account.balance_remaining + account.balance_remaining * (parseFloat(restructureRate) / 100) * parseInt(restructureTerm)) / parseInt(restructureTerm))}</p>
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowRestructure(false)}>Cancel</Button>
+            <Button onClick={handleRestructure}>
+              Restructure Account
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

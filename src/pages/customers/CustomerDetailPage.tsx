@@ -196,6 +196,11 @@ export function CustomerDetailPage() {
             <StickyNote className="h-4 w-4" /> {customer.notes}
           </span>
         )}
+        {customer.credit_limit != null && (
+          <span className="flex items-center gap-1">
+            <Banknote className="h-4 w-4" /> Credit Limit: {formatCurrency(customer.credit_limit)}
+          </span>
+        )}
       </div>
 
       <Separator />

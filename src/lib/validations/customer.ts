@@ -25,6 +25,18 @@ export const customerSchema = z.object({
     .max(500, "Max 500 characters")
     .optional()
     .or(z.literal("")),
+  credit_limit: z
+    .string()
+    .optional()
+    .or(z.literal("")),
 });
 
 export type CustomerFormData = z.infer<typeof customerSchema>;
+
+/** Parse credit_limit string to number | null for submission */
+export function parseCreditLimit(value?: string): number | null {
+  if (!value || value.trim() === "") return null;
+  const n = parseFloat(value);
+  if (isNaN(n) || n < 0) return null;
+  return n;
+}

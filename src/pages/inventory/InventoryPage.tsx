@@ -3,7 +3,7 @@ import { PageHeader } from "@/components/PageHeader";
 import { EmptyState } from "@/components/EmptyState";
 import { TableSkeleton } from "@/components/TableSkeleton";
 import { Pagination } from "@/components/Pagination";
-import { Plus, Package, Download } from "lucide-react";
+import { Plus, Package, Download, History } from "lucide-react";
 import { toast } from "sonner";
 
 import { extractErrorMessage } from "@/lib/error";
@@ -37,6 +37,7 @@ import { VariantFormModal } from "./VariantFormModal";
 import { StockAdjustModal } from "./StockAdjustModal";
 import { InventoryToolbar } from "./InventoryToolbar";
 import { ProductRow } from "./ProductRow";
+import { StockMovementLog } from "./StockMovementLog";
 import { downloadCsv } from "@/lib/csv";
 
 type ModalState =
@@ -68,6 +69,7 @@ export function InventoryPage() {
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
   const [bulkArchiveOpen, setBulkArchiveOpen] = useState(false);
   const [isArchiving, setIsArchiving] = useState(false);
+  const [stockLogOpen, setStockLogOpen] = useState(false);
 
   const activeProducts = useMemo(() => products.filter((p) => p.is_active), [products]);
   const allActiveSelected = activeProducts.length > 0 && activeProducts.every((p) => selectedIds.has(p.id));
@@ -193,6 +195,9 @@ export function InventoryPage() {
         description="Manage products, variants, stock levels, and categories."
         actions={
           <div className="flex gap-2">
+            <Button variant="outline" onClick={() => setStockLogOpen(true)}>
+              <History className="mr-1 h-4 w-4" /> Stock Log
+            </Button>
             <Button variant="outline" onClick={() => {
               const flat = products.flatMap((p) =>
                 (p.variants ?? []).map((v) => ({
@@ -368,6 +373,8 @@ export function InventoryPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <StockMovementLog open={stockLogOpen} onClose={() => setStockLogOpen(false)} />
     </div>
   );
 }
