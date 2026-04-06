@@ -937,20 +937,27 @@ pub fn get_import_template_columns(import_type: String) -> Result<Vec<String>, S
 
 #[tauri::command]
 pub fn generate_import_template(import_type: String, file_path: String) -> Result<(), String> {
+    use rust_xlsxwriter::{Workbook, Format};
+
     let columns = get_import_template_columns(import_type.clone())?;
 
-    if file_path.ends_with(".csv") {
-        // Generate CSV template
-        let header = columns.join(",");
-        std::fs::write(&file_path, format!("{}\n", header))
-            .map_err(|e| format!("Failed to write CSV template: {}", e))?;
-    } else {
-        // Generate CSV-based template (user can open in Excel)
-        let header = columns.join(",");
-        std::fs::write(&file_path, format!("{}\n", header))
-            .map_err(|e| format!("Failed to write template: {}", e))?;
+    let mut workbook = Workbook::new();
+    let worksheet = workbook.add_worksheet();
+    worksheet.set_name(&import_type).map_err(|e| e.to_string())?;
+
+    // Bold header format
+    let header_fmt = Format::new().set_bold();
+
+    for (col, name) in columns.iter().enumerate() {
+        worksheet
+            .write_string_with_format(0, col as u16, name, &header_fmt)
+            .map_err(|e| e.to_string())?;
+        // Auto-width: at least column name length + padding
+        let width = (name.len() as f64).max(12.0) + 2.0;
+        worksheet.set_column_width(col as u16, width).map_err(|e| e.to_string())?;
     }
 
+    workbook.save(&file_path).map_err(|e| format!("Failed to save template: {}", e))?;
     Ok(())
 }
 

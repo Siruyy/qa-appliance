@@ -107,8 +107,8 @@ export function ImportSection() {
 
   const handleDownloadTemplate = useCallback(async () => {
     const filePath = await save({
-      defaultPath: `${importType}_template.csv`,
-      filters: [{ name: "CSV Template", extensions: ["csv"] }],
+      defaultPath: `${importType}_template.xlsx`,
+      filters: [{ name: "Excel Template", extensions: ["xlsx"] }],
     });
     if (!filePath) return;
     try {
