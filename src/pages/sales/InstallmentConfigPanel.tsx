@@ -102,9 +102,10 @@ export function InstallmentConfigPanel({
               max={100}
               step={0.5}
               value={config.rebate_rate ?? 0}
-              onChange={(e) =>
-                onChange({ ...config, rebate_rate: parseFloat(e.target.value) || 0 })
-              }
+              onChange={(e) => {
+                const val = parseFloat(e.target.value) || 0;
+                onChange({ ...config, rebate_rate: Math.min(100, Math.max(0, val)) });
+              }}
             />
             <p className="text-xs text-muted-foreground">
               % of interest refunded if paid on time

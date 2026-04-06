@@ -249,6 +249,7 @@ export function NewSalePage() {
       if (saleId) {
         toast.success("Sale recorded successfully");
         clearCart();
+        await fetchProducts();
         navigate("/sales");
       }
     } catch (err) {

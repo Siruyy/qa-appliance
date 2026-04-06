@@ -198,6 +198,15 @@ pub fn create_sale(db: State<DbState>, payload: CreateSalePayload) -> Result<i64
         return Err("At least one item is required".to_string());
     }
 
+    for (i, item) in payload.items.iter().enumerate() {
+        if item.quantity == 0 {
+            return Err(format!("Item {} has zero quantity", i + 1));
+        }
+        if item.unit_price <= 0.0 {
+            return Err(format!("Item {} has invalid unit price", i + 1));
+        }
+    }
+
     if payload.payment_type == "installment" && payload.customer_id.is_none() {
         return Err("Customer is required for installment sales".to_string());
     }

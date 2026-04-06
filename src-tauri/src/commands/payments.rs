@@ -466,7 +466,7 @@ fn auto_apply_to_schedule(
 
 #[tauri::command]
 pub fn void_payment(db: State<'_, DbState>, payment_id: i64, reason: String) -> Result<(), String> {
-    let conn = db.0.lock().map_err(|e| e.to_string())?;
+    let mut conn = db.0.lock().map_err(|e| e.to_string())?;
 
     let reason = reason.trim().to_string();
     if reason.is_empty() {
@@ -489,22 +489,24 @@ pub fn void_payment(db: State<'_, DbState>, payment_id: i64, reason: String) -> 
         return Err(format!("Cannot void a {} entry — use the appropriate action instead", payment_type));
     }
 
+    let tx = conn.transaction().map_err(|e| e.to_string())?;
+
     let now = crate::utils::date::today_iso();
-    conn.execute(
+    tx.execute(
         "UPDATE payments SET is_reversed = 1, reversed_at = ?1, reversed_reason = ?2 WHERE id = ?3",
         rusqlite::params![now, reason, payment_id],
     )
     .map_err(|e| e.to_string())?;
 
     if let Some(acct_id) = account_id {
-        conn.execute(
+        tx.execute(
             "UPDATE installment_accounts SET balance_remaining = balance_remaining + ?1, status = 'open' WHERE id = ?2",
             rusqlite::params![amount, acct_id],
         )
         .map_err(|e| e.to_string())?;
 
         // Reverse schedule entries in LIFO order
-        let mut stmt = conn
+        let mut stmt = tx
             .prepare(
                 "SELECT id, amount_due, amount_paid FROM payment_schedules
                  WHERE account_id = ?1 AND status IN ('paid', 'partial')
@@ -527,7 +529,7 @@ pub fn void_payment(db: State<'_, DbState>, payment_id: i64, reason: String) -> 
             let new_paid = amount_paid - deduct;
             let new_status = if new_paid <= 0.001 { "pending" } else { "partial" };
 
-            conn.execute(
+            tx.execute(
                 "UPDATE payment_schedules SET amount_paid = ?1, status = ?2 WHERE id = ?3",
                 rusqlite::params![new_paid, new_status, entry_id],
             )
@@ -537,7 +539,7 @@ pub fn void_payment(db: State<'_, DbState>, payment_id: i64, reason: String) -> 
         }
     }
 
-    conn.execute(
+    tx.execute(
         "INSERT INTO audit_log (action, entity_type, entity_id, details) VALUES (?1, ?2, ?3, ?4)",
         rusqlite::params![
             "void_payment",
@@ -548,12 +550,14 @@ pub fn void_payment(db: State<'_, DbState>, payment_id: i64, reason: String) -> 
     )
     .map_err(|e| e.to_string())?;
 
+    tx.commit().map_err(|e| e.to_string())?;
+
     Ok(())
 }
 
 #[tauri::command]
 pub fn waive_penalty(db: State<'_, DbState>, payment_id: i64, reason: String) -> Result<(), String> {
-    let conn = db.0.lock().map_err(|e| e.to_string())?;
+    let mut conn = db.0.lock().map_err(|e| e.to_string())?;
 
     let reason = reason.trim().to_string();
     if reason.is_empty() {
@@ -575,8 +579,10 @@ pub fn waive_penalty(db: State<'_, DbState>, payment_id: i64, reason: String) ->
         return Err("This penalty has already been waived".to_string());
     }
 
+    let tx = conn.transaction().map_err(|e| e.to_string())?;
+
     let now = crate::utils::date::today_iso();
-    conn.execute(
+    tx.execute(
         "UPDATE payments SET is_reversed = 1, reversed_at = ?1, reversed_reason = ?2 WHERE id = ?3",
         rusqlite::params![now, reason, payment_id],
     )
@@ -584,14 +590,14 @@ pub fn waive_penalty(db: State<'_, DbState>, payment_id: i64, reason: String) ->
 
     // Reduce balance by penalty amount (penalty added to balance, so subtract to undo)
     if let Some(acct_id) = account_id {
-        conn.execute(
+        tx.execute(
             "UPDATE installment_accounts SET balance_remaining = balance_remaining - ?1 WHERE id = ?2",
             rusqlite::params![amount, acct_id],
         )
         .map_err(|e| e.to_string())?;
     }
 
-    conn.execute(
+    tx.execute(
         "INSERT INTO audit_log (action, entity_type, entity_id, details) VALUES (?1, ?2, ?3, ?4)",
         rusqlite::params![
             "waive_penalty",
@@ -601,6 +607,8 @@ pub fn waive_penalty(db: State<'_, DbState>, payment_id: i64, reason: String) ->
         ],
     )
     .map_err(|e| e.to_string())?;
+
+    tx.commit().map_err(|e| e.to_string())?;
 
     Ok(())
 }

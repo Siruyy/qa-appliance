@@ -54,6 +54,10 @@ pub fn run(conn: &Connection) -> Result<()> {
         migrate_v9(conn)?;
     }
 
+    if version < 10 {
+        migrate_v10(conn)?;
+    }
+
     Ok(())
 }
 
@@ -1461,5 +1465,118 @@ fn migrate_v9(conn: &Connection) -> Result<()> {
     )?;
 
     println!("[db] Applied migration v9 — performance indexes, low stock threshold setting");
+    Ok(())
+}
+
+/// V10 — Fix CHECK constraints: add 'rebate'/'waived_penalty' to payments.type,
+///        'voided' to payment_schedules.status, 'voided' to installment_accounts.status.
+///        SQLite doesn't support ALTER CHECK, so we recreate the affected tables.
+fn migrate_v10(conn: &Connection) -> Result<()> {
+    conn.execute_batch(
+        "
+        -- 1) Recreate installment_accounts with 'voided' status
+        CREATE TABLE installment_accounts_new (
+            id                  INTEGER PRIMARY KEY AUTOINCREMENT,
+            sale_id             INTEGER NOT NULL REFERENCES sales(id) ON DELETE RESTRICT,
+            customer_id         INTEGER NOT NULL REFERENCES customers(id) ON DELETE RESTRICT,
+            principal           REAL NOT NULL,
+            down_payment        REAL NOT NULL DEFAULT 0,
+            interest_rate       REAL NOT NULL DEFAULT 0,
+            penalty_rate        REAL NOT NULL DEFAULT 0,
+            balance_remaining   REAL NOT NULL,
+            has_schedule        INTEGER NOT NULL DEFAULT 1,
+            term_months         INTEGER,
+            monthly_amount      REAL,
+            start_date          TEXT,
+            status              TEXT NOT NULL DEFAULT 'open'
+                                CHECK(status IN ('open', 'paid', 'defaulted', 'voided')),
+            last_penalty_date   TEXT,
+            notes               TEXT,
+            created_at          TEXT NOT NULL DEFAULT (datetime('now')),
+            updated_at          TEXT NOT NULL DEFAULT (datetime('now')),
+            rebate_rate         REAL NOT NULL DEFAULT 0
+        );
+
+        INSERT INTO installment_accounts_new
+            SELECT id, sale_id, customer_id, principal, down_payment, interest_rate,
+                   penalty_rate, balance_remaining, has_schedule, term_months, monthly_amount,
+                   start_date, status, last_penalty_date, notes, created_at, updated_at, rebate_rate
+            FROM installment_accounts;
+
+        DROP TABLE installment_accounts;
+        ALTER TABLE installment_accounts_new RENAME TO installment_accounts;
+
+        CREATE INDEX IF NOT EXISTS idx_accounts_customer ON installment_accounts(customer_id);
+        CREATE INDEX IF NOT EXISTS idx_accounts_status ON installment_accounts(status);
+        CREATE INDEX IF NOT EXISTS idx_accounts_sale ON installment_accounts(sale_id);
+        CREATE INDEX IF NOT EXISTS idx_installment_accounts_customer_status
+            ON installment_accounts (customer_id, status);
+        CREATE INDEX IF NOT EXISTS idx_installment_accounts_sale_id
+            ON installment_accounts (sale_id);
+
+        -- 2) Recreate payment_schedules with 'voided' status
+        CREATE TABLE payment_schedules_new (
+            id              INTEGER PRIMARY KEY AUTOINCREMENT,
+            account_id      INTEGER NOT NULL REFERENCES installment_accounts(id) ON DELETE CASCADE,
+            due_date        TEXT NOT NULL,
+            amount_due      REAL NOT NULL,
+            amount_paid     REAL NOT NULL DEFAULT 0,
+            status          TEXT NOT NULL DEFAULT 'pending'
+                            CHECK(status IN ('pending', 'paid', 'overdue', 'partial', 'voided')),
+            created_at      TEXT NOT NULL DEFAULT (datetime('now')),
+            updated_at      TEXT NOT NULL DEFAULT (datetime('now'))
+        );
+
+        INSERT INTO payment_schedules_new
+            SELECT id, account_id, due_date, amount_due, amount_paid, status, created_at, updated_at
+            FROM payment_schedules;
+
+        DROP TABLE payment_schedules;
+        ALTER TABLE payment_schedules_new RENAME TO payment_schedules;
+
+        CREATE INDEX IF NOT EXISTS idx_schedules_account ON payment_schedules(account_id);
+        CREATE INDEX IF NOT EXISTS idx_schedules_due_date ON payment_schedules(due_date);
+        CREATE INDEX IF NOT EXISTS idx_schedules_status ON payment_schedules(status);
+        CREATE INDEX IF NOT EXISTS idx_payment_schedules_account_status
+            ON payment_schedules (account_id, status);
+        CREATE INDEX IF NOT EXISTS idx_payment_schedules_due_date
+            ON payment_schedules (due_date);
+
+        -- 3) Recreate payments with 'rebate'/'waived_penalty' types
+        CREATE TABLE payments_new (
+            id            INTEGER PRIMARY KEY AUTOINCREMENT,
+            account_id    INTEGER NOT NULL REFERENCES installment_accounts(id) ON DELETE RESTRICT,
+            schedule_id   INTEGER REFERENCES payment_schedules(id) ON DELETE SET NULL,
+            amount        REAL NOT NULL,
+            payment_date  TEXT NOT NULL DEFAULT (datetime('now')),
+            type          TEXT NOT NULL DEFAULT 'payment'
+                          CHECK(type IN ('payment', 'penalty', 'interest_adjustment', 'down_payment', 'rebate', 'waived_penalty')),
+            notes         TEXT,
+            created_at    TEXT NOT NULL DEFAULT (datetime('now')),
+            is_reversed   INTEGER NOT NULL DEFAULT 0,
+            reversed_at   TEXT,
+            reversed_reason TEXT
+        );
+
+        INSERT INTO payments_new
+            SELECT id, account_id, schedule_id, amount, payment_date, type, notes, created_at,
+                   is_reversed, reversed_at, reversed_reason
+            FROM payments;
+
+        DROP TABLE payments;
+        ALTER TABLE payments_new RENAME TO payments;
+
+        CREATE INDEX IF NOT EXISTS idx_payments_account ON payments(account_id);
+        CREATE INDEX IF NOT EXISTS idx_payments_schedule ON payments(schedule_id);
+        CREATE INDEX IF NOT EXISTS idx_payments_account_id_type
+            ON payments (account_id, type);
+        CREATE INDEX IF NOT EXISTS idx_payments_date
+            ON payments (payment_date);
+
+        INSERT INTO schema_migrations (version) VALUES (10);
+        "
+    )?;
+
+    println!("[db] Applied migration v10 — fix CHECK constraints for rebate, voided statuses");
     Ok(())
 }

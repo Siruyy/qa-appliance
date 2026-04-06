@@ -360,6 +360,12 @@ pub fn archive_product(db: State<'_, DbState>, id: i64) -> Result<(), String> {
     )
     .map_err(|e| e.to_string())?;
 
+    conn.execute(
+        "INSERT INTO audit_log (action, entity_type, entity_id, details) VALUES (?1, ?2, ?3, ?4)",
+        params!["archive", "product", id, format!("Archived product #{} and its variants", id)],
+    )
+    .map_err(|e| e.to_string())?;
+
     Ok(())
 }
 
@@ -376,6 +382,12 @@ pub fn restore_product(db: State<'_, DbState>, id: i64) -> Result<(), String> {
     conn.execute(
         "UPDATE product_variants SET is_active = 1, updated_at = datetime('now') WHERE product_id = ?1",
         params![id],
+    )
+    .map_err(|e| e.to_string())?;
+
+    conn.execute(
+        "INSERT INTO audit_log (action, entity_type, entity_id, details) VALUES (?1, ?2, ?3, ?4)",
+        params!["restore", "product", id, format!("Restored product #{} and its variants", id)],
     )
     .map_err(|e| e.to_string())?;
 

@@ -110,7 +110,7 @@ export function AccountDetailPage() {
     setRecalculating(true);
     try {
       const newBalance = await recalculateBalance(account.id);
-      toast.success(`Balance recalculated: ${newBalance.toFixed(2)}`);
+      toast.success(`Balance recalculated: ${formatCurrency(newBalance)}`);
       await loadAccount();
     } catch (err) {
       toast.error(`Recalculate failed: ${extractErrorMessage(err)}`);
@@ -613,7 +613,7 @@ export function AccountDetailPage() {
                 onChange={(e) => setRestructureRate(e.target.value)}
               />
             </div>
-            {restructureTerm && restructureRate && (
+            {restructureTerm && restructureRate && !isNaN(parseFloat(restructureRate)) && !isNaN(parseInt(restructureTerm)) && parseInt(restructureTerm) > 0 && (
               <div className="rounded-md bg-muted p-3 text-sm space-y-1">
                 <p className="font-medium">Preview</p>
                 <p>Remaining balance: {formatCurrency(account.balance_remaining)}</p>

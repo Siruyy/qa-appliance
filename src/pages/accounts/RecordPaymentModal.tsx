@@ -87,6 +87,10 @@ export function RecordPaymentModal({
 
   const onSubmit = async (values: RecordPaymentValues) => {
     if (submitting) return;
+    if (values.amount > account.balance_remaining) {
+      toast.error(`Amount cannot exceed remaining balance of ${formatCurrency(account.balance_remaining)}`);
+      return;
+    }
     setSubmitting(true);
     try {
       const result = await recordPayment({

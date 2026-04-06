@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useEffect } from "react";
 import { PageHeader } from "@/components/PageHeader";
 import { EmptyState } from "@/components/EmptyState";
 import { TableSkeleton } from "@/components/TableSkeleton";
@@ -52,6 +52,13 @@ export function InventoryPage() {
 
   const { categories, loading, filters, setFilter, filteredProducts, products: rawProducts, page, pageSize, setPage } = useProductStore();
   const allFiltered = useMemo(() => filteredProducts(), [rawProducts, filters]);
+
+  // Clamp page when filtered results shrink
+  const totalPages = Math.max(1, Math.ceil(allFiltered.length / pageSize));
+  useEffect(() => {
+    if (page > totalPages) setPage(totalPages);
+  }, [page, totalPages, setPage]);
+
   const products = useMemo(
     () => allFiltered.slice((page - 1) * pageSize, page * pageSize),
     [allFiltered, page, pageSize]
