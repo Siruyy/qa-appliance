@@ -20,6 +20,7 @@ const typeLabels: Record<string, string> = {
   down_payment: "Down Payment",
   penalty: "Penalty",
   interest_adjustment: "Interest Adj.",
+  rebate: "Rebate",
 };
 
 const typeVariant: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
@@ -27,6 +28,7 @@ const typeVariant: Record<string, "default" | "secondary" | "destructive" | "out
   down_payment: "secondary",
   penalty: "destructive",
   interest_adjustment: "outline",
+  rebate: "outline",
 };
 
 export function PaymentHistoryTable({ payments }: PaymentHistoryTableProps) {
@@ -53,8 +55,8 @@ export function PaymentHistoryTable({ payments }: PaymentHistoryTableProps) {
         {payments.map((p) => (
           <TableRow key={p.id}>
             <TableCell>{formatDate(p.payment_date)}</TableCell>
-            <TableCell className={`text-right font-medium ${p.type === "penalty" ? "text-destructive" : ""}`}>
-              {p.type === "penalty" ? "+" : "−"}{formatCurrency(p.amount)}
+            <TableCell className={`text-right font-medium ${p.type === "penalty" ? "text-destructive" : p.type === "rebate" ? "text-green-600" : ""}`}>
+              {p.type === "penalty" ? "+" : p.type === "rebate" ? "−" : "−"}{formatCurrency(Math.abs(p.amount))}
             </TableCell>
             <TableCell>
               <Badge variant={typeVariant[p.type] ?? "outline"}>

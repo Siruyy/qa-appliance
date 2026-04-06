@@ -1,4 +1,4 @@
-export type PaymentRecordType = "payment" | "penalty" | "interest_adjustment" | "down_payment";
+export type PaymentRecordType = "payment" | "penalty" | "interest_adjustment" | "down_payment" | "rebate";
 export type ScheduleStatus = "pending" | "paid" | "overdue" | "partial";
 
 export interface Payment {

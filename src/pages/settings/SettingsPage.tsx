@@ -222,6 +222,51 @@ export function SettingsPage() {
         </CardContent>
       </Card>
 
+      {/* Early Payment Rebate */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Early Payment Rebate</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex items-center gap-3">
+            <label className="relative inline-flex items-center cursor-pointer">
+              <input
+                type="checkbox"
+                className="sr-only peer"
+                checked={form.rebate_enabled === "1"}
+                onChange={(e) =>
+                  handleChange("rebate_enabled", e.target.checked ? "1" : "0")
+                }
+              />
+              <div className="w-9 h-5 bg-gray-300 peer-focus:outline-none rounded-full peer peer-checked:bg-primary transition-colors after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-full" />
+            </label>
+            <Label>Enable rebate for on-time installment payments</Label>
+          </div>
+          {form.rebate_enabled === "1" && (
+            <div className="space-y-2">
+              <Label htmlFor="default_rebate_rate">
+                Default Rebate Rate (% of interest)
+              </Label>
+              <Input
+                id="default_rebate_rate"
+                type="number"
+                min="0"
+                max="100"
+                step="0.5"
+                value={form.default_rebate_rate}
+                onChange={(e) =>
+                  handleChange("default_rebate_rate", e.target.value)
+                }
+                className="w-32"
+              />
+              <p className="text-xs text-muted-foreground">
+                Percentage of total interest credited back when all payments are made on or before due dates. Can be overridden per account.
+              </p>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
       {/* Inventory */}
       <Card>
         <CardHeader>

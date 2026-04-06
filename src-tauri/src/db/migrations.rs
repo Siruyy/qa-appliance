@@ -42,6 +42,10 @@ pub fn run(conn: &Connection) -> Result<()> {
         migrate_v6(conn)?;
     }
 
+    if version < 7 {
+        migrate_v7(conn)?;
+    }
+
     Ok(())
 }
 
@@ -1323,5 +1327,36 @@ fn migrate_v6(conn: &Connection) -> Result<()> {
         "
     )?;
     println!("[db] Applied migration v6 — audit log table");
+    Ok(())
+}
+
+/// V7 — Discount types, per-item discounts, and early-payment rebate
+fn migrate_v7(conn: &Connection) -> Result<()> {
+    conn.execute_batch(
+        "
+        -- Sales: store the original discount input (type + raw value)
+        ALTER TABLE sales ADD COLUMN discount_type TEXT NOT NULL DEFAULT 'peso';
+        ALTER TABLE sales ADD COLUMN discount_value REAL NOT NULL DEFAULT 0;
+
+        -- Backfill existing sales
+        UPDATE sales SET discount_value = discount, discount_type = 'peso' WHERE discount > 0;
+
+        -- Sale items: per-item discount support
+        ALTER TABLE sale_items ADD COLUMN item_discount REAL NOT NULL DEFAULT 0;
+        ALTER TABLE sale_items ADD COLUMN item_discount_type TEXT NOT NULL DEFAULT 'peso';
+        ALTER TABLE sale_items ADD COLUMN item_discount_value REAL NOT NULL DEFAULT 0;
+
+        -- Installment accounts: per-account rebate rate
+        ALTER TABLE installment_accounts ADD COLUMN rebate_rate REAL NOT NULL DEFAULT 0;
+
+        -- New settings for rebate feature
+        INSERT OR IGNORE INTO settings (key, value) VALUES
+            ('rebate_enabled', '0'),
+            ('default_rebate_rate', '5');
+
+        INSERT INTO schema_migrations (version) VALUES (7);
+        "
+    )?;
+    println!("[db] Applied migration v7 — discount types, per-item discounts, rebate");
     Ok(())
 }

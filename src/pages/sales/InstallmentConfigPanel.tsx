@@ -11,6 +11,7 @@ interface InstallmentConfigPanelProps {
   config: CreateInstallmentPayload;
   onChange: (config: CreateInstallmentPayload) => void;
   onPreviewSchedule: () => void;
+  rebateEnabled?: boolean;
 }
 
 const PRESET_TERMS = [6, 12, 18, 24] as const;
@@ -21,6 +22,7 @@ export function InstallmentConfigPanel({
   config,
   onChange,
   onPreviewSchedule,
+  rebateEnabled,
 }: InstallmentConfigPanelProps) {
   const principal = saleTotal - config.down_payment;
 
@@ -91,6 +93,24 @@ export function InstallmentConfigPanel({
             }
           />
         </div>
+        {rebateEnabled && (
+          <div className="space-y-1.5">
+            <Label>Rebate Rate (%)</Label>
+            <Input
+              type="number"
+              min={0}
+              max={100}
+              step={0.5}
+              value={config.rebate_rate ?? 0}
+              onChange={(e) =>
+                onChange({ ...config, rebate_rate: parseFloat(e.target.value) || 0 })
+              }
+            />
+            <p className="text-xs text-muted-foreground">
+              % of interest refunded if paid on time
+            </p>
+          </div>
+        )}
       </div>
 
       <div className="grid grid-cols-2 gap-4">

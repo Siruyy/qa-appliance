@@ -58,8 +58,9 @@ pub fn get_sales(
     );
 
     let data_sql = format!(
-        "SELECT s.id, s.customer_id, s.sale_date, s.subtotal, s.discount, s.total,
-                s.payment_type, s.status, s.notes, s.created_at,
+        "SELECT s.id, s.customer_id, s.sale_date, s.subtotal, s.discount,
+                s.discount_type, s.discount_value,
+                s.total, s.payment_type, s.status, s.notes, s.created_at,
                 c.name as customer_name
          FROM sales s
          LEFT JOIN customers c ON s.customer_id = c.id
@@ -74,12 +75,14 @@ pub fn get_sales(
             sale_date: row.get(2)?,
             subtotal: row.get(3)?,
             discount: row.get(4)?,
-            total: row.get(5)?,
-            payment_type: row.get(6)?,
-            status: row.get(7)?,
-            notes: row.get(8)?,
-            created_at: row.get(9)?,
-            customer_name: row.get(10)?,
+            discount_type: row.get(5)?,
+            discount_value: row.get(6)?,
+            total: row.get(7)?,
+            payment_type: row.get(8)?,
+            status: row.get(9)?,
+            notes: row.get(10)?,
+            created_at: row.get(11)?,
+            customer_name: row.get(12)?,
         })
     })
 }
@@ -92,8 +95,9 @@ pub fn get_sale_by_id(db: State<DbState>, id: i64) -> Result<SaleDetail, String>
     // Get sale
     let sale = conn
         .query_row(
-            "SELECT s.id, s.customer_id, s.sale_date, s.subtotal, s.discount, s.total,
-                    s.payment_type, s.status, s.notes, s.created_at,
+            "SELECT s.id, s.customer_id, s.sale_date, s.subtotal, s.discount,
+                    s.discount_type, s.discount_value,
+                    s.total, s.payment_type, s.status, s.notes, s.created_at,
                     c.name as customer_name
              FROM sales s
              LEFT JOIN customers c ON s.customer_id = c.id
@@ -106,12 +110,14 @@ pub fn get_sale_by_id(db: State<DbState>, id: i64) -> Result<SaleDetail, String>
                     sale_date: row.get(2)?,
                     subtotal: row.get(3)?,
                     discount: row.get(4)?,
-                    total: row.get(5)?,
-                    payment_type: row.get(6)?,
-                    status: row.get(7)?,
-                    notes: row.get(8)?,
-                    created_at: row.get(9)?,
-                    customer_name: row.get(10)?,
+                    discount_type: row.get(5)?,
+                    discount_value: row.get(6)?,
+                    total: row.get(7)?,
+                    payment_type: row.get(8)?,
+                    status: row.get(9)?,
+                    notes: row.get(10)?,
+                    created_at: row.get(11)?,
+                    customer_name: row.get(12)?,
                 })
             },
         )
@@ -121,7 +127,8 @@ pub fn get_sale_by_id(db: State<DbState>, id: i64) -> Result<SaleDetail, String>
     let mut items_stmt = conn
         .prepare(
             "SELECT si.id, si.sale_id, si.variant_id, si.quantity, si.unit_price, si.subtotal,
-                    si.cost_price_snapshot, si.created_at, p.name as product_name, pv.attributes as variant_label
+                    si.cost_price_snapshot, si.item_discount, si.item_discount_type, si.item_discount_value,
+                    si.created_at, p.name as product_name, pv.attributes as variant_label
              FROM sale_items si
              LEFT JOIN product_variants pv ON si.variant_id = pv.id
              LEFT JOIN products p ON pv.product_id = p.id
@@ -139,9 +146,12 @@ pub fn get_sale_by_id(db: State<DbState>, id: i64) -> Result<SaleDetail, String>
                 unit_price: row.get(4)?,
                 subtotal: row.get(5)?,
                 cost_price_snapshot: row.get(6)?,
-                created_at: row.get(7)?,
-                product_name: row.get(8)?,
-                variant_label: row.get(9)?,
+                item_discount: row.get(7)?,
+                item_discount_type: row.get(8)?,
+                item_discount_value: row.get(9)?,
+                created_at: row.get(10)?,
+                product_name: row.get(11)?,
+                variant_label: row.get(12)?,
             })
         })
         .map_err(|e| e.to_string())?
@@ -192,9 +202,25 @@ pub fn create_sale(db: State<DbState>, payload: CreateSalePayload) -> Result<i64
         return Err("Customer is required for installment sales".to_string());
     }
 
-    // Calculate totals
-    let subtotal: f64 = payload.items.iter().map(|i| i.unit_price * i.quantity as f64).sum();
-    let total = subtotal - payload.discount;
+    // Calculate per-item discounts and subtotal
+    let mut subtotal = 0.0_f64;
+    for item in &payload.items {
+        let line_total = item.unit_price * item.quantity as f64;
+        let item_disc = match item.item_discount_type.as_str() {
+            "percent" => (line_total * item.item_discount_value / 100.0 * 100.0).round() / 100.0,
+            _ => item.item_discount_value,
+        };
+        subtotal += line_total - item_disc;
+    }
+
+    // Resolve sale-level discount
+    let discount_type = payload.discount_type.as_str();
+    let discount_value = if payload.discount_value > 0.0 { payload.discount_value } else { payload.discount };
+    let resolved_discount = match discount_type {
+        "percent" => (subtotal * discount_value / 100.0 * 100.0).round() / 100.0,
+        _ => discount_value,
+    };
+    let total = subtotal - resolved_discount;
 
     // Validate unit prices match DB selling_price (prevent client manipulation)
     for item in &payload.items {
@@ -221,12 +247,14 @@ pub fn create_sale(db: State<DbState>, payload: CreateSalePayload) -> Result<i64
 
     // 1. Insert sale
     tx.execute(
-        "INSERT INTO sales (customer_id, subtotal, discount, total, payment_type, notes)
-         VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
+        "INSERT INTO sales (customer_id, subtotal, discount, discount_type, discount_value, total, payment_type, notes)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)",
         rusqlite::params![
             payload.customer_id,
             subtotal,
-            payload.discount,
+            resolved_discount,
+            discount_type,
+            discount_value,
             total,
             payload.payment_type,
             payload.notes,
@@ -238,7 +266,14 @@ pub fn create_sale(db: State<DbState>, payload: CreateSalePayload) -> Result<i64
 
     // 2. Insert sale items and deduct stock
     for item in &payload.items {
-        let item_subtotal = item.unit_price * item.quantity as f64;
+        let line_total = item.unit_price * item.quantity as f64;
+        let item_disc_type = item.item_discount_type.as_str();
+        let item_disc_value = item.item_discount_value;
+        let item_disc = match item_disc_type {
+            "percent" => (line_total * item_disc_value / 100.0 * 100.0).round() / 100.0,
+            _ => item_disc_value,
+        };
+        let item_subtotal = line_total - item_disc;
 
         // Snapshot the current cost_price so P&L is historically accurate
         let cost_price_snapshot: f64 = tx.query_row(
@@ -248,9 +283,11 @@ pub fn create_sale(db: State<DbState>, payload: CreateSalePayload) -> Result<i64
         ).unwrap_or(0.0);
 
         tx.execute(
-            "INSERT INTO sale_items (sale_id, variant_id, quantity, unit_price, subtotal, cost_price_snapshot)
-             VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
-            rusqlite::params![sale_id, item.variant_id, item.quantity, item.unit_price, item_subtotal, cost_price_snapshot],
+            "INSERT INTO sale_items (sale_id, variant_id, quantity, unit_price, subtotal, cost_price_snapshot,
+             item_discount, item_discount_type, item_discount_value)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)",
+            rusqlite::params![sale_id, item.variant_id, item.quantity, item.unit_price, item_subtotal, cost_price_snapshot,
+                item_disc, item_disc_type, item_disc_value],
         )
         .map_err(|e| e.to_string())?;
 
@@ -293,8 +330,8 @@ pub fn create_sale(db: State<DbState>, payload: CreateSalePayload) -> Result<i64
         tx.execute(
             "INSERT INTO installment_accounts
              (sale_id, customer_id, principal, down_payment, interest_rate, penalty_rate,
-              balance_remaining, has_schedule, term_months, monthly_amount, start_date)
-             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11)",
+              balance_remaining, has_schedule, term_months, monthly_amount, start_date, rebate_rate)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12)",
             rusqlite::params![
                 sale_id,
                 payload.customer_id,
@@ -307,6 +344,7 @@ pub fn create_sale(db: State<DbState>, payload: CreateSalePayload) -> Result<i64
                 inst.term_months,
                 Some(monthly_amount),
                 inst.start_date,
+                inst.rebate_rate,
             ],
         )
         .map_err(|e| e.to_string())?;

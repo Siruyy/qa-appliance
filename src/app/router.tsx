@@ -1,8 +1,9 @@
 import { lazy, Suspense } from "react";
-import { Routes, Route, Navigate } from "react-router-dom";
+import { createHashRouter, RouterProvider, Navigate, Outlet } from "react-router-dom";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { NotFoundPage } from "@/pages/errors/NotFoundPage";
 import { Loader2 } from "lucide-react";
+import { AppShell } from "@/app/layout/AppShell";
 
 const DashboardPage = lazy(() => import("@/pages/dashboard/DashboardPage").then(m => ({ default: m.DashboardPage })));
 const InventoryPage = lazy(() => import("@/pages/inventory/InventoryPage").then(m => ({ default: m.InventoryPage })));
@@ -33,23 +34,36 @@ function Wrap({ children }: { children: React.ReactNode }) {
   );
 }
 
-export function AppRouter() {
+function LayoutWrapper() {
   return (
-    <Routes>
-      <Route path="/" element={<Navigate to="/dashboard" replace />} />
-      <Route path="/dashboard" element={<Wrap><DashboardPage /></Wrap>} />
-      <Route path="/inventory" element={<Wrap><InventoryPage /></Wrap>} />
-      <Route path="/customers" element={<Wrap><CustomersPage /></Wrap>} />
-      <Route path="/customers/:id" element={<Wrap><CustomerDetailPage /></Wrap>} />
-      <Route path="/sales/new" element={<Wrap><NewSalePage /></Wrap>} />
-      <Route path="/sales" element={<Wrap><SalesHistoryPage /></Wrap>} />
-      <Route path="/accounts" element={<Wrap><AccountsPage /></Wrap>} />
-      <Route path="/accounts/:id" element={<Wrap><AccountDetailPage /></Wrap>} />
-      <Route path="/payments" element={<Wrap><PaymentsPage /></Wrap>} />
-      <Route path="/reports" element={<Wrap><ReportsPage /></Wrap>} />
-      <Route path="/import-export" element={<Wrap><ImportExportPage /></Wrap>} />
-      <Route path="/settings" element={<Wrap><SettingsPage /></Wrap>} />
-      <Route path="*" element={<NotFoundPage />} />
-    </Routes>
+    <AppShell>
+      <Outlet />
+    </AppShell>
   );
+}
+
+const router = createHashRouter([
+  {
+    element: <LayoutWrapper />,
+    children: [
+      { path: "/", element: <Navigate to="/dashboard" replace /> },
+      { path: "/dashboard", element: <Wrap><DashboardPage /></Wrap> },
+      { path: "/inventory", element: <Wrap><InventoryPage /></Wrap> },
+      { path: "/customers", element: <Wrap><CustomersPage /></Wrap> },
+      { path: "/customers/:id", element: <Wrap><CustomerDetailPage /></Wrap> },
+      { path: "/sales/new", element: <Wrap><NewSalePage /></Wrap> },
+      { path: "/sales", element: <Wrap><SalesHistoryPage /></Wrap> },
+      { path: "/accounts", element: <Wrap><AccountsPage /></Wrap> },
+      { path: "/accounts/:id", element: <Wrap><AccountDetailPage /></Wrap> },
+      { path: "/payments", element: <Wrap><PaymentsPage /></Wrap> },
+      { path: "/reports", element: <Wrap><ReportsPage /></Wrap> },
+      { path: "/import-export", element: <Wrap><ImportExportPage /></Wrap> },
+      { path: "/settings", element: <Wrap><SettingsPage /></Wrap> },
+      { path: "*", element: <NotFoundPage /> },
+    ],
+  },
+]);
+
+export function AppRouter() {
+  return <RouterProvider router={router} />;
 }

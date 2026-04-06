@@ -30,6 +30,7 @@ export interface InstallmentAccount {
   last_penalty_date: string | null;
   next_due_date: string | null;
   is_overdue: boolean;
+  rebate_rate: number;
   notes: string | null;
   created_at: string;
   updated_at: string;

@@ -50,7 +50,11 @@ export const AgingTab = memo(function AgingTab() {
   }, []);
 
   if (loading || !report) {
-    return <TableSkeleton rows={8} cols={7} />;
+    return (
+      <Table>
+        <TableSkeleton rows={8} cols={7} />
+      </Table>
+    );
   }
 
   return (

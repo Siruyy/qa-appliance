@@ -211,6 +211,12 @@ export function AccountDetailPage() {
           <p className="text-xs text-muted-foreground">Penalty Rate</p>
           <p className="text-sm font-medium">{account.penalty_rate}%</p>
         </div>
+        {(account.rebate_rate ?? 0) > 0 && (
+          <div>
+            <p className="text-xs text-muted-foreground">Rebate Rate</p>
+            <p className="text-sm font-medium text-green-600">{account.rebate_rate}% of interest</p>
+          </div>
+        )}
         <div>
           <p className="text-xs text-muted-foreground">Type</p>
           <p className="text-sm font-medium">

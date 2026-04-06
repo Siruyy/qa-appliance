@@ -85,6 +85,7 @@ pub fn get_accounts(
                     SELECT 1 FROM payment_schedules ps
                     WHERE ps.account_id = ia.id AND ps.status = 'overdue'
                 ) THEN 1 ELSE 0 END AS is_overdue,
+                ia.rebate_rate,
                 ia.notes, ia.created_at, ia.updated_at
          FROM installment_accounts ia
          JOIN customers c ON c.id = ia.customer_id
@@ -120,9 +121,10 @@ pub fn get_accounts(
             last_penalty_date: row.get(15)?,
             next_due_date: row.get(16)?,
             is_overdue: row.get(17)?,
-            notes: row.get(18)?,
-            created_at: row.get(19)?,
-            updated_at: row.get(20)?,
+            rebate_rate: row.get(18)?,
+            notes: row.get(19)?,
+            created_at: row.get(20)?,
+            updated_at: row.get(21)?,
         })
     })
 }
@@ -148,6 +150,7 @@ pub fn get_account_by_id(db: State<DbState>, id: i64) -> Result<AccountDetail, S
                         SELECT 1 FROM payment_schedules ps
                         WHERE ps.account_id = ia.id AND ps.status = 'overdue'
                     ) THEN 1 ELSE 0 END AS is_overdue,
+                    ia.rebate_rate,
                     ia.notes, ia.created_at, ia.updated_at
              FROM installment_accounts ia
              JOIN customers c ON c.id = ia.customer_id
@@ -178,9 +181,10 @@ pub fn get_account_by_id(db: State<DbState>, id: i64) -> Result<AccountDetail, S
                     last_penalty_date: row.get(15)?,
                     next_due_date: row.get(16)?,
                     is_overdue: row.get(17)?,
-                    notes: row.get(18)?,
-                    created_at: row.get(19)?,
-                    updated_at: row.get(20)?,
+                    rebate_rate: row.get(18)?,
+                    notes: row.get(19)?,
+                    created_at: row.get(20)?,
+                    updated_at: row.get(21)?,
                     schedule: Vec::new(),
                     payments: Vec::new(),
                 })
@@ -362,8 +366,18 @@ pub fn recalculate_balance(db: State<DbState>, account_id: i64) -> Result<f64, S
         )
         .unwrap_or(0.0);
 
-    // balance = total_payable - all payments (including down_payment) + all penalties
-    let new_balance = total_payable - total_payments + total_penalties;
+    // Sum rebates (stored as negative amounts — credit to customer)
+    let total_rebates: f64 = conn
+        .query_row(
+            "SELECT COALESCE(SUM(ABS(amount)), 0) FROM payments
+             WHERE account_id = ?1 AND type = 'rebate'",
+            rusqlite::params![account_id],
+            |row| row.get(0),
+        )
+        .unwrap_or(0.0);
+
+    // balance = total_payable - payments - rebates + penalties
+    let new_balance = total_payable - total_payments - total_rebates + total_penalties;
     let new_balance = (new_balance * 100.0).round() / 100.0;
     let new_balance = if new_balance < 0.0 { 0.0 } else { new_balance };
 

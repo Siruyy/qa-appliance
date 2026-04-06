@@ -10,6 +10,8 @@ export interface AppSettings extends Record<string, string> {
   currency_symbol: string;
   preset_terms: string;
   receipt_footer: string;
+  rebate_enabled: string;
+  default_rebate_rate: string;
 }
 
 /** Known setting key names for type-safe access. */
@@ -25,6 +27,8 @@ export interface TypedSettings {
   low_stock_threshold: number;
   default_installment_term: number;
   receipt_footer: string;
+  rebate_enabled: boolean;
+  default_rebate_rate: number;
 }
 
 /** Parse raw string settings into typed settings */
@@ -38,5 +42,7 @@ export function parseSettings(raw: AppSettings): TypedSettings {
     low_stock_threshold: parseInt(raw.low_stock_threshold, 10) || 5,
     default_installment_term: parseInt(raw.default_term_months, 10) || 6,
     receipt_footer: raw.receipt_footer ?? '',
+    rebate_enabled: raw.rebate_enabled === '1',
+    default_rebate_rate: parseFloat(raw.default_rebate_rate) || 0,
   };
 }

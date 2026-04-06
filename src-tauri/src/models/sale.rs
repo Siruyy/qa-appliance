@@ -7,6 +7,8 @@ pub struct Sale {
     pub sale_date: String,
     pub subtotal: f64,
     pub discount: f64,
+    pub discount_type: String,
+    pub discount_value: f64,
     pub total: f64,
     pub payment_type: String,
     pub status: String,
@@ -24,6 +26,9 @@ pub struct SaleItem {
     pub unit_price: f64,
     pub subtotal: f64,
     pub cost_price_snapshot: f64,
+    pub item_discount: f64,
+    pub item_discount_type: String,
+    pub item_discount_value: f64,
     pub created_at: String,
     pub product_name: Option<String>,
     pub variant_label: Option<String>,
@@ -55,6 +60,10 @@ pub struct CreateSalePayload {
     pub customer_id: Option<i64>,
     pub payment_type: String,
     pub discount: f64,
+    #[serde(default = "default_peso")]
+    pub discount_type: String,
+    #[serde(default)]
+    pub discount_value: f64,
     pub notes: Option<String>,
     pub items: Vec<CreateSaleItemPayload>,
     pub installment: Option<CreateInstallmentPayload>,
@@ -65,6 +74,12 @@ pub struct CreateSaleItemPayload {
     pub variant_id: i64,
     pub quantity: i64,
     pub unit_price: f64,
+    #[serde(default)]
+    pub item_discount: f64,
+    #[serde(default = "default_peso")]
+    pub item_discount_type: String,
+    #[serde(default)]
+    pub item_discount_value: f64,
 }
 
 #[derive(Debug, Deserialize)]
@@ -74,4 +89,10 @@ pub struct CreateInstallmentPayload {
     pub penalty_rate: f64,
     pub term_months: Option<i64>,
     pub start_date: Option<String>,
+    #[serde(default)]
+    pub rebate_rate: f64,
+}
+
+fn default_peso() -> String {
+    "peso".to_string()
 }
