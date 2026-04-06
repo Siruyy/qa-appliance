@@ -1,7 +1,7 @@
 import { extractErrorMessage } from "@/lib/error";
 import { useEffect, useState, useCallback } from "react";
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
-import { ArrowLeft, CreditCard, XCircle, NotebookPen, RefreshCw } from "lucide-react";
+import { ArrowLeft, CreditCard, XCircle, NotebookPen, RefreshCw, FileText, FileSpreadsheet } from "lucide-react";
 import { toast } from "sonner";
 
 import { useAccounts } from "@/hooks/useAccounts";
@@ -10,6 +10,8 @@ import { formatDate, formatProductSummary } from "@/lib/formatters";
 import { useCurrency } from "@/hooks/useCurrency";
 import { accountStatusVariant } from "@/lib/badgeVariants";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
+import { useSettingsStore } from "@/stores/settingsStore";
+import { toInstallmentPlan, toStatementOfAccount } from "@/lib/export";
 
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -37,6 +39,7 @@ export function AccountDetailPage() {
   const [searchParams] = useSearchParams();
   const { getAccountById, markAccountDefaulted, updateAccountNotes, recalculateBalance } = useAccounts();
   const { format: formatCurrency } = useCurrency();
+  const settings = useSettingsStore((s) => s.settings);
 
   const [account, setAccount] = useState<AccountDetail | null>(null);
   const [loading, setLoading] = useState(true);
@@ -45,6 +48,8 @@ export function AccountDetailPage() {
   const [editingNotes, setEditingNotes] = useState(false);
   const [notes, setNotes] = useState("");
   const [recalculating, setRecalculating] = useState(false);
+  const [exportingPlan, setExportingPlan] = useState(false);
+  const [exportingSoa, setExportingSoa] = useState(false);
 
   const loadAccount = useCallback(async () => {
     if (!id) return;
@@ -84,6 +89,38 @@ export function AccountDetailPage() {
       toast.error(`Recalculate failed: ${extractErrorMessage(err)}`);
     } finally {
       setRecalculating(false);
+    }
+  };
+
+  const handlePrintPlan = async () => {
+    if (!account) return;
+    setExportingPlan(true);
+    try {
+      await toInstallmentPlan(account, {
+        name: settings.store_name,
+        address: settings.store_address,
+        phone: settings.store_phone,
+      });
+    } catch (err) {
+      toast.error(`Export failed: ${extractErrorMessage(err)}`);
+    } finally {
+      setExportingPlan(false);
+    }
+  };
+
+  const handleExportSoa = async () => {
+    if (!account) return;
+    setExportingSoa(true);
+    try {
+      await toStatementOfAccount(account, {
+        name: settings.store_name,
+        address: settings.store_address,
+        phone: settings.store_phone,
+      });
+    } catch (err) {
+      toast.error(`Export failed: ${extractErrorMessage(err)}`);
+    } finally {
+      setExportingSoa(false);
     }
   };
 
@@ -155,6 +192,26 @@ export function AccountDetailPage() {
           </div>
         </div>
         <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handlePrintPlan}
+            disabled={exportingPlan}
+            title="Save installment plan as PDF"
+          >
+            <FileText className={`mr-2 h-4 w-4 ${exportingPlan ? "animate-pulse" : ""}`} />
+            {exportingPlan ? "Saving…" : "Print Plan"}
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleExportSoa}
+            disabled={exportingSoa}
+            title="Export statement of account as PDF"
+          >
+            <FileSpreadsheet className={`mr-2 h-4 w-4 ${exportingSoa ? "animate-pulse" : ""}`} />
+            {exportingSoa ? "Saving…" : "Export SOA"}
+          </Button>
           {account.status === "open" && (
             <>
               <Button onClick={() => setShowPaymentModal(true)}>

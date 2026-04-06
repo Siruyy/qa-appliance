@@ -80,6 +80,9 @@ export interface ExportSale {
   customer_name: string;
   items_summary: string;
   total_amount: number;
+  discount_type: string;
+  discount_value: number;
+  discount: number;
   payment_type: PaymentType;
   down_payment: number | null;
   status: SaleStatus;
@@ -93,6 +96,7 @@ export interface ExportAccount {
   balance_remaining: number;
   interest_rate: number;
   penalty_rate: number;
+  rebate_rate: number;
   term_months: number | null;
   has_schedule: boolean;
   status: AccountStatus;

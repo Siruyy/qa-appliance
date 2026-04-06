@@ -23,9 +23,11 @@ import { useCurrency } from "@/hooks/useCurrency";
 import { paymentTypeVariant, saleStatusVariant } from "@/lib/badgeVariants";
 import type { SaleDetail } from "@/types/sale";
 import { useSales } from "@/hooks/useSales";
-import { Loader2 } from "lucide-react";
+import { FileDown, Loader2 } from "lucide-react";
 import { SaleReceipt } from "@/components/SaleReceipt";
 import { useSettingsStore } from "@/stores/settingsStore";
+import { toast } from "sonner";
+import { toSaleReceiptPdf } from "@/lib/export";
 
 interface SaleDetailModalProps {
   open: boolean;
@@ -40,7 +42,9 @@ export function SaleDetailModal({ open, onOpenChange, saleId, onVoided }: SaleDe
   const [loading, setLoading] = useState(false);
   const [voiding, setVoiding] = useState(false);
   const [showVoidConfirm, setShowVoidConfirm] = useState(false);
-  const storeName = useSettingsStore((s) => s.settings.store_name);
+  const [savingPdf, setSavingPdf] = useState(false);
+  const settings = useSettingsStore((s) => s.settings);
+  const storeName = settings.store_name;
 
   const load = useCallback(async () => {
     if (!saleId) return;
@@ -66,6 +70,23 @@ export function SaleDetailModal({ open, onOpenChange, saleId, onVoided }: SaleDe
     if (ok) {
       onOpenChange(false);
       onVoided();
+    }
+  };
+
+  const handleSavePdf = async () => {
+    if (!detail) return;
+    setSavingPdf(true);
+    try {
+      await toSaleReceiptPdf(detail, {
+        name: settings.store_name,
+        address: settings.store_address,
+        phone: settings.store_phone,
+        footer: settings.receipt_footer,
+      });
+    } catch (err) {
+      toast.error(`PDF export failed: ${String(err)}`);
+    } finally {
+      setSavingPdf(false);
     }
   };
 
@@ -226,6 +247,19 @@ export function SaleDetailModal({ open, onOpenChange, saleId, onVoided }: SaleDe
             <Separator />
             <div className="flex items-center gap-2 flex-wrap">
               <SaleReceipt detail={detail} storeName={storeName} />
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleSavePdf}
+                disabled={savingPdf}
+                title="Save receipt as PDF file"
+              >
+                {savingPdf ? (
+                  <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Saving…</>
+                ) : (
+                  <><FileDown className="mr-2 h-4 w-4" /> Save PDF</>
+                )}
+              </Button>
               {sale.status === "completed" && (
                 <Button
                   variant="destructive"

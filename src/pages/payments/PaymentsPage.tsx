@@ -1,6 +1,6 @@
 import { useEffect, useCallback, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { CreditCard, Search, Download, Banknote, Loader2 } from "lucide-react";
+import { CreditCard, Search, Download, Banknote, Loader2, ChevronDown, FileSpreadsheet } from "lucide-react";
 
 import { usePayments } from "@/hooks/usePayments";
 import { EmptyState } from "@/components/EmptyState";
@@ -29,8 +29,14 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Button } from "@/components/ui/button";
 import { downloadCsv } from "@/lib/csv";
+import { toExcel } from "@/lib/export";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 export function PaymentsPage() {
   const navigate = useNavigate();
@@ -76,23 +82,48 @@ export function PaymentsPage() {
             <p className="text-sm text-muted-foreground">All recorded payments across accounts</p>
           </div>
         </div>
-        <Button variant="outline" className="gap-2" disabled={isExporting} onClick={async () => {
-          setIsExporting(true);
-          try {
-            downloadCsv(payments, "payments", [
-              { key: "payment_date", label: "Date" },
-              { key: "customer_name", label: "Customer" },
-              { key: "amount", label: "Amount" },
-              { key: "type", label: "Type" },
-              { key: "product_summary", label: "Products" },
-            ]);
-          } finally {
-            setIsExporting(false);
-          }
-        }}>
-          {isExporting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
-          CSV
-        </Button>
+        <DropdownMenu>
+          <DropdownMenuTrigger className="inline-flex items-center gap-2 rounded-md border border-input bg-background px-3 h-9 text-sm font-medium hover:bg-accent hover:text-accent-foreground disabled:opacity-50">
+            {isExporting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
+            Export
+            <ChevronDown className="h-3 w-3" />
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={async () => {
+              setIsExporting(true);
+              try {
+                downloadCsv(payments, "payments", [
+                  { key: "payment_date", label: "Date" },
+                  { key: "customer_name", label: "Customer" },
+                  { key: "amount", label: "Amount" },
+                  { key: "type", label: "Type" },
+                  { key: "product_summary", label: "Products" },
+                ]);
+              } finally { setIsExporting(false); }
+            }}>
+              <Download className="mr-2 h-4 w-4" /> CSV
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={async () => {
+              setIsExporting(true);
+              try {
+                await toExcel({
+                  filename: "payments",
+                  sheetName: "Payments",
+                  headers: ["Date", "Customer", "Amount", "Type", "Products"],
+                  rows: payments.map((p) => [
+                    p.payment_date,
+                    p.customer_name,
+                    p.amount,
+                    p.type,
+                    p.product_summary,
+                  ]),
+                });
+              } finally { setIsExporting(false); }
+            }}>
+              <FileSpreadsheet className="mr-2 h-4 w-4" /> Excel
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
 
       {/* Filters */}

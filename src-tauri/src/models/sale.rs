@@ -74,6 +74,7 @@ pub struct CreateSaleItemPayload {
     pub variant_id: i64,
     pub quantity: i64,
     pub unit_price: f64,
+    #[allow(dead_code)]
     #[serde(default)]
     pub item_discount: f64,
     #[serde(default = "default_peso")]

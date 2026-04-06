@@ -98,7 +98,8 @@ fn query_sales(db: &rusqlite::Connection) -> Result<Vec<ExportSale>, String> {
         "SELECT s.id, s.sale_date,
                 COALESCE(cu.name, 'Walk-in') AS customer_name,
                 GROUP_CONCAT(p.name || ' - ' || COALESCE(pv.sku, 'N/A'), ', ') AS items_summary,
-                s.total, s.payment_type,
+                s.total, s.discount_type, s.discount_value, s.discount,
+                s.payment_type,
                 (SELECT ia.down_payment FROM installment_accounts ia WHERE ia.sale_id = s.id LIMIT 1),
                 s.status
          FROM sales s
@@ -117,9 +118,12 @@ fn query_sales(db: &rusqlite::Connection) -> Result<Vec<ExportSale>, String> {
             customer_name: row.get(2)?,
             items_summary: row.get::<_, Option<String>>(3)?.unwrap_or_default(),
             total_amount: row.get(4)?,
-            payment_type: row.get(5)?,
-            down_payment: row.get(6)?,
-            status: row.get(7)?,
+            discount_type: row.get::<_, Option<String>>(5)?.unwrap_or_else(|| "peso".to_string()),
+            discount_value: row.get::<_, Option<f64>>(6)?.unwrap_or(0.0),
+            discount: row.get::<_, Option<f64>>(7)?.unwrap_or(0.0),
+            payment_type: row.get(8)?,
+            down_payment: row.get(9)?,
+            status: row.get(10)?,
         })
     }).map_err(|e| e.to_string())?;
 
@@ -131,7 +135,7 @@ fn query_accounts(db: &rusqlite::Connection) -> Result<Vec<ExportAccount>, Strin
         "SELECT ia.id, cu.name AS customer_name,
                 GROUP_CONCAT(p.name || ' - ' || COALESCE(pv.sku, 'N/A'), ', ') AS product_summary,
                 ia.principal, ia.balance_remaining, ia.interest_rate, ia.penalty_rate,
-                ia.term_months, ia.has_schedule, ia.status, ia.created_at
+                ia.rebate_rate, ia.term_months, ia.has_schedule, ia.status, ia.created_at
          FROM installment_accounts ia
          JOIN customers cu ON ia.customer_id = cu.id
          JOIN sales s ON ia.sale_id = s.id
@@ -143,7 +147,7 @@ fn query_accounts(db: &rusqlite::Connection) -> Result<Vec<ExportAccount>, Strin
     ).map_err(|e| e.to_string())?;
 
     let rows = stmt.query_map(params![], |row| {
-        let has_schedule_int: i64 = row.get(8)?;
+        let has_schedule_int: i64 = row.get(9)?;
         Ok(ExportAccount {
             id: row.get(0)?,
             customer_name: row.get(1)?,
@@ -152,10 +156,11 @@ fn query_accounts(db: &rusqlite::Connection) -> Result<Vec<ExportAccount>, Strin
             balance_remaining: row.get(4)?,
             interest_rate: row.get(5)?,
             penalty_rate: row.get(6)?,
-            term_months: row.get(7)?,
+            rebate_rate: row.get::<_, Option<f64>>(7)?.unwrap_or(0.0),
+            term_months: row.get(8)?,
             has_schedule: has_schedule_int != 0,
-            status: row.get(9)?,
-            created_at: row.get(10)?,
+            status: row.get(10)?,
+            created_at: row.get(11)?,
         })
     }).map_err(|e| e.to_string())?;
 

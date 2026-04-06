@@ -11,6 +11,8 @@ import {
   CreditCard,
   XCircle,
   Download,
+  ChevronDown,
+  FileSpreadsheet,
 } from "lucide-react";
 
 import { useAccounts } from "@/hooks/useAccounts";
@@ -20,7 +22,6 @@ import { useCurrency } from "@/hooks/useCurrency";
 import { accountStatusVariant } from "@/lib/badgeVariants";
 
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
   Select,
@@ -45,6 +46,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { TableSkeleton } from "@/components/TableSkeleton";
 import { downloadCsv } from "@/lib/csv";
+import { toExcel } from "@/lib/export";
 
 export function AccountsPage() {
   const navigate = useNavigate();
@@ -92,19 +94,40 @@ export function AccountsPage() {
         title="Accounts / Receivables"
         description="Track all open installment accounts."
         actions={
-          <Button variant="outline" className="gap-2" onClick={() => {
-            downloadCsv(accounts, "accounts", [
-              { key: "customer_name", label: "Customer" },
-              { key: "type", label: "Type" },
-              { key: "total_payable", label: "Total Payable" },
-              { key: "balance_remaining", label: "Balance" },
-              { key: "status", label: "Status" },
-              { key: "start_date", label: "Start Date" },
-            ]);
-          }}>
-            <Download className="h-4 w-4" />
-            CSV
-          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger className="inline-flex items-center gap-2 rounded-md border border-input bg-background px-3 h-9 text-sm font-medium hover:bg-accent hover:text-accent-foreground">
+              <Download className="h-4 w-4" />
+              Export
+              <ChevronDown className="h-3 w-3" />
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => downloadCsv(accounts, "accounts", [
+                { key: "customer_name", label: "Customer" },
+                { key: "product_summary", label: "Products" },
+                { key: "principal", label: "Principal" },
+                { key: "balance_remaining", label: "Balance" },
+                { key: "status", label: "Status" },
+                { key: "start_date", label: "Start Date" },
+              ])}>
+                <Download className="mr-2 h-4 w-4" /> CSV
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => toExcel({
+                filename: "accounts",
+                sheetName: "Accounts",
+                headers: ["Customer", "Products", "Principal", "Balance", "Status", "Start Date"],
+                rows: accounts.map((a) => [
+                  a.customer_name,
+                  a.product_summary,
+                  a.principal,
+                  a.balance_remaining,
+                  a.status,
+                  a.start_date ?? "",
+                ]),
+              })}>
+                <FileSpreadsheet className="mr-2 h-4 w-4" /> Excel
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         }
       />
 

@@ -2,7 +2,7 @@ import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { PageHeader } from "@/components/PageHeader";
 import { Pagination } from "@/components/Pagination";
-import { Plus, Search, X, ReceiptText, Download } from "lucide-react";
+import { Plus, Search, X, ReceiptText, Download, ChevronDown, FileSpreadsheet } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -33,6 +33,13 @@ import { SaleDetailModal } from "./SaleDetailModal";
 import { EmptyState } from "@/components/EmptyState";
 import { TableSkeleton } from "@/components/TableSkeleton";
 import { downloadCsv } from "@/lib/csv";
+import { toExcel } from "@/lib/export";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 export function SalesHistoryPage() {
   const navigate = useNavigate();
@@ -68,19 +75,40 @@ export function SalesHistoryPage() {
         description="View and manage past sales transactions."
         actions={
           <div className="flex gap-2">
-            <Button variant="outline" className="gap-2" onClick={() => {
-              downloadCsv(sales, "sales-history", [
-                { key: "sale_date", label: "Date" },
-                { key: "customer_name", label: "Customer" },
-                { key: "items_summary", label: "Items" },
-                { key: "total", label: "Total" },
-                { key: "payment_type", label: "Type" },
-                { key: "status", label: "Status" },
-              ]);
-            }}>
-              <Download className="h-4 w-4" />
-              CSV
-            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger className="inline-flex items-center gap-2 rounded-md border border-input bg-background px-3 h-9 text-sm font-medium hover:bg-accent hover:text-accent-foreground">
+                <Download className="h-4 w-4" />
+                Export
+                <ChevronDown className="h-3 w-3" />
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => downloadCsv(sales, "sales-history", [
+                  { key: "sale_date", label: "Date" },
+                  { key: "customer_name", label: "Customer" },
+                  { key: "total", label: "Total" },
+                  { key: "payment_type", label: "Type" },
+                  { key: "status", label: "Status" },
+                  { key: "notes", label: "Notes" },
+                ])}>
+                  <Download className="mr-2 h-4 w-4" /> CSV
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => toExcel({
+                  filename: "sales-history",
+                  sheetName: "Sales",
+                  headers: ["Date", "Customer", "Total", "Type", "Status", "Notes"],
+                  rows: sales.map((s) => [
+                    s.sale_date,
+                    s.customer_name ?? "",
+                    s.total,
+                    s.payment_type,
+                    s.status,
+                    s.notes ?? "",
+                  ]),
+                })}>
+                  <FileSpreadsheet className="mr-2 h-4 w-4" /> Excel
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
             <Button onClick={() => navigate("/sales/new")} className="gap-2">
               <Plus className="h-4 w-4" />
               New Sale

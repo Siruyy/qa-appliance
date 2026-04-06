@@ -14,6 +14,8 @@ import {
   Eye,
   Download,
   Loader2,
+  ChevronDown,
+  FileSpreadsheet,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -60,6 +62,7 @@ import {
 
 import { CustomerFormModal } from "./CustomerFormModal";
 import { downloadCsv } from "@/lib/csv";
+import { toExcel } from "@/lib/export";
 
 type ModalState =
   | { type: "none" }
@@ -144,22 +147,48 @@ export function CustomersPage() {
         description="Customer profiles, contact info, and linked accounts."
         actions={
           <div className="flex gap-2">
-            <Button variant="outline" disabled={isExporting} onClick={async () => {
-              setIsExporting(true);
-              try {
-                downloadCsv(customers, "customers", [
-                  { key: "name", label: "Name" },
-                  { key: "phone", label: "Phone" },
-                  { key: "email", label: "Email" },
-                  { key: "address", label: "Address" },
-                  { key: "is_active", label: "Active" },
-                ]);
-              } finally {
-                setIsExporting(false);
-              }
-            }}>
-              {isExporting ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : <Download className="mr-1 h-4 w-4" />} CSV
-            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger className="inline-flex items-center gap-2 rounded-md border border-input bg-background px-3 h-9 text-sm font-medium hover:bg-accent hover:text-accent-foreground disabled:opacity-50">
+                {isExporting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="mr-1 h-4 w-4" />}
+                Export
+                <ChevronDown className="h-3 w-3" />
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={async () => {
+                  setIsExporting(true);
+                  try {
+                    downloadCsv(customers, "customers", [
+                      { key: "name", label: "Name" },
+                      { key: "phone", label: "Phone" },
+                      { key: "address", label: "Address" },
+                      { key: "notes", label: "Notes" },
+                      { key: "is_active", label: "Active" },
+                    ]);
+                  } finally { setIsExporting(false); }
+                }}>
+                  <Download className="mr-2 h-4 w-4" /> CSV
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={async () => {
+                  setIsExporting(true);
+                  try {
+                    await toExcel({
+                      filename: "customers",
+                      sheetName: "Customers",
+                      headers: ["Name", "Phone", "Address", "Notes", "Active"],
+                      rows: customers.map((c) => [
+                        c.name,
+                        c.phone ?? "",
+                        c.address ?? "",
+                        c.notes ?? "",
+                        c.is_active ? "Yes" : "No",
+                      ]),
+                    });
+                  } finally { setIsExporting(false); }
+                }}>
+                  <FileSpreadsheet className="mr-2 h-4 w-4" /> Excel
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
             <Button onClick={() => setModal({ type: "form" })}>
               <Plus className="mr-1 h-4 w-4" /> Add Customer
             </Button>

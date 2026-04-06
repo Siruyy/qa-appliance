@@ -11,6 +11,7 @@ import {
   CreditCard,
   ShoppingCart,
   Banknote,
+  FileText,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -20,6 +21,8 @@ import { useCurrency } from "@/hooks/useCurrency";
 import { saleStatusVariant, paymentTypeVariant } from "@/lib/badgeVariants";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
 import type { CustomerDetail } from "@/types/customer";
+import { useSettingsStore } from "@/stores/settingsStore";
+import { toCustomerStatement } from "@/lib/export";
 
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -86,6 +89,7 @@ export function CustomerDetailPage() {
   }
 
   const { customer, sales, accounts, payments } = detail;
+  const settings = useSettingsStore((s) => s.settings);
 
   const handleArchive = async () => {
     try {
@@ -104,6 +108,18 @@ export function CustomerDetailPage() {
       await fetchDetail();
     } catch (error) {
       toast.error(error as string);
+    }
+  };
+
+  const handleExportStatement = async () => {
+    try {
+      await toCustomerStatement(detail, {
+        name: settings.store_name,
+        address: settings.store_address,
+        phone: settings.store_phone,
+      });
+    } catch (err) {
+      toast.error(`Export failed: ${String(err)}`);
     }
   };
 
@@ -134,6 +150,9 @@ export function CustomerDetailPage() {
           </div>
         </div>
         <div className="flex gap-2">
+          <Button variant="outline" size="sm" onClick={handleExportStatement}>
+            <FileText className="mr-1 h-4 w-4" /> Export Statement
+          </Button>
           <Button variant="outline" size="sm" onClick={() => setEditing(true)}>
             <Pencil className="mr-1 h-4 w-4" /> Edit
           </Button>
