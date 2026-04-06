@@ -35,6 +35,8 @@ import { ChartTooltip, gridStyle, axisTickStyle, barRadius, animationProps } fro
 import { Skeleton } from "@/components/ui/skeleton";
 import { ShoppingCart, TrendingUp, Wallet, AlertTriangle, BarChart3, Banknote, Receipt, CalendarClock } from "lucide-react";
 import { EmptyState } from "@/components/EmptyState";
+import { HelpTip } from "@/components/help/HelpTip";
+import { FirstTimeHint } from "@/components/help/FirstTimeHint";
 
 export function DashboardPage() {
   const { fetchDashboard } = useDashboard();
@@ -100,6 +102,8 @@ export function DashboardPage() {
 
   return (
     <div className="space-y-6">
+      <FirstTimeHint />
+
       {/* Alerts */}
       {(data.overdue_accounts_count > 0 || data.low_stock_count > 0) && (
         <div className="flex flex-wrap gap-2">
@@ -168,7 +172,7 @@ export function DashboardPage() {
 
       {/* Charts */}
       <div className="flex items-center justify-between">
-        <h2 className="text-sm font-semibold">Charts</h2>
+        <h2 className="text-sm font-semibold">Charts <HelpTip text="Visual trends of your daily sales revenue and payment collections. Change the time range with the buttons on the right." /></h2>
         <div className="flex gap-1">
           {[7, 30, 60, 90].map((d) => (
             <Button
@@ -315,7 +319,7 @@ export function DashboardPage() {
         {/* Recent Sales */}
         <Card>
           <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle className="text-sm">Recent Sales</CardTitle>
+            <CardTitle className="text-sm">Recent Sales <HelpTip text="The 5 most recent sales transactions. Click 'View all' to see the full sales history." /></CardTitle>
             <Button
               variant="ghost"
               size="sm"
@@ -367,7 +371,7 @@ export function DashboardPage() {
         {/* Upcoming Due */}
         <Card>
           <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle className="text-sm">Upcoming Payments Due</CardTitle>
+            <CardTitle className="text-sm">Upcoming Payments Due <HelpTip text="Installment payments coming due soon. Red rows are already overdue." /></CardTitle>
             <Button
               variant="ghost"
               size="sm"
