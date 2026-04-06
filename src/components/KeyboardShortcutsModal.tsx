@@ -15,6 +15,8 @@ const shortcuts = [
   { keys: ["Ctrl", "K"], description: "Search / command palette" },
   { keys: ["Ctrl", "N"], description: "New Sale" },
   { keys: ["Ctrl", ","], description: "Open Settings" },
+  { keys: ["Ctrl", "/"], description: "Open Help Center" },
+  { keys: ["F1"], description: "Open Help Center" },
   { keys: ["?"], description: "Show this help overlay" },
 ];
 

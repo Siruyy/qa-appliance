@@ -7,6 +7,12 @@ interface UIState {
   toggleSidebar: () => void;
   theme: Theme;
   setTheme: (theme: Theme) => void;
+  /** Page help sheet (right slide-out) */
+  helpSheetOpen: boolean;
+  setHelpSheetOpen: (open: boolean) => void;
+  /** Global help center dialog */
+  helpCenterOpen: boolean;
+  setHelpCenterOpen: (open: boolean) => void;
 }
 
 function getInitialTheme(): Theme {
@@ -37,4 +43,8 @@ export const useUIStore = create<UIState>((set) => ({
     try { localStorage.setItem("theme", theme); } catch {}
     set({ theme });
   },
+  helpSheetOpen: false,
+  setHelpSheetOpen: (open) => set({ helpSheetOpen: open }),
+  helpCenterOpen: false,
+  setHelpCenterOpen: (open) => set({ helpCenterOpen: open }),
 }));

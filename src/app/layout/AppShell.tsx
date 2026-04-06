@@ -10,6 +10,9 @@ import { Sidebar } from "./Sidebar";
 import { TopBar } from "./TopBar";
 import { KeyboardShortcutsModal } from "@/components/KeyboardShortcutsModal";
 import { CommandPalette } from "@/components/CommandPalette";
+import { HelpFAB } from "@/components/help/HelpFAB";
+import { HelpCenterDialog } from "@/components/help/HelpCenterDialog";
+import { PageHelpSheet } from "@/components/help/PageHelpSheet";
 
 interface AppShellProps {
   children: React.ReactNode;
@@ -20,6 +23,7 @@ export function AppShell({ children }: AppShellProps) {
   const loadSettings = useSettingsStore((s) => s.loadSettings);
   const theme = useUIStore((s) => s.theme);
   const navigate = useNavigate();
+  const setHelpCenterOpen = useUIStore((s) => s.setHelpCenterOpen);
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
   const [commandOpen, setCommandOpen] = useState(false);
 
@@ -77,9 +81,12 @@ export function AppShell({ children }: AppShellProps) {
       } else if (e.key === "?" && !isInput) {
         e.preventDefault();
         setShortcutsOpen((o) => !o);
+      } else if ((ctrl && e.key === "/") || e.key === "F1") {
+        e.preventDefault();
+        setHelpCenterOpen(true);
       }
     },
-    [navigate]
+    [navigate, setHelpCenterOpen]
   );
 
   useEffect(() => {
@@ -98,6 +105,9 @@ export function AppShell({ children }: AppShellProps) {
       </div>
       <KeyboardShortcutsModal open={shortcutsOpen} onOpenChange={setShortcutsOpen} />
       <CommandPalette open={commandOpen} onOpenChange={setCommandOpen} />
+      <PageHelpSheet />
+      <HelpCenterDialog />
+      <HelpFAB />
     </div>
   );
 }
