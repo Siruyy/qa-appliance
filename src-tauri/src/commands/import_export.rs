@@ -937,28 +937,80 @@ pub fn get_import_template_columns(import_type: String) -> Result<Vec<String>, S
 
 #[tauri::command]
 pub fn generate_import_template(import_type: String, file_path: String) -> Result<(), String> {
-    use rust_xlsxwriter::{Workbook, Format};
+    use rust_xlsxwriter::{Workbook, Format, Color};
 
     let columns = get_import_template_columns(import_type.clone())?;
+    let example = get_import_example_row(&import_type)?;
 
     let mut workbook = Workbook::new();
     let worksheet = workbook.add_worksheet();
     worksheet.set_name(&import_type).map_err(|e| e.to_string())?;
 
-    // Bold header format
     let header_fmt = Format::new().set_bold();
+    let example_fmt = Format::new()
+        .set_font_color(Color::RGB(0x6B7280))
+        .set_italic();
 
     for (col, name) in columns.iter().enumerate() {
         worksheet
             .write_string_with_format(0, col as u16, name, &header_fmt)
             .map_err(|e| e.to_string())?;
-        // Auto-width: at least column name length + padding
-        let width = (name.len() as f64).max(12.0) + 2.0;
+
+        // Example row
+        if col < example.len() {
+            worksheet
+                .write_string_with_format(1, col as u16, &example[col], &example_fmt)
+                .map_err(|e| e.to_string())?;
+        }
+
+        // Column width based on longest of header or example value
+        let ex_len = if col < example.len() { example[col].len() as f64 } else { 0.0 };
+        let width = (name.len() as f64).max(ex_len).max(12.0) + 2.0;
         worksheet.set_column_width(col as u16, width).map_err(|e| e.to_string())?;
     }
 
     workbook.save(&file_path).map_err(|e| format!("Failed to save template: {}", e))?;
     Ok(())
+}
+
+fn get_import_example_row(import_type: &str) -> Result<Vec<String>, String> {
+    let row: Vec<&str> = match import_type {
+        "products" => vec![
+            "Refrigerators",     // category
+            "Samsung Inverter",  // product_name
+            "Samsung",           // brand
+            "RT35CG5444",        // model
+            "Digital Inverter Refrigerator", // description
+            "Silver",            // variant_color
+            "350L",              // variant_size
+            "REF-SAM-001",       // sku
+            "18500",             // cost_price
+            "24990",             // selling_price
+            "5",                 // stock_qty
+            "2",                 // low_stock_threshold
+        ],
+        "customers" => vec![
+            "Juan Dela Cruz",    // name
+            "09171234567",       // phone
+            "123 Rizal St, Quezon City", // address
+            "Regular customer",  // notes
+        ],
+        "balances" => vec![
+            "Juan Dela Cruz",    // customer_name
+            "09171234567",       // customer_phone
+            "Samsung Inverter Ref - Silver 350L", // product_description
+            "24990",             // original_amount
+            "18500",             // balance_remaining
+            "3.5",               // interest_rate (%)
+            "5",                 // penalty_rate (%)
+            "12",                // term_months
+            "2200",              // monthly_amount
+            "2025-01-15",        // start_date
+            "Transferred from old ledger", // notes
+        ],
+        _ => return Err(format!("Unknown import type: {}", import_type)),
+    };
+    Ok(row.into_iter().map(|s| s.to_string()).collect())
 }
 
 // ── Undo Import ─────────────────────────────────────
