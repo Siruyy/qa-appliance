@@ -69,6 +69,7 @@ pub fn get_stock_movements(
 }
 
 /// Insert a stock movement record (called internally from other commands)
+#[allow(dead_code)]
 pub fn insert_stock_movement(
     conn: &rusqlite::Connection,
     variant_id: i64,

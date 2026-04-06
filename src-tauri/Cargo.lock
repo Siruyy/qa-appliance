@@ -2907,7 +2907,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "quality-appliance"
+name = "qams"
 version = "0.1.0"
 dependencies = [
  "calamine",

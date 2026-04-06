@@ -89,9 +89,11 @@ export function Sidebar() {
           sidebarCollapsed && "justify-center px-0"
         )}
       >
-        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-[var(--cta)] text-[var(--cta-foreground)] font-bold text-sm">
-          QA
-        </div>
+        <img
+          src="/Logo.png"
+          alt="Quality Appliance Logo"
+          className="h-8 w-8 shrink-0 rounded-md object-cover"
+        />
         {!sidebarCollapsed && (
           <div className="flex flex-col leading-tight">
             <span className="text-sm font-semibold text-[var(--sidebar-accent-foreground)] leading-tight">

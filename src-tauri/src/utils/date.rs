@@ -13,6 +13,7 @@ pub fn today_iso() -> String {
 }
 
 /// Returns the current datetime as "YYYY-MM-DD HH:MM:SS" in PHT (UTC+8).
+#[allow(dead_code)]
 pub fn now_pht_iso() -> String {
     let now = std::time::SystemTime::now()
         .duration_since(std::time::UNIX_EPOCH)
