@@ -178,6 +178,7 @@ export function VariantFormModal({ productId, variant, onClose }: Props) {
                 id="cost-price"
                 type="number"
                 step="0.01"
+                min="0"
                 {...register("cost_price", { valueAsNumber: true })}
               />
               {errors.cost_price && (
@@ -190,6 +191,7 @@ export function VariantFormModal({ productId, variant, onClose }: Props) {
                 id="selling-price"
                 type="number"
                 step="0.01"
+                min="0"
                 {...register("selling_price", { valueAsNumber: true })}
               />
               {errors.selling_price && (

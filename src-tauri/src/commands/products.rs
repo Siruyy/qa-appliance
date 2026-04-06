@@ -628,10 +628,11 @@ pub fn adjust_stock(db: State<'_, DbState>, id: i64, delta: i64) -> Result<Produ
         params!["stock_adjust", "variant", id, format!("Stock adjusted by {} ({}→{})", delta, current_qty, new_qty)],
     );
 
-    let _ = conn.execute(
+    conn.execute(
         "INSERT INTO stock_movements (variant_id, delta, reason, notes) VALUES (?1, ?2, ?3, ?4)",
         params![id, delta, "adjustment", format!("Manual adjustment: {} → {}", current_qty, new_qty)],
-    );
+    )
+    .map_err(|e| format!("Failed to record stock movement: {}", e))?;
 
     conn.query_row(
         "SELECT id, product_id, sku, attributes, cost_price, selling_price,

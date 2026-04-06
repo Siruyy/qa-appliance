@@ -352,7 +352,8 @@ pub fn record_payment(
         )
         .map_err(|e| format!("Failed to fetch created payment: {}", e))?;
 
-    let _ = insert_audit(&tx, "payment_recorded", "payment", Some(payment.id), Some(&format!("₱{:.2} for account #{}", payment.amount, payment.account_id)));
+    insert_audit(&tx, "payment_recorded", "payment", Some(payment.id), Some(&format!("₱{:.2} for account #{}", payment.amount, payment.account_id)))
+        .map_err(|e| format!("Failed to write audit log: {}", e))?;
     tx.commit().map_err(|e| e.to_string())?;
     Ok(RecordPaymentResult { payment, rebate_credited })
 }

@@ -313,11 +313,12 @@ pub fn create_sale(db: State<DbState>, payload: CreateSalePayload) -> Result<i64
         }
 
         // Record stock movement for sale
-        let _ = tx.execute(
+        tx.execute(
             "INSERT INTO stock_movements (variant_id, delta, reason, reference_type, reference_id)
              VALUES (?1, ?2, 'sale', 'sale', ?3)",
             rusqlite::params![item.variant_id, -(item.quantity as i64), sale_id],
-        );
+        )
+        .map_err(|e| format!("Failed to record stock movement: {}", e))?;
     }
 
     // 3. Handle installment account
@@ -363,6 +364,9 @@ pub fn create_sale(db: State<DbState>, payload: CreateSalePayload) -> Result<i64
         // Filipino add-on (flat) interest: total_interest = principal × monthly_rate × term_months
         // interest_rate is stored as a monthly percentage (e.g. 5 = 5%/month)
         let term = inst.term_months.ok_or("Term months required for installment")?;
+        if term < 1 {
+            return Err("Term months must be at least 1".to_string());
+        }
         let monthly_rate = inst.interest_rate / 100.0;
         let total_interest = principal * monthly_rate * term as f64;
         let total_payable = principal + total_interest;
@@ -430,7 +434,8 @@ pub fn create_sale(db: State<DbState>, payload: CreateSalePayload) -> Result<i64
         }
     }
 
-    let _ = insert_audit(&tx, "sale_created", "sale", Some(sale_id), Some(&format!("{} sale, {} items", payload.payment_type, payload.items.len())));
+    insert_audit(&tx, "sale_created", "sale", Some(sale_id), Some(&format!("{} sale, {} items", payload.payment_type, payload.items.len())))
+        .map_err(|e| format!("Failed to write audit log: {}", e))?;
     tx.commit().map_err(|e| e.to_string())?;
     Ok(sale_id)
 }
@@ -491,11 +496,12 @@ pub fn void_sale(db: State<DbState>, id: i64) -> Result<(), String> {
             .filter_map(|r| r.ok())
             .collect();
         for (vid, qty) in items {
-            let _ = tx.execute(
+            tx.execute(
                 "INSERT INTO stock_movements (variant_id, delta, reason, reference_type, reference_id)
                  VALUES (?1, ?2, 'void', 'sale', ?3)",
                 rusqlite::params![vid, qty, id],
-            );
+            )
+            .map_err(|e| format!("Failed to record void stock movement: {}", e))?;
         }
     }
 
@@ -521,7 +527,8 @@ pub fn void_sale(db: State<DbState>, id: i64) -> Result<(), String> {
     )
     .map_err(|e| e.to_string())?;
 
-    let _ = insert_audit(&tx, "sale_voided", "sale", Some(id), None);
+    insert_audit(&tx, "sale_voided", "sale", Some(id), None)
+        .map_err(|e| format!("Failed to write audit log: {}", e))?;
     tx.commit().map_err(|e| e.to_string())?;
     Ok(())
 }

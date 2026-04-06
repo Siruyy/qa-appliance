@@ -259,7 +259,7 @@ pub fn get_overdue_accounts(db: State<DbState>) -> Result<Vec<InstallmentAccount
 
 #[tauri::command]
 pub fn mark_account_paid(db: State<DbState>, id: i64) -> Result<(), String> {
-    let conn = db.0.lock().map_err(|e| e.to_string())?;
+    let mut conn = db.0.lock().map_err(|e| e.to_string())?;
 
     let balance: f64 = conn
         .query_row(
@@ -276,19 +276,24 @@ pub fn mark_account_paid(db: State<DbState>, id: i64) -> Result<(), String> {
         ));
     }
 
-    conn.execute(
+    let tx = conn.transaction().map_err(|e| e.to_string())?;
+
+    tx.execute(
         "UPDATE installment_accounts SET status = 'paid', updated_at = datetime('now') WHERE id = ?1",
         rusqlite::params![id],
     )
     .map_err(|e| e.to_string())?;
 
-    // Mark all remaining schedule entries as paid
-    conn.execute(
+    tx.execute(
         "UPDATE payment_schedules SET status = 'paid' WHERE account_id = ?1 AND status != 'paid'",
         rusqlite::params![id],
     )
     .map_err(|e| e.to_string())?;
 
+    insert_audit(&tx, "account_marked_paid", "installment_account", Some(id), None)
+        .map_err(|e| e.to_string())?;
+
+    tx.commit().map_err(|e| e.to_string())?;
     Ok(())
 }
 
@@ -325,7 +330,8 @@ pub fn run_penalty_check(db: State<DbState>) -> Result<Vec<PenaltyApplied>, Stri
     let tx = conn.transaction().map_err(|e| e.to_string())?;
     let results = penalty::check_and_apply_penalties(&tx)?;
     for p in &results {
-        let _ = insert_audit(&tx, "penalty_applied", "account", Some(p.account_id), Some(&format!("₱{:.2} penalty", p.penalty_amount)));
+        insert_audit(&tx, "penalty_applied", "account", Some(p.account_id), Some(&format!("₱{:.2} penalty", p.penalty_amount)))
+            .map_err(|e| format!("Failed to write audit log: {}", e))?;
     }
     tx.commit().map_err(|e| e.to_string())?;
     Ok(results)
@@ -456,7 +462,7 @@ pub fn restructure_account(
     new_term_months: i64,
     new_monthly_rate: f64,
 ) -> Result<(), String> {
-    let conn = db.0.lock().map_err(|e| e.to_string())?;
+    let mut conn = db.0.lock().map_err(|e| e.to_string())?;
 
     if new_term_months < 1 || new_term_months > 60 {
         return Err("Term must be between 1 and 60 months".to_string());
@@ -465,7 +471,7 @@ pub fn restructure_account(
         return Err("Monthly rate must be between 0 and 20%".to_string());
     }
 
-    // Get current account state
+    // Get current account state (before transaction so we can validate)
     let (balance_remaining, status, _down_payment): (f64, String, f64) = conn
         .query_row(
             "SELECT balance_remaining, status, down_payment FROM installment_accounts WHERE id = ?1",
@@ -483,8 +489,10 @@ pub fn restructure_account(
     let new_total = balance_remaining + new_interest;
     let new_monthly = new_total / new_term_months as f64;
 
+    let tx = conn.transaction().map_err(|e| e.to_string())?;
+
     // Update the account
-    conn.execute(
+    tx.execute(
         "UPDATE installment_accounts SET
             term_months = ?1,
             interest_rate = ?2,
@@ -497,7 +505,7 @@ pub fn restructure_account(
     .map_err(|e| e.to_string())?;
 
     // Delete old pending/overdue schedule entries (preserving paid history)
-    conn.execute(
+    tx.execute(
         "DELETE FROM payment_schedules WHERE account_id = ?1 AND status IN ('pending', 'overdue')",
         rusqlite::params![account_id],
     )
@@ -506,7 +514,7 @@ pub fn restructure_account(
     // Generate new schedule entries starting from today using SQLite date math
     let today = crate::utils::date::today_iso();
     for i in 1..=new_term_months {
-        let due_date: String = conn
+        let due_date: String = tx
             .query_row(
                 "SELECT date(?1, '+' || ?2 || ' months')",
                 rusqlite::params![today, i],
@@ -514,7 +522,7 @@ pub fn restructure_account(
             )
             .map_err(|e| e.to_string())?;
 
-        conn.execute(
+        tx.execute(
             "INSERT INTO payment_schedules (account_id, due_date, amount_due, amount_paid, status)
              VALUES (?1, ?2, ?3, 0, 'pending')",
             rusqlite::params![account_id, due_date, new_monthly],
@@ -522,19 +530,12 @@ pub fn restructure_account(
         .map_err(|e| e.to_string())?;
     }
 
-    conn.execute(
-        "INSERT INTO audit_log (action, entity_type, entity_id, details) VALUES (?1, ?2, ?3, ?4)",
-        rusqlite::params![
-            "restructure_account",
-            "installment_account",
-            account_id.to_string(),
-            format!(
-                "Restructured: {} months @ {}%/mo, new monthly ₱{:.2}, new balance ₱{:.2}",
-                new_term_months, new_monthly_rate, new_monthly, new_total
-            )
-        ],
-    )
+    insert_audit(&tx, "restructure_account", "installment_account", Some(account_id), Some(&format!(
+        "Restructured: {} months @ {}%/mo, new monthly ₱{:.2}, new balance ₱{:.2}",
+        new_term_months, new_monthly_rate, new_monthly, new_total
+    )))
     .map_err(|e| e.to_string())?;
 
+    tx.commit().map_err(|e| e.to_string())?;
     Ok(())
 }
