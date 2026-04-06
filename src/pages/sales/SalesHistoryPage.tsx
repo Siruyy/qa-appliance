@@ -32,6 +32,8 @@ import { useSales } from "@/hooks/useSales";
 import { SaleDetailModal } from "./SaleDetailModal";
 import { EmptyState } from "@/components/EmptyState";
 import { TableSkeleton } from "@/components/TableSkeleton";
+import { HelpTip } from "@/components/help/HelpTip";
+import { FirstTimeHint } from "@/components/help/FirstTimeHint";
 import { downloadCsv } from "@/lib/csv";
 import { toExcel } from "@/lib/export";
 import {
@@ -70,6 +72,7 @@ export function SalesHistoryPage() {
   const { format: formatCurrency } = useCurrency();
   return (
     <div className="space-y-6">
+      <FirstTimeHint />
       <PageHeader
         title="Sales History"
         description="View and manage past sales transactions."
@@ -190,7 +193,7 @@ export function SalesHistoryPage() {
                 <TableHead>Customer</TableHead>
                 <TableHead>Type</TableHead>
                 <TableHead className="text-right">Total</TableHead>
-                <TableHead>Status</TableHead>
+                <TableHead>Status <HelpTip text="Completed = fully processed. Voided = cancelled with stock restored." /></TableHead>
               </TableRow>
             </TableHeader>
             <TableSkeleton cols={6} rows={5} />
@@ -212,7 +215,7 @@ export function SalesHistoryPage() {
                 <TableHead>Customer</TableHead>
                 <TableHead>Type</TableHead>
                 <TableHead className="text-right">Total</TableHead>
-                <TableHead>Status</TableHead>
+                <TableHead>Status <HelpTip text="Completed = fully processed. Voided = cancelled with stock restored." /></TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>

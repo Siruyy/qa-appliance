@@ -2,6 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
+import { HelpTip } from "@/components/help/HelpTip";
 import { useCurrency } from "@/hooks/useCurrency";
 import { calculateAddOnInterest } from "@/lib/interest";
 import type { CreateInstallmentPayload } from "@/types/sale";
@@ -38,7 +39,7 @@ export function InstallmentConfigPanel({
 
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-1.5">
-          <Label>Down Payment</Label>
+          <Label>Down Payment <HelpTip text="Amount paid upfront by the customer. Subtracted from the total before calculating monthly payments." /></Label>
           <div className="flex gap-1 mb-1.5 flex-wrap">
             {PRESET_DOWN_PCT.map((pct) => {
               const val = Math.round((saleTotal * pct) / 100);
@@ -68,7 +69,7 @@ export function InstallmentConfigPanel({
           />
         </div>
         <div className="space-y-1.5">
-          <Label>Interest Rate (% p.a.)</Label>
+          <Label>Interest Rate (% p.a.) <HelpTip text="Annual add-on (flat) interest rate. Total interest = Principal × Rate × Months. Not compounding." /></Label>
           <Input
             type="number"
             min={0}
@@ -81,7 +82,7 @@ export function InstallmentConfigPanel({
           />
         </div>
         <div className="space-y-1.5">
-          <Label>Penalty Rate (%)</Label>
+          <Label>Penalty Rate (%) <HelpTip text="Percentage charged when a payment is missed past the due date." /></Label>
           <Input
             type="number"
             min={0}
@@ -95,7 +96,7 @@ export function InstallmentConfigPanel({
         </div>
         {rebateEnabled && (
           <div className="space-y-1.5">
-            <Label>Rebate Rate (%)</Label>
+            <Label>Rebate Rate (%) <HelpTip text="Discount percentage applied when the customer pays off the account early." /></Label>
             <Input
               type="number"
               min={0}
@@ -116,7 +117,7 @@ export function InstallmentConfigPanel({
 
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-1.5">
-          <Label>Term (months)</Label>
+          <Label>Term (months) <HelpTip text="Number of monthly installments. Common terms: 6, 12, 18, or 24 months." /></Label>
           <div className="flex gap-1 mb-1.5 flex-wrap">
             {PRESET_TERMS.map((t) => (
               <Button

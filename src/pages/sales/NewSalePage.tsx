@@ -40,6 +40,8 @@ import { useCustomerStore } from "@/stores/customerStore";
 import { useProducts } from "@/hooks/useProducts";
 import { useCustomers } from "@/hooks/useCustomers";
 import { useSales } from "@/hooks/useSales";
+import { HelpTip } from "@/components/help/HelpTip";
+import { FirstTimeHint } from "@/components/help/FirstTimeHint";
 import { ProductSearchDropdown } from "./ProductSearchDropdown";
 import { SaleItemRow } from "./SaleItemRow";
 import { InstallmentConfigPanel } from "./InstallmentConfigPanel";
@@ -262,6 +264,7 @@ export function NewSalePage() {
   const { format: formatCurrency } = useCurrency();
   return (
     <div className="space-y-6">
+      <FirstTimeHint />
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">New Sale</h1>
@@ -408,7 +411,7 @@ export function NewSalePage() {
             </CardHeader>
             <CardContent className="space-y-3">
               <div className="space-y-1.5">
-                <Label>Payment Type</Label>
+                <Label>Payment Type <HelpTip text="Cash: paid in full now. Installment: creates a payment schedule with monthly dues." /></Label>
                 <Select value={cart.paymentType} onValueChange={handlePaymentTypeChange}>
                   <SelectTrigger>
                     <SelectValue />
