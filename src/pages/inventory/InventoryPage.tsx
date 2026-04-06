@@ -39,6 +39,8 @@ import { InventoryToolbar } from "./InventoryToolbar";
 import { ProductRow } from "./ProductRow";
 import { StockMovementLog } from "./StockMovementLog";
 import { downloadCsv } from "@/lib/csv";
+import { HelpTip } from "@/components/help/HelpTip";
+import { FirstTimeHint } from "@/components/help/FirstTimeHint";
 
 type ModalState =
   | { type: "none" }
@@ -196,6 +198,7 @@ export function InventoryPage() {
 
   return (
     <div className="space-y-4">
+      <FirstTimeHint />
       {/* Header */}
       <PageHeader
         title="Inventory"
@@ -258,8 +261,8 @@ export function InventoryPage() {
                 <TableHead className="w-10" />
                 <TableHead>Product</TableHead>
                 <TableHead>Category</TableHead>
-                <TableHead className="text-right">Variants</TableHead>
-                <TableHead className="text-right">Total Stock</TableHead>
+                <TableHead className="text-right">Variants <HelpTip text="Product variations like different colors or sizes. Each variant has its own stock and price." /></TableHead>
+                <TableHead className="text-right">Total Stock <HelpTip text="Total available stock across all active variants of this product." /></TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead className="w-10" />
               </TableRow>
@@ -288,8 +291,8 @@ export function InventoryPage() {
                 <TableHead className="w-10" />
                 <TableHead>Product</TableHead>
                 <TableHead>Category</TableHead>
-                <TableHead className="text-right">Variants</TableHead>
-                <TableHead className="text-right">Total Stock</TableHead>
+                <TableHead className="text-right">Variants <HelpTip text="Product variations like different colors or sizes. Each variant has its own stock and price." /></TableHead>
+                <TableHead className="text-right">Total Stock <HelpTip text="Total available stock across all active variants of this product." /></TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead className="w-10" />
               </TableRow>
