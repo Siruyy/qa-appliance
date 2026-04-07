@@ -1,6 +1,6 @@
 name: Build
 
-on:
+"on":
   push:
     branches: [main]
   workflow_dispatch:
@@ -8,6 +8,9 @@ on:
       version:
         description: "Version override (e.g. 1.2.0). Leave blank to use tauri.conf.json."
         required: false
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
   build-windows:
