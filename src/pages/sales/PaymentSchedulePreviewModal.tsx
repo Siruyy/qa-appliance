@@ -51,8 +51,13 @@ export function PaymentSchedulePreviewModal({
                 <tr key={entry.month_number} className="border-b">
                   <td className="py-2 px-2">{entry.month_number}</td>
                   <td className="py-2 px-2">{formatDate(entry.due_date)}</td>
-                  <td className="py-2 px-2 text-right font-medium">
-                    {formatCurrency(entry.amount_due)}
+                  <td className="py-2 px-2 text-right">
+                    <span className="font-medium">{formatCurrency(entry.amount_due)}</span>
+                    {entry.principal_portion > 0 && (
+                      <span className="block text-xs text-muted-foreground">
+                        {formatCurrency(entry.principal_portion)} principal + {formatCurrency(entry.interest_portion)} interest
+                      </span>
+                    )}
                   </td>
                 </tr>
               ))}

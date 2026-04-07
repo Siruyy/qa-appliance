@@ -64,6 +64,7 @@ export function NewSalePage() {
     term_months: typed.default_installment_term,
     start_date: new Date().toISOString().split("T")[0],
     rebate_rate: typed.rebate_enabled ? typed.default_rebate_rate : 0,
+    interest_type: "monthly",
   }), [typed.default_interest_rate, typed.default_penalty_rate, typed.default_installment_term, typed.rebate_enabled, typed.default_rebate_rate]);
 
   const {
@@ -175,16 +176,19 @@ export function NewSalePage() {
     }
     const principal = total - cart.installment.down_payment;
     if (principal <= 0) return null;
-    const { totalPayable, monthlyPayment } = calculateAddOnInterest(
+    const { totalPayable, monthlyPayment, principalPerMonth, interestPerMonth } = calculateAddOnInterest(
       principal,
       cart.installment.interest_rate,
-      cart.installment.term_months
+      cart.installment.term_months,
+      cart.installment.interest_type ?? "monthly"
     );
     const schedule = generatePaymentSchedule(
       monthlyPayment,
       cart.installment.term_months,
       cart.installment.start_date,
-      totalPayable
+      totalPayable,
+      principalPerMonth,
+      interestPerMonth
     );
     return { schedule, monthlyPayment, totalPayable };
   }, [cart.installment, total]);

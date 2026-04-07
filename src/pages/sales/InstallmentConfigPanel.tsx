@@ -6,6 +6,7 @@ import { HelpTip } from "@/components/help/HelpTip";
 import { useCurrency } from "@/hooks/useCurrency";
 import { calculateAddOnInterest } from "@/lib/interest";
 import type { CreateInstallmentPayload } from "@/types/sale";
+import type { InterestType } from "@/types/account";
 
 interface InstallmentConfigPanelProps {
   saleTotal: number;
@@ -26,11 +27,25 @@ export function InstallmentConfigPanel({
   rebateEnabled,
 }: InstallmentConfigPanelProps) {
   const principal = saleTotal - config.down_payment;
+  const interestType: InterestType = config.interest_type ?? "monthly";
 
   const interest =
     config.term_months
-      ? calculateAddOnInterest(principal, config.interest_rate, config.term_months)
+      ? calculateAddOnInterest(principal, config.interest_rate, config.term_months, interestType)
       : null;
+
+  const INTEREST_TYPE_OPTIONS: { value: InterestType; label: string }[] = [
+    { value: "monthly", label: "Monthly" },
+    { value: "annual", label: "Annual" },
+    { value: "flat_total", label: "Flat Total" },
+  ];
+
+  const rateLabel =
+    interestType === "monthly"
+      ? "% / month"
+      : interestType === "annual"
+        ? "% p.a."
+        : "% (one-time)";
 
   const { format: formatCurrency } = useCurrency();
   return (
@@ -69,7 +84,7 @@ export function InstallmentConfigPanel({
           />
         </div>
         <div className="space-y-1.5">
-          <Label>Interest Rate (% p.a.) <HelpTip text="Annual add-on (flat) interest rate. Total interest = Principal × Rate × Months. Not compounding." /></Label>
+          <Label>Interest Rate ({rateLabel}) <HelpTip text="Add-on (flat) interest rate. The formula depends on the selected interest type." /></Label>
           <Input
             type="number"
             min={0}
@@ -81,6 +96,27 @@ export function InstallmentConfigPanel({
             }
           />
         </div>
+      </div>
+
+      <div className="space-y-1.5">
+        <Label>Interest Type <HelpTip text="Monthly: rate applied per month. Annual: rate applied per year. Flat Total: rate applied once on principal." /></Label>
+        <div className="flex gap-1">
+          {INTEREST_TYPE_OPTIONS.map((opt) => (
+            <Button
+              key={opt.value}
+              type="button"
+              size="sm"
+              variant={interestType === opt.value ? "default" : "outline"}
+              className="h-7 px-3 text-xs"
+              onClick={() => onChange({ ...config, interest_type: opt.value })}
+            >
+              {opt.label}
+            </Button>
+          ))}
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-4">
         <div className="space-y-1.5">
           <Label>Penalty Rate (%) <HelpTip text="Percentage charged when a payment is missed past the due date." /></Label>
           <Input
@@ -171,7 +207,13 @@ export function InstallmentConfigPanel({
           <>
             <div className="flex justify-between">
               <span className="text-muted-foreground">
-                Interest ({config.interest_rate}% × {((config.term_months ?? 0) / 12).toFixed(1)} yr)
+                Interest ({config.interest_rate}%
+                {interestType === "monthly"
+                  ? ` × ${config.term_months ?? 0}mo`
+                  : interestType === "annual"
+                    ? ` × ${((config.term_months ?? 0) / 12).toFixed(1)}yr`
+                    : " flat"}
+                )
               </span>
               <span>{formatCurrency(interest.totalInterest)}</span>
             </div>

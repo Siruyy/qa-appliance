@@ -361,23 +361,31 @@ pub fn create_sale(db: State<DbState>, payload: CreateSalePayload) -> Result<i64
         }
 
         // All installments have schedules — calculate monthly amount
-        // Filipino add-on (flat) interest: total_interest = principal × monthly_rate × term_months
-        // interest_rate is stored as a monthly percentage (e.g. 5 = 5%/month)
+        // interest_type determines which formula applies:
+        //   monthly:    total_interest = principal × (rate/100) × term_months
+        //   annual:     total_interest = principal × (rate/100) × (term_months/12)
+        //   flat_total: total_interest = principal × (rate/100)
         let term = inst.term_months.ok_or("Term months required for installment")?;
         if term < 1 {
             return Err("Term months must be at least 1".to_string());
         }
-        let monthly_rate = inst.interest_rate / 100.0;
-        let total_interest = principal * monthly_rate * term as f64;
+        let rate_decimal = inst.interest_rate / 100.0;
+        let total_interest = match inst.interest_type.as_str() {
+            "annual" => principal * rate_decimal * (term as f64 / 12.0),
+            "flat_total" => principal * rate_decimal,
+            _ => principal * rate_decimal * term as f64, // "monthly" (default)
+        };
         let total_payable = principal + total_interest;
         let monthly_amount = (total_payable / term as f64 * 100.0).ceil() / 100.0;
-        let balance = total_payable - inst.down_payment;
+        // balance = total_payable (down payment is already excluded from principal)
+        let balance = total_payable;
 
         tx.execute(
             "INSERT INTO installment_accounts
              (sale_id, customer_id, principal, down_payment, interest_rate, penalty_rate,
-              balance_remaining, has_schedule, term_months, monthly_amount, start_date, rebate_rate)
-             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12)",
+              balance_remaining, has_schedule, term_months, monthly_amount, start_date, rebate_rate,
+              interest_type)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13)",
             rusqlite::params![
                 sale_id,
                 payload.customer_id,
@@ -391,6 +399,7 @@ pub fn create_sale(db: State<DbState>, payload: CreateSalePayload) -> Result<i64
                 Some(monthly_amount),
                 inst.start_date,
                 inst.rebate_rate,
+                inst.interest_type,
             ],
         )
         .map_err(|e| e.to_string())?;

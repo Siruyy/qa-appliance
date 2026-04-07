@@ -92,6 +92,12 @@ pub struct CreateInstallmentPayload {
     pub start_date: Option<String>,
     #[serde(default)]
     pub rebate_rate: f64,
+    #[serde(default = "default_interest_type")]
+    pub interest_type: String,
+}
+
+fn default_interest_type() -> String {
+    "monthly".to_string()
 }
 
 fn default_peso() -> String {

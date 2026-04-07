@@ -1,6 +1,7 @@
 import type { PaymentRecordType, ScheduleStatus } from "./payment";
 
 export type AccountStatus = "open" | "paid" | "defaulted";
+export type InterestType = "monthly" | "annual" | "flat_total";
 
 export interface PaymentScheduleEntry {
   id: number;
@@ -31,6 +32,8 @@ export interface InstallmentAccount {
   next_due_date: string | null;
   is_overdue: boolean;
   rebate_rate: number;
+  interest_type: InterestType;
+  rebate_credited: number;
   notes: string | null;
   created_at: string;
   updated_at: string;

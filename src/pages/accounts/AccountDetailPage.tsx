@@ -359,6 +359,14 @@ export function AccountDetailPage() {
             {formatCurrency(account.balance_remaining)}
           </p>
         </div>
+        {account.rebate_credited > 0 && (
+          <div>
+            <p className="text-xs text-muted-foreground">Rebate</p>
+            <p className="text-lg font-semibold text-green-600">
+              {formatCurrency(account.rebate_credited)}
+            </p>
+          </div>
+        )}
         <div>
           <p className="text-xs text-muted-foreground">Status</p>
           <Badge
@@ -370,7 +378,14 @@ export function AccountDetailPage() {
         </div>
         <div>
           <p className="text-xs text-muted-foreground">Interest Rate</p>
-          <p className="text-sm font-medium">{account.interest_rate}%/mo</p>
+          <p className="text-sm font-medium">
+            {account.interest_rate}%
+            {account.interest_type === "annual"
+              ? "/yr"
+              : account.interest_type === "flat_total"
+                ? " flat"
+                : "/mo"}
+          </p>
         </div>
         <div>
           <p className="text-xs text-muted-foreground">Penalty Rate</p>
@@ -467,7 +482,22 @@ export function AccountDetailPage() {
         <div>
           <h2 className="text-lg font-semibold mb-3">Payment Schedule <HelpTip text="Fixed monthly payments with due dates. Green = paid, red = overdue." /></h2>
           <div className="rounded-md border">
-            <ScheduleTable schedule={account.schedule} />
+            <ScheduleTable
+              schedule={account.schedule}
+              totalPenalties={account.payments
+                .filter((p) => p.type === "penalty" && !p.is_reversed)
+                .reduce((sum, p) => sum + p.amount, 0)}
+              principalPerMonth={
+                account.term_months && account.term_months > 0
+                  ? Math.round((account.principal / account.term_months) * 100) / 100
+                  : undefined
+              }
+              interestPerMonth={
+                account.term_months && account.term_months > 0 && account.monthly_amount
+                  ? Math.round((account.monthly_amount - account.principal / account.term_months) * 100) / 100
+                  : undefined
+              }
+            />
           </div>
         </div>
 

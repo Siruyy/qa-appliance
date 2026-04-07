@@ -2,6 +2,7 @@ use tauri::State;
 use crate::db::connection::DbState;
 use crate::models::report::*;
 use crate::utils::date::{today_iso, days_since};
+use crate::utils::format::format_product_summary;
 use std::collections::HashMap;
 
 // ──────────────────────────────────────────────────────────
@@ -140,7 +141,7 @@ pub fn get_receivables_report(
             Ok(ReceivablesRow {
                 id: row.get(0)?,
                 customer_name: row.get(1)?,
-                product_summary: row.get(2)?,
+                product_summary: format_product_summary(&row.get::<_, String>(2)?),
                 balance_remaining: row.get(3)?,
                 has_schedule: row.get(4)?,
                 status: row.get(5)?,
@@ -321,7 +322,7 @@ pub fn get_collections_report(
                 id: row.get(0)?,
                 payment_date: row.get(1)?,
                 customer_name: row.get(2)?,
-                product_summary: row.get(3)?,
+                product_summary: format_product_summary(&row.get::<_, String>(3)?),
                 amount: row.get(4)?,
                 payment_type: row.get(5)?,
             })
@@ -461,7 +462,7 @@ pub fn get_customer_history_report(
                 payment_date: row.get(1)?,
                 amount: row.get(2)?,
                 payment_type: row.get(3)?,
-                product_summary: row.get(4)?,
+                product_summary: format_product_summary(&row.get::<_, String>(4)?),
             })
         }
     ).map_err(|e| e.to_string())?

@@ -62,6 +62,10 @@ pub fn run(conn: &Connection) -> Result<()> {
         migrate_v11(conn)?;
     }
 
+    if version < 12 {
+        migrate_v12(conn)?;
+    }
+
     Ok(())
 }
 
@@ -1603,5 +1607,18 @@ fn migrate_v11(conn: &Connection) -> Result<()> {
     )?;
 
     println!("[db] Applied migration v11 — import_logs.imported_ids, products.brand/model");
+    Ok(())
+}
+
+/// V12 — Add interest_type column so each account explicitly records how interest is calculated.
+fn migrate_v12(conn: &Connection) -> Result<()> {
+    conn.execute_batch(
+        "
+        ALTER TABLE installment_accounts ADD COLUMN interest_type TEXT NOT NULL DEFAULT 'monthly';
+        INSERT INTO schema_migrations (version) VALUES (12);
+        "
+    )?;
+
+    println!("[db] Applied migration v12 — installment_accounts.interest_type");
     Ok(())
 }

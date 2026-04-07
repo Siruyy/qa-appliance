@@ -1,6 +1,7 @@
 use crate::db::connection::DbState;
 use crate::models::import_export::*;
 use crate::utils::date::{add_months_to_date, today_iso};
+use crate::utils::format::format_product_summary;
 use calamine::{open_workbook, Reader, Xlsx};
 use rusqlite::params;
 use std::collections::HashMap;
@@ -152,7 +153,7 @@ fn query_accounts(db: &rusqlite::Connection) -> Result<Vec<ExportAccount>, Strin
         Ok(ExportAccount {
             id: row.get(0)?,
             customer_name: row.get(1)?,
-            product_summary: row.get::<_, Option<String>>(2)?.unwrap_or_default(),
+            product_summary: format_product_summary(&row.get::<_, Option<String>>(2)?.unwrap_or_default()),
             principal: row.get(3)?,
             balance_remaining: row.get(4)?,
             interest_rate: row.get(5)?,
@@ -208,7 +209,7 @@ fn query_payments(
             id: row.get(0)?,
             payment_date: row.get(1)?,
             customer_name: row.get(2)?,
-            product_summary: row.get::<_, Option<String>>(3)?.unwrap_or_default(),
+            product_summary: format_product_summary(&row.get::<_, Option<String>>(3)?.unwrap_or_default()),
             amount: row.get(4)?,
             payment_type: row.get(5)?,
             notes: row.get(6)?,

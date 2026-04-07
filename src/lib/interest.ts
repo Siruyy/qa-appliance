@@ -1,26 +1,51 @@
 import { addMonths, format } from "date-fns";
+import type { InterestType } from "@/types/account";
 
 export interface SchedulePreviewEntry {
   due_date: string;
   amount_due: number;
   month_number: number;
+  principal_portion: number;
+  interest_portion: number;
 }
 
 /**
- * Add-on interest: total_interest = principal * rate% * term_years
- * Total payable = principal + total_interest
- * Monthly = ceil(total_payable / term_months) — last payment absorbs rounding.
+ * Calculate add-on (flat) interest with three modes:
+ *   monthly:    totalInterest = principal × (rate/100) × termMonths
+ *   annual:     totalInterest = principal × (rate/100) × (termMonths/12)
+ *   flat_total: totalInterest = principal × (rate/100)
+ *
+ * Returns per-month breakdown values as well.
  */
 export function calculateAddOnInterest(
   principal: number,
-  annualRate: number,
-  termMonths: number
-): { totalInterest: number; totalPayable: number; monthlyPayment: number } {
-  const termYears = termMonths / 12;
-  const totalInterest = principal * (annualRate / 100) * termYears;
+  rate: number,
+  termMonths: number,
+  interestType: InterestType = "monthly"
+): {
+  totalInterest: number;
+  totalPayable: number;
+  monthlyPayment: number;
+  interestPerMonth: number;
+  principalPerMonth: number;
+} {
+  let totalInterest: number;
+  switch (interestType) {
+    case "annual":
+      totalInterest = principal * (rate / 100) * (termMonths / 12);
+      break;
+    case "flat_total":
+      totalInterest = principal * (rate / 100);
+      break;
+    default: // "monthly"
+      totalInterest = principal * (rate / 100) * termMonths;
+      break;
+  }
   const totalPayable = principal + totalInterest;
   const monthlyPayment = Math.ceil((totalPayable / termMonths) * 100) / 100;
-  return { totalInterest, totalPayable, monthlyPayment };
+  const interestPerMonth = Math.round((totalInterest / termMonths) * 100) / 100;
+  const principalPerMonth = Math.round((principal / termMonths) * 100) / 100;
+  return { totalInterest, totalPayable, monthlyPayment, interestPerMonth, principalPerMonth };
 }
 
 /**
@@ -35,10 +60,14 @@ export function generatePaymentSchedule(
   monthlyPayment: number,
   termMonths: number,
   startDate: string,
-  totalPayable?: number
+  totalPayable?: number,
+  principalPerMonth?: number,
+  interestPerMonth?: number
 ): SchedulePreviewEntry[] {
   const schedule: SchedulePreviewEntry[] = [];
   const start = new Date(startDate);
+  const pPortion = principalPerMonth ?? 0;
+  const iPortion = interestPerMonth ?? 0;
 
   for (let i = 0; i < termMonths; i++) {
     const due = addMonths(start, i + 1);
@@ -47,6 +76,8 @@ export function generatePaymentSchedule(
       due_date: format(due, "yyyy-MM-dd"),
       amount_due: monthlyPayment,
       month_number: i + 1,
+      principal_portion: pPortion,
+      interest_portion: iPortion,
     });
   }
 

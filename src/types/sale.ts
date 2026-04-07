@@ -63,6 +63,7 @@ export interface CreateInstallmentPayload {
   term_months: number | null;
   start_date: string | null;
   rebate_rate?: number;
+  interest_type?: import('./account').InterestType;
 }
 
 /** Cart item used in the New Sale page (display + data) */

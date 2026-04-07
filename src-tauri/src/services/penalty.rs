@@ -3,6 +3,7 @@ use rusqlite::Connection;
 use crate::models::account::PenaltyApplied;
 use crate::utils::constants::PENALTY_COOLDOWN_DAYS;
 use crate::utils::date::today_iso;
+use crate::utils::format::format_product_summary;
 
 /// Read a setting as an integer, returning a default if not found or unparseable.
 fn read_setting_i64(conn: &Connection, key: &str, default: i64) -> i64 {
@@ -85,7 +86,8 @@ pub fn check_and_apply_penalties(conn: &Connection) -> Result<Vec<PenaltyApplied
 
     let candidates: Vec<_> = rows.collect::<Result<Vec<_>, _>>().map_err(|e| format!("Row read error: {}", e))?;
 
-    for (account_id, principal, penalty_rate, _balance_remaining, customer_name, product_summary) in candidates {
+    for (account_id, principal, penalty_rate, _balance_remaining, customer_name, raw_summary) in candidates {
+        let product_summary = format_product_summary(&raw_summary);
         // Check max penalties cap (0 = unlimited)
         if max_penalties > 0 {
             let penalty_count: i64 = conn

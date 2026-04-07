@@ -4,6 +4,7 @@ use crate::models::report::{
     UpcomingDue,
 };
 use crate::utils::date::{today_iso, days_ago_iso, first_of_month, prev_month_range};
+use crate::utils::format::format_product_summary;
 use rusqlite::params;
 use tauri::State;
 
@@ -168,7 +169,7 @@ pub fn get_dashboard_data(
                 customer_name: row.get(1)?,
                 due_date: row.get(2)?,
                 amount_due: row.get(3)?,
-                product_summary: row.get(4)?,
+                product_summary: format_product_summary(&row.get::<_, String>(4)?),
             })
         })
         .map_err(|e| e.to_string())?;
@@ -206,7 +207,7 @@ pub fn get_dashboard_data(
                 customer_name: row.get(1)?,
                 balance_remaining: row.get(2)?,
                 days_overdue: row.get(3).unwrap_or(0),
-                product_summary: row.get(4)?,
+                product_summary: format_product_summary(&row.get::<_, String>(4)?),
             })
         })
         .map_err(|e| e.to_string())?;

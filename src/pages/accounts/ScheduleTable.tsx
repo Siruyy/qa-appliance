@@ -16,9 +16,12 @@ interface ScheduleTableProps {
   schedule: PaymentScheduleEntry[];
   onSelectEntry?: (entry: PaymentScheduleEntry) => void;
   selectedId?: number | null;
+  totalPenalties?: number;
+  interestPerMonth?: number;
+  principalPerMonth?: number;
 }
 
-export function ScheduleTable({ schedule, onSelectEntry, selectedId }: ScheduleTableProps) {
+export function ScheduleTable({ schedule, onSelectEntry, selectedId, totalPenalties, interestPerMonth, principalPerMonth }: ScheduleTableProps) {
   if (schedule.length === 0) {
     return (
       <p className="text-sm text-muted-foreground py-4 text-center">
@@ -52,7 +55,14 @@ export function ScheduleTable({ schedule, onSelectEntry, selectedId }: ScheduleT
             >
               <TableCell className="text-muted-foreground">{idx + 1}</TableCell>
               <TableCell>{formatDate(entry.due_date)}</TableCell>
-              <TableCell className="text-right">{formatCurrency(entry.amount_due)}</TableCell>
+              <TableCell className="text-right">
+                <span>{formatCurrency(entry.amount_due)}</span>
+                {principalPerMonth != null && principalPerMonth > 0 && (
+                  <span className="block text-xs text-muted-foreground">
+                    {formatCurrency(principalPerMonth)} + {formatCurrency(interestPerMonth ?? 0)} int.
+                  </span>
+                )}
+              </TableCell>
               <TableCell className="text-right">
                 {entry.amount_paid > 0 ? formatCurrency(entry.amount_paid) : "—"}
               </TableCell>
@@ -67,6 +77,17 @@ export function ScheduleTable({ schedule, onSelectEntry, selectedId }: ScheduleT
             </TableRow>
           );
         })}
+        {totalPenalties != null && totalPenalties > 0 && (
+          <TableRow className="bg-destructive/5 font-medium">
+            <TableCell colSpan={2} className="text-destructive">
+              Total Penalties Applied
+            </TableCell>
+            <TableCell className="text-right text-destructive">
+              {formatCurrency(totalPenalties)}
+            </TableCell>
+            <TableCell colSpan={3} />
+          </TableRow>
+        )}
       </TableBody>
     </Table>
   );

@@ -6,6 +6,7 @@ use crate::models::PaginatedResult;
 use crate::utils::constants::CENTAVO_TOLERANCE;
 use crate::utils::query::{build_where, paginated_query};
 use crate::commands::audit_log::insert_audit;
+use crate::utils::format::format_product_summary;
 
 #[tauri::command]
 pub fn get_payments(
@@ -86,7 +87,7 @@ pub fn get_payments(
             account_id: row.get(1)?,
             schedule_id: row.get(2)?,
             customer_name: row.get(3)?,
-            product_summary: row.get(4)?,
+            product_summary: format_product_summary(&row.get::<_, String>(4)?),
             amount: row.get(5)?,
             payment_date: row.get(6)?,
             payment_type: row.get(7)?,
@@ -136,7 +137,7 @@ pub fn get_payments_for_account(
                 account_id: row.get(1)?,
                 schedule_id: row.get(2)?,
                 customer_name: row.get(3)?,
-                product_summary: row.get(4)?,
+                product_summary: format_product_summary(&row.get::<_, String>(4)?),
                 amount: row.get(5)?,
                 payment_date: row.get(6)?,
                 payment_type: row.get(7)?,
@@ -299,13 +300,6 @@ pub fn record_payment(
                     )
                     .map_err(|e| e.to_string())?;
 
-                    // Update balance (will go negative — credit owed to customer)
-                    tx.execute(
-                        "UPDATE installment_accounts SET balance_remaining = balance_remaining - ?1, updated_at = datetime('now') WHERE id = ?2",
-                        rusqlite::params![rebate_amount, payload.account_id],
-                    )
-                    .map_err(|e| e.to_string())?;
-
                     rebate_credited = rebate_amount;
                 }
             }
@@ -338,7 +332,7 @@ pub fn record_payment(
                     account_id: row.get(1)?,
                     schedule_id: row.get(2)?,
                     customer_name: row.get(3)?,
-                    product_summary: row.get(4)?,
+                    product_summary: format_product_summary(&row.get::<_, String>(4)?),
                     amount: row.get(5)?,
                     payment_date: row.get(6)?,
                     payment_type: row.get(7)?,

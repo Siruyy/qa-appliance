@@ -10,6 +10,7 @@ use crate::utils::constants::CENTAVO_TOLERANCE;
 use crate::utils::query::{build_where, paginated_query};
 use crate::utils::validation::optional_text;
 use crate::commands::audit_log::insert_audit;
+use crate::utils::format::format_product_summary;
 
 #[tauri::command]
 pub fn get_accounts(
@@ -86,6 +87,8 @@ pub fn get_accounts(
                     WHERE ps.account_id = ia.id AND ps.status = 'overdue'
                 ) THEN 1 ELSE 0 END AS is_overdue,
                 ia.rebate_rate,
+                ia.interest_type,
+                COALESCE((SELECT SUM(ABS(pay.amount)) FROM payments pay WHERE pay.account_id = ia.id AND pay.type = 'rebate' AND COALESCE(pay.is_reversed, 0) = 0), 0) AS rebate_credited,
                 ia.notes, ia.created_at, ia.updated_at
          FROM installment_accounts ia
          JOIN customers c ON c.id = ia.customer_id
@@ -107,7 +110,7 @@ pub fn get_accounts(
             sale_id: row.get(1)?,
             customer_id: row.get(2)?,
             customer_name: row.get(3)?,
-            product_summary: row.get(4)?,
+            product_summary: format_product_summary(&row.get::<_, String>(4)?),
             principal: row.get(5)?,
             down_payment: row.get(6)?,
             interest_rate: row.get(7)?,
@@ -122,9 +125,11 @@ pub fn get_accounts(
             next_due_date: row.get(16)?,
             is_overdue: row.get(17)?,
             rebate_rate: row.get(18)?,
-            notes: row.get(19)?,
-            created_at: row.get(20)?,
-            updated_at: row.get(21)?,
+            interest_type: row.get(19)?,
+            rebate_credited: row.get(20)?,
+            notes: row.get(21)?,
+            created_at: row.get(22)?,
+            updated_at: row.get(23)?,
         })
     })
 }
@@ -151,6 +156,8 @@ pub fn get_account_by_id(db: State<DbState>, id: i64) -> Result<AccountDetail, S
                         WHERE ps.account_id = ia.id AND ps.status = 'overdue'
                     ) THEN 1 ELSE 0 END AS is_overdue,
                     ia.rebate_rate,
+                    ia.interest_type,
+                    COALESCE((SELECT SUM(ABS(pay.amount)) FROM payments pay WHERE pay.account_id = ia.id AND pay.type = 'rebate' AND COALESCE(pay.is_reversed, 0) = 0), 0) AS rebate_credited,
                     ia.notes, ia.created_at, ia.updated_at
              FROM installment_accounts ia
              JOIN customers c ON c.id = ia.customer_id
@@ -167,7 +174,7 @@ pub fn get_account_by_id(db: State<DbState>, id: i64) -> Result<AccountDetail, S
                     sale_id: row.get(1)?,
                     customer_id: row.get(2)?,
                     customer_name: row.get(3)?,
-                    product_summary: row.get(4)?,
+                    product_summary: format_product_summary(&row.get::<_, String>(4)?),
                     principal: row.get(5)?,
                     down_payment: row.get(6)?,
                     interest_rate: row.get(7)?,
@@ -182,9 +189,11 @@ pub fn get_account_by_id(db: State<DbState>, id: i64) -> Result<AccountDetail, S
                     next_due_date: row.get(16)?,
                     is_overdue: row.get(17)?,
                     rebate_rate: row.get(18)?,
-                    notes: row.get(19)?,
-                    created_at: row.get(20)?,
-                    updated_at: row.get(21)?,
+                    interest_type: row.get(19)?,
+                    rebate_credited: row.get(20)?,
+                    notes: row.get(21)?,
+                    created_at: row.get(22)?,
+                    updated_at: row.get(23)?,
                     schedule: Vec::new(),
                     payments: Vec::new(),
                 })
@@ -358,11 +367,11 @@ pub fn recalculate_balance(db: State<DbState>, account_id: i64) -> Result<f64, S
     };
     let total_payable = principal + total_interest;
 
-    // Sum all payments (regular + down_payment reduce balance)
+    // Sum regular payments only (down_payment is already excluded from principal/total_payable)
     let total_payments: f64 = conn
         .query_row(
             "SELECT COALESCE(SUM(amount), 0) FROM payments
-             WHERE account_id = ?1 AND type IN ('payment', 'down_payment')",
+             WHERE account_id = ?1 AND type = 'payment'",
             rusqlite::params![account_id],
             |row| row.get(0),
         )
@@ -378,18 +387,9 @@ pub fn recalculate_balance(db: State<DbState>, account_id: i64) -> Result<f64, S
         )
         .unwrap_or(0.0);
 
-    // Sum rebates (stored as negative amounts — credit to customer)
-    let total_rebates: f64 = conn
-        .query_row(
-            "SELECT COALESCE(SUM(ABS(amount)), 0) FROM payments
-             WHERE account_id = ?1 AND type = 'rebate'",
-            rusqlite::params![account_id],
-            |row| row.get(0),
-        )
-        .unwrap_or(0.0);
-
-    // balance = total_payable - payments - rebates + penalties
-    let new_balance = total_payable - total_payments - total_rebates + total_penalties;
+    // balance = total_payable - payments + penalties
+    // Rebates are not subtracted — they are a credit/refund separate from the debt balance
+    let new_balance = total_payable - total_payments + total_penalties;
     let new_balance = (new_balance * 100.0).round() / 100.0;
     let new_balance = if new_balance < 0.0 { 0.0 } else { new_balance };
 
