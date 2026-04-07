@@ -280,16 +280,9 @@ fn migrate_v3(conn: &Connection) -> Result<()> {
 /// V4 — Comprehensive demo seed data: 2 years of Filipino appliance store data
 /// Inserts ~8 categories, ~35 products, ~70 variants, ~60 customers,
 /// ~350 sales, ~100 installment accounts, payment schedules, and payment records.
-#[allow(clippy::too_many_lines)]
 fn migrate_v4(conn: &Connection) -> Result<()> {
-    // Only seed if the database is truly empty (no categories yet)
-    let cat_count: i32 = conn.query_row(
-        "SELECT COUNT(*) FROM categories",
-        [],
-        |r| r.get(0),
-    ).unwrap_or(0);
-
-    if cat_count == 0 {
+    // Demo seed data removed — fresh installs start empty.
+    if false {
         // ── Categories ───────────────────────────────────────────────────────
         conn.execute_batch("
             INSERT INTO categories (name) VALUES
