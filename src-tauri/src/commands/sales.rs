@@ -231,13 +231,22 @@ pub fn create_sale(db: State<DbState>, payload: CreateSalePayload) -> Result<i64
     };
     let total = subtotal - resolved_discount;
 
-    // Validate unit prices match DB selling_price (prevent client manipulation)
+    // Validate unit prices match DB price (prevent client manipulation)
+    // For installment sales, use installment_price if available, otherwise selling_price
     for item in &payload.items {
-        let db_price: f64 = conn.query_row(
-            "SELECT selling_price FROM product_variants WHERE id = ?1 AND is_active = 1",
-            rusqlite::params![item.variant_id],
-            |row| row.get(0),
-        ).map_err(|_| format!("Product variant {} not found or inactive", item.variant_id))?;
+        let db_price: f64 = if payload.payment_type == "installment" {
+            conn.query_row(
+                "SELECT COALESCE(installment_price, selling_price) FROM product_variants WHERE id = ?1 AND is_active = 1",
+                rusqlite::params![item.variant_id],
+                |row| row.get(0),
+            ).map_err(|_| format!("Product variant {} not found or inactive", item.variant_id))?
+        } else {
+            conn.query_row(
+                "SELECT selling_price FROM product_variants WHERE id = ?1 AND is_active = 1",
+                rusqlite::params![item.variant_id],
+                |row| row.get(0),
+            ).map_err(|_| format!("Product variant {} not found or inactive", item.variant_id))?
+        };
 
         if (item.unit_price - db_price).abs() > 0.01 {
             return Err(format!(
@@ -300,6 +309,8 @@ pub fn create_sale(db: State<DbState>, payload: CreateSalePayload) -> Result<i64
         )
         .map_err(|e| e.to_string())?;
 
+        let sale_item_id = tx.last_insert_rowid();
+
         // Deduct stock
         let updated = tx.execute(
             "UPDATE product_variants SET stock_qty = stock_qty - ?1
@@ -319,6 +330,25 @@ pub fn create_sale(db: State<DbState>, payload: CreateSalePayload) -> Result<i64
             rusqlite::params![item.variant_id, -(item.quantity as i64), sale_id],
         )
         .map_err(|e| format!("Failed to record stock movement: {}", e))?;
+
+        // Mark serial as sold if one was specified
+        if let Some(ref serial) = item.serial_no {
+            if !serial.is_empty() {
+                let updated = tx.execute(
+                    "UPDATE serial_numbers SET status = 'sold', sale_item_id = ?1, sold_at = datetime('now')
+                     WHERE variant_id = ?2 AND serial_no = ?3 AND status = 'in_stock'",
+                    rusqlite::params![sale_item_id, item.variant_id, serial],
+                )
+                .map_err(|e| format!("Failed to mark serial as sold: {}", e))?;
+
+                if updated == 0 {
+                    return Err(format!(
+                        "Serial '{}' not found or already sold for variant {}",
+                        serial, item.variant_id
+                    ));
+                }
+            }
+        }
     }
 
     // 3. Handle installment account
@@ -376,14 +406,17 @@ pub fn create_sale(db: State<DbState>, payload: CreateSalePayload) -> Result<i64
             _ => principal * rate_decimal * term as f64, // "monthly" (default)
         };
         let total_payable = principal + total_interest;
-        let monthly_amount = (total_payable / term as f64 * 100.0).ceil() / 100.0;
+        let computed_monthly = (total_payable / term as f64 * 100.0).ceil() / 100.0;
+        let monthly_amount = inst.monthly_payment_override
+            .filter(|&v| v > 0.0)
+            .unwrap_or(computed_monthly);
         // balance = total_payable (down payment is already excluded from principal)
         let balance = total_payable;
 
         tx.execute(
             "INSERT INTO installment_accounts
              (sale_id, customer_id, principal, down_payment, interest_rate, penalty_rate,
-              balance_remaining, has_schedule, term_months, monthly_amount, start_date, rebate_rate,
+              balance_remaining, has_schedule, term_months, monthly_amount, start_date, rebate_amount,
               interest_type)
              VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13)",
             rusqlite::params![
@@ -398,7 +431,7 @@ pub fn create_sale(db: State<DbState>, payload: CreateSalePayload) -> Result<i64
                 inst.term_months,
                 Some(monthly_amount),
                 inst.start_date,
-                inst.rebate_rate,
+                inst.rebate_amount,
                 inst.interest_type,
             ],
         )

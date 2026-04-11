@@ -30,7 +30,7 @@ fn parse_attr(attributes: &Option<String>) -> (Option<String>, Option<String>) {
 fn query_products(db: &rusqlite::Connection) -> Result<Vec<ExportProduct>, String> {
     let mut stmt = db.prepare(
         "SELECT c.name AS category, p.name AS product_name, pv.attributes,
-                pv.sku, pv.cost_price, pv.selling_price, pv.stock_qty,
+                pv.sku, pv.cost_price, pv.selling_price, pv.installment_price, pv.stock_qty,
                 pv.low_stock_threshold, pv.is_active
          FROM product_variants pv
          JOIN products p ON pv.product_id = p.id
@@ -41,7 +41,7 @@ fn query_products(db: &rusqlite::Connection) -> Result<Vec<ExportProduct>, Strin
     let rows = stmt.query_map(params![], |row| {
         let attributes: Option<String> = row.get(2)?;
         let (color, size) = parse_attr(&attributes);
-        let is_active_int: i64 = row.get(8)?;
+        let is_active_int: i64 = row.get(9)?;
         Ok(ExportProduct {
             category: row.get(0)?,
             product_name: row.get(1)?,
@@ -50,8 +50,9 @@ fn query_products(db: &rusqlite::Connection) -> Result<Vec<ExportProduct>, Strin
             sku: row.get::<_, Option<String>>(3)?.unwrap_or_default(),
             cost_price: row.get(4)?,
             selling_price: row.get(5)?,
-            stock_quantity: row.get(6)?,
-            low_stock_threshold: row.get(7)?,
+            installment_price: row.get(6)?,
+            stock_quantity: row.get(7)?,
+            low_stock_threshold: row.get(8)?,
             is_active: is_active_int != 0,
         })
     }).map_err(|e| e.to_string())?;
@@ -137,7 +138,7 @@ fn query_accounts(db: &rusqlite::Connection) -> Result<Vec<ExportAccount>, Strin
         "SELECT ia.id, cu.name AS customer_name,
                 GROUP_CONCAT(p.name || ' - ' || COALESCE(pv.sku, 'N/A'), ', ') AS product_summary,
                 ia.principal, ia.balance_remaining, ia.interest_rate, ia.penalty_rate,
-                ia.rebate_rate, ia.term_months, ia.has_schedule, ia.status, ia.created_at
+                ia.rebate_amount, ia.term_months, ia.has_schedule, ia.status, ia.created_at
          FROM installment_accounts ia
          JOIN customers cu ON ia.customer_id = cu.id
          JOIN sales s ON ia.sale_id = s.id
@@ -158,7 +159,7 @@ fn query_accounts(db: &rusqlite::Connection) -> Result<Vec<ExportAccount>, Strin
             balance_remaining: row.get(4)?,
             interest_rate: row.get(5)?,
             penalty_rate: row.get(6)?,
-            rebate_rate: row.get::<_, Option<f64>>(7)?.unwrap_or(0.0),
+            rebate_amount: row.get::<_, Option<f64>>(7)?.unwrap_or(0.0),
             term_months: row.get(8)?,
             has_schedule: has_schedule_int != 0,
             status: row.get(10)?,
@@ -429,6 +430,7 @@ fn preview_products(
         let product_name = get_field(&data, "product_name");
         let cost_price = get_field(&data, "cost_price");
         let selling_price = get_field(&data, "selling_price");
+        let installment_price = get_field(&data, "installment_price");
         let stock_qty = get_field(&data, "stock_qty");
 
         if category.is_empty() { row_errors.push("category is required".to_string()); }
@@ -438,6 +440,11 @@ fn preview_products(
         }
         if selling_price.parse::<f64>().is_err() || selling_price.parse::<f64>().unwrap_or(-1.0) < 0.0 {
             row_errors.push("selling_price must be a non-negative number".to_string());
+        }
+        if !installment_price.is_empty() {
+            if installment_price.parse::<f64>().is_err() || installment_price.parse::<f64>().unwrap_or(-1.0) < 0.0 {
+                row_errors.push("installment_price must be a non-negative number".to_string());
+            }
         }
         if stock_qty.parse::<i64>().is_err() || stock_qty.parse::<i64>().unwrap_or(-1) < 0 {
             row_errors.push("stock_qty must be a non-negative integer".to_string());
@@ -681,6 +688,8 @@ fn import_product_row(db: &rusqlite::Connection, data: &HashMap<String, String>)
     let sku = get_field(data, "sku");
     let cost_price: f64 = get_field(data, "cost_price").parse().unwrap_or(0.0);
     let selling_price: f64 = get_field(data, "selling_price").parse().unwrap_or(0.0);
+    let installment_price_str = get_field(data, "installment_price");
+    let installment_price: Option<f64> = if installment_price_str.is_empty() { None } else { installment_price_str.parse().ok() };
     let stock_qty: i64 = get_field(data, "stock_qty").parse().unwrap_or(0);
     let threshold: i64 = get_field(data, "low_stock_threshold").parse().unwrap_or(2);
 
@@ -754,19 +763,19 @@ fn import_product_row(db: &rusqlite::Connection, data: &HashMap<String, String>)
     if let Some(variant_id) = existing_variant {
         // Update existing
         db.execute(
-            "UPDATE product_variants SET cost_price = ?1, selling_price = ?2, stock_qty = ?3,
-             low_stock_threshold = ?4, sku = COALESCE(NULLIF(?5, ''), sku),
-             updated_at = datetime('now') WHERE id = ?6",
-            params![cost_price, selling_price, stock_qty, threshold, sku, variant_id],
+            "UPDATE product_variants SET cost_price = ?1, selling_price = ?2, installment_price = ?3, stock_qty = ?4,
+             low_stock_threshold = ?5, sku = COALESCE(NULLIF(?6, ''), sku),
+             updated_at = datetime('now') WHERE id = ?7",
+            params![cost_price, selling_price, installment_price, stock_qty, threshold, sku, variant_id],
         ).map_err(|e| e.to_string())?;
         Ok(variant_id)
     } else {
         // Insert new
         let sku_val = if sku.is_empty() { None } else { Some(sku) };
         db.execute(
-            "INSERT INTO product_variants (product_id, sku, attributes, cost_price, selling_price, stock_qty, low_stock_threshold)
-             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)",
-            params![product_id, sku_val, attrs_json, cost_price, selling_price, stock_qty, threshold],
+            "INSERT INTO product_variants (product_id, sku, attributes, cost_price, selling_price, installment_price, stock_qty, low_stock_threshold)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)",
+            params![product_id, sku_val, attrs_json, cost_price, selling_price, installment_price, stock_qty, threshold],
         ).map_err(|e| e.to_string())?;
         Ok(db.last_insert_rowid())
     }
@@ -921,7 +930,7 @@ pub fn get_import_template_columns(import_type: String) -> Result<Vec<String>, S
         "products" => Ok(vec![
             "category".into(), "product_name".into(), "brand".into(), "model".into(),
             "description".into(), "variant_color".into(), "variant_size".into(), "sku".into(),
-            "cost_price".into(), "selling_price".into(), "stock_qty".into(), "low_stock_threshold".into(),
+            "cost_price".into(), "selling_price".into(), "installment_price".into(), "stock_qty".into(), "low_stock_threshold".into(),
         ]),
         "customers" => Ok(vec![
             "name".into(), "phone".into(), "address".into(), "notes".into(),
@@ -987,6 +996,7 @@ fn get_import_example_row(import_type: &str) -> Result<Vec<String>, String> {
             "REF-SAM-001",       // sku
             "18500",             // cost_price
             "24990",             // selling_price
+            "27990",             // installment_price
             "5",                 // stock_qty
             "2",                 // low_stock_threshold
         ],

@@ -25,6 +25,7 @@ interface CartStore {
   setCartNotes: (notes: string) => void;
   setCartInstallment: (config: CreateInstallmentPayload | null) => void;
   setItemDiscount: (variantId: number, value: number, type: DiscountType) => void;
+  setItemSerial: (variantId: number, serialNo: string | undefined) => void;
   cartSubtotal: () => number;
   cartTotal: () => number;
   resolvedDiscount: () => number;
@@ -122,15 +123,27 @@ export const useCartStore = create<CartStore>((set, get) => ({
       },
     })),
 
-  /** Set payment type; clears installment config when switching to cash. */
+  /** Set payment type; clears installment config when switching to cash. Reprices items using the appropriate price. */
   setCartPaymentType: (type_) =>
-    set((state) => ({
-      cart: {
-        ...state.cart,
-        paymentType: type_,
-        installment: type_ === "cash" ? null : state.cart.installment,
-      },
-    })),
+    set((state) => {
+      const repricedItems = state.cart.items.map((i: CartItem) => {
+        const newPrice = type_ === "installment"
+          ? (i.installment_price ?? i.selling_price)
+          : i.selling_price;
+        if (newPrice === i.unit_price) return i;
+        const updated = { ...i, unit_price: newPrice };
+        updated.subtotal = calcItemSubtotal(updated);
+        return updated;
+      });
+      return {
+        cart: {
+          ...state.cart,
+          paymentType: type_,
+          installment: type_ === "cash" ? null : state.cart.installment,
+          items: repricedItems,
+        },
+      };
+    }),
 
   /** Set notes on the current cart. */
   setCartNotes: (notes) =>
@@ -153,6 +166,17 @@ export const useCartStore = create<CartStore>((set, get) => ({
             : value;
           return { ...i, item_discount_type: type_, item_discount_value: value, item_discount: disc, subtotal: lineTotal - disc };
         }),
+      },
+    })),
+
+  /** Set per-item serial number on a specific cart item. */
+  setItemSerial: (variantId, serialNo) =>
+    set((state) => ({
+      cart: {
+        ...state.cart,
+        items: state.cart.items.map((i: CartItem) =>
+          i.variant_id !== variantId ? i : { ...i, serial_no: serialNo }
+        ),
       },
     })),
 

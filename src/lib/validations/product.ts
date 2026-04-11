@@ -30,6 +30,7 @@ export const variantSchema = z
       .max(5, "Max 5 attributes"),
     cost_price: z.number({ error: "Cost price is required" }).min(0, "Must be ≥ 0"),
     selling_price: z.number({ error: "Selling price is required" }).min(0, "Must be ≥ 0"),
+    installment_price: z.number().min(0, "Must be ≥ 0").nullable().optional(),
     stock_qty: z.number({ error: "Stock quantity is required" }).int().min(0, "Must be ≥ 0"),
     low_stock_threshold: z.number().int().min(0, "Must be ≥ 0"),
   })

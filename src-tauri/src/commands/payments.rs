@@ -242,13 +242,13 @@ pub fn record_payment(
         .map_err(|e| e.to_string())?;
 
         // Check rebate eligibility: all scheduled payments were on time (no overdue history)
-        let rebate_rate: f64 = tx.query_row(
-            "SELECT rebate_rate FROM installment_accounts WHERE id = ?1",
+        let rebate_amount: f64 = tx.query_row(
+            "SELECT rebate_amount FROM installment_accounts WHERE id = ?1",
             rusqlite::params![payload.account_id],
             |row| row.get(0),
         ).unwrap_or(0.0);
 
-        if rebate_rate > 0.0 {
+        if rebate_amount > 0.0 {
             // Check if any payment was made after its due date
             let has_late: bool = tx.query_row(
                 "SELECT EXISTS(
@@ -271,36 +271,21 @@ pub fn record_payment(
             ).unwrap_or(true);
 
             if !has_late && !has_penalties {
-                // Calculate total interest paid
-                let _total_interest: f64 = tx.query_row(
-                    "SELECT COALESCE(SUM(amount), 0) FROM payments WHERE account_id = ?1 AND type = 'interest_adjustment'",
-                    rusqlite::params![payload.account_id],
-                    |row| row.get(0),
-                ).unwrap_or(0.0);
+                let credited = (rebate_amount * 100.0).round() / 100.0;
 
-                // For add-on interest, total interest = principal × monthly_rate × term
-                let (principal, interest_rate, term_months): (f64, f64, i64) = tx.query_row(
-                    "SELECT principal, interest_rate, term_months FROM installment_accounts WHERE id = ?1",
-                    rusqlite::params![payload.account_id],
-                    |row| Ok((row.get(0)?, row.get(1)?, row.get(2)?)),
-                ).map_err(|e| e.to_string())?;
-
-                let flat_interest = principal * (interest_rate / 100.0) * term_months as f64;
-                let rebate_amount = (flat_interest * rebate_rate / 100.0 * 100.0).round() / 100.0;
-
-                if rebate_amount > 0.0 {
+                if credited > 0.0 {
                     tx.execute(
                         "INSERT INTO payments (account_id, amount, type, notes)
                          VALUES (?1, ?2, 'rebate', ?3)",
                         rusqlite::params![
                             payload.account_id,
-                            -rebate_amount,
-                            format!("Early payment rebate: {}% of ₱{:.2} interest", rebate_rate, flat_interest),
+                            -credited,
+                            format!("Early payment rebate: ₱{:.2}", credited),
                         ],
                     )
                     .map_err(|e| e.to_string())?;
 
-                    rebate_credited = rebate_amount;
+                    rebate_credited = credited;
                 }
             }
         }

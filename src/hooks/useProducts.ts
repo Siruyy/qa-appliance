@@ -11,6 +11,7 @@ import type {
   UpdateVariantPayload,
   ProductVariant,
 } from "@/types/product";
+import type { SerialNumber } from "@/types/serial";
 import type { PaginatedResult } from "@/types/shared";
 
 /** Hook for product and variant CRUD operations with auto-fetch on mount. */
@@ -84,12 +85,27 @@ export function useProducts() {
     await fetchProducts();
   }, [fetchProducts]);
 
-  /** Adjust variant stock by a delta amount and refresh the list. */
-  const adjustStock = useCallback(async (id: number, delta: number) => {
-    const variant = await invoke<ProductVariant>("adjust_stock", { id, delta });
+  /** Adjust variant stock by a delta amount (with optional serials for additions) and refresh the list. */
+  const adjustStock = useCallback(async (id: number, delta: number, serials?: string[]) => {
+    const variant = await invoke<ProductVariant>("adjust_stock", { id, delta, serials: serials ?? null });
     await fetchProducts();
     return variant;
   }, [fetchProducts]);
+
+  /** Fetch a single product by ID (with variants). */
+  const getProductById = useCallback(async (id: number) => {
+    return invoke<Product>("get_product_by_id", { id });
+  }, []);
+
+  /** Add serial numbers to a variant and return updated in-stock serials. */
+  const addSerialNumbers = useCallback(async (variantId: number, serials: string[]) => {
+    return invoke<SerialNumber[]>("add_serial_numbers", { variantId, serials });
+  }, []);
+
+  /** Delete an in_stock serial number by ID. */
+  const deleteSerialNumber = useCallback(async (id: number) => {
+    await invoke<void>("delete_serial_number", { id });
+  }, []);
 
   return {
     fetchProducts,
@@ -101,5 +117,8 @@ export function useProducts() {
     updateVariant,
     archiveVariant,
     adjustStock,
+    getProductById,
+    addSerialNumbers,
+    deleteSerialNumber,
   };
 }

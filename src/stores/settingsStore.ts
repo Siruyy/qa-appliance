@@ -15,7 +15,7 @@ const defaultSettings: AppSettings = {
   preset_terms: "3,6,12,18,24",
   receipt_footer: "",
   rebate_enabled: "0",
-  default_rebate_rate: "5",
+  default_rebate_amount: "0",
 };
 
 interface SettingsState {

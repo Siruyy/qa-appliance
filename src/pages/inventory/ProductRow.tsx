@@ -1,4 +1,5 @@
 import { Fragment } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import {
   ChevronDown,
   ChevronRight,
@@ -9,6 +10,7 @@ import {
   PackagePlus,
   AlertTriangle,
   XCircle,
+  ExternalLink,
 } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
@@ -51,6 +53,7 @@ export function ProductRow({
   onAdjustStock,
   onArchiveVariant,
 }: ProductRowProps) {
+  const navigate = useNavigate();
   const variants = product.variants ?? [];
   const totalStock = variants.reduce((sum, v) => sum + v.stock_qty, 0);
   const hasLowStock = variants.some(
@@ -81,7 +84,15 @@ export function ProductRow({
               <ChevronRight className="h-4 w-4" />
             ))}
         </TableCell>
-        <TableCell className="font-medium">{product.name}</TableCell>
+        <TableCell className="font-medium">
+          <Link
+            to={`/inventory/${product.id}`}
+            className="hover:underline text-primary"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {product.name}
+          </Link>
+        </TableCell>
         <TableCell>{product.category_name ?? "—"}</TableCell>
         <TableCell className="text-right">{variants.length}</TableCell>
         <TableCell className="text-right tabular-nums">
@@ -111,6 +122,10 @@ export function ProductRow({
               <MoreHorizontal className="h-4 w-4" />
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => navigate(`/inventory/${product.id}`)  }>
+                <ExternalLink className="mr-2 h-4 w-4" />
+                View Details
+              </DropdownMenuItem>
               <DropdownMenuItem onClick={onEdit}>
                 <Pencil className="mr-2 h-4 w-4" />
                 Edit

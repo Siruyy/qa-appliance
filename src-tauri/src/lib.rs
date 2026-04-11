@@ -83,9 +83,12 @@ pub fn run() {
             commands::audit_log::get_audit_log,
             commands::payments::void_payment,
             commands::payments::waive_penalty,
-            commands::accounts::update_account_rebate_rate,
+            commands::accounts::update_account_rebate_amount,
             commands::accounts::restructure_account,
             commands::stock_movements::get_stock_movements,
+            commands::serial_numbers::get_serial_numbers,
+            commands::serial_numbers::add_serial_numbers,
+            commands::serial_numbers::delete_serial_number,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

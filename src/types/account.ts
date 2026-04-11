@@ -31,7 +31,7 @@ export interface InstallmentAccount {
   last_penalty_date: string | null;
   next_due_date: string | null;
   is_overdue: boolean;
-  rebate_rate: number;
+  rebate_amount: number;
   interest_type: InterestType;
   rebate_credited: number;
   notes: string | null;

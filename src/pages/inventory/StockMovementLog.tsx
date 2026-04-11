@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { invoke } from "@/lib/invoke";
-import { formatDateTime } from "@/lib/formatters";
+import { formatDateTime, formatVariantLabel } from "@/lib/formatters";
 import { extractErrorMessage } from "@/lib/error";
 import type { StockMovement } from "@/types/stock-movement";
 
@@ -54,7 +54,7 @@ export function StockMovementLog({ open, onClose, productId }: Props) {
     setError(null);
 
     const args: Record<string, unknown> = { limit: 500 };
-    if (productId) args.product_id = productId;
+    if (productId) args.productId = productId;
 
     invoke<StockMovement[]>("get_stock_movements", args)
       .then(setMovements)
@@ -74,7 +74,7 @@ export function StockMovementLog({ open, onClose, productId }: Props) {
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="max-w-4xl max-h-[80vh] flex flex-col">
+      <DialogContent className="w-[90vw] max-w-7xl sm:max-w-7xl max-h-[80vh] flex flex-col">
         <DialogHeader>
           <DialogTitle>Stock Movement History</DialogTitle>
         </DialogHeader>
@@ -138,7 +138,7 @@ export function StockMovementLog({ open, onClose, productId }: Props) {
                     <TableCell>
                       <div className="font-medium text-sm">{m.product_name}</div>
                       {m.variant_label && (
-                        <div className="text-xs text-muted-foreground">{m.variant_label}</div>
+                        <div className="text-xs text-muted-foreground">{formatVariantLabel(m.variant_label)}</div>
                       )}
                     </TableCell>
                     <TableCell>

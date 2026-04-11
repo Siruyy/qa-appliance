@@ -86,7 +86,7 @@ pub fn get_accounts(
                     SELECT 1 FROM payment_schedules ps
                     WHERE ps.account_id = ia.id AND ps.status = 'overdue'
                 ) THEN 1 ELSE 0 END AS is_overdue,
-                ia.rebate_rate,
+                ia.rebate_amount,
                 ia.interest_type,
                 COALESCE((SELECT SUM(ABS(pay.amount)) FROM payments pay WHERE pay.account_id = ia.id AND pay.type = 'rebate' AND COALESCE(pay.is_reversed, 0) = 0), 0) AS rebate_credited,
                 ia.notes, ia.created_at, ia.updated_at
@@ -124,7 +124,7 @@ pub fn get_accounts(
             last_penalty_date: row.get(15)?,
             next_due_date: row.get(16)?,
             is_overdue: row.get(17)?,
-            rebate_rate: row.get(18)?,
+            rebate_amount: row.get(18)?,
             interest_type: row.get(19)?,
             rebate_credited: row.get(20)?,
             notes: row.get(21)?,
@@ -155,7 +155,7 @@ pub fn get_account_by_id(db: State<DbState>, id: i64) -> Result<AccountDetail, S
                         SELECT 1 FROM payment_schedules ps
                         WHERE ps.account_id = ia.id AND ps.status = 'overdue'
                     ) THEN 1 ELSE 0 END AS is_overdue,
-                    ia.rebate_rate,
+                    ia.rebate_amount,
                     ia.interest_type,
                     COALESCE((SELECT SUM(ABS(pay.amount)) FROM payments pay WHERE pay.account_id = ia.id AND pay.type = 'rebate' AND COALESCE(pay.is_reversed, 0) = 0), 0) AS rebate_credited,
                     ia.notes, ia.created_at, ia.updated_at
@@ -188,7 +188,7 @@ pub fn get_account_by_id(db: State<DbState>, id: i64) -> Result<AccountDetail, S
                     last_penalty_date: row.get(15)?,
                     next_due_date: row.get(16)?,
                     is_overdue: row.get(17)?,
-                    rebate_rate: row.get(18)?,
+                    rebate_amount: row.get(18)?,
                     interest_type: row.get(19)?,
                     rebate_credited: row.get(20)?,
                     notes: row.get(21)?,
@@ -412,15 +412,15 @@ pub fn recalculate_balance(db: State<DbState>, account_id: i64) -> Result<f64, S
 }
 
 #[tauri::command]
-pub fn update_account_rebate_rate(
+pub fn update_account_rebate_amount(
     db: State<'_, DbState>,
     account_id: i64,
-    rebate_rate: f64,
+    rebate_amount: f64,
 ) -> Result<(), String> {
     let conn = db.0.lock().map_err(|e| e.to_string())?;
 
-    if rebate_rate < 0.0 || rebate_rate > 100.0 {
-        return Err("Rebate rate must be between 0 and 100".to_string());
+    if rebate_amount < 0.0 {
+        return Err("Rebate amount cannot be negative".to_string());
     }
 
     let status: String = conn
@@ -432,22 +432,22 @@ pub fn update_account_rebate_rate(
         .map_err(|_| "Account not found".to_string())?;
 
     if status != "open" {
-        return Err("Can only update rebate rate on open accounts".to_string());
+        return Err("Can only update rebate amount on open accounts".to_string());
     }
 
     conn.execute(
-        "UPDATE installment_accounts SET rebate_rate = ?1, updated_at = datetime('now') WHERE id = ?2",
-        rusqlite::params![rebate_rate, account_id],
+        "UPDATE installment_accounts SET rebate_amount = ?1, updated_at = datetime('now') WHERE id = ?2",
+        rusqlite::params![rebate_amount, account_id],
     )
     .map_err(|e| e.to_string())?;
 
     conn.execute(
         "INSERT INTO audit_log (action, entity_type, entity_id, details) VALUES (?1, ?2, ?3, ?4)",
         rusqlite::params![
-            "update_rebate_rate",
+            "update_rebate_amount",
             "installment_account",
             account_id.to_string(),
-            format!("Updated rebate rate to {}%", rebate_rate)
+            format!("Updated rebate amount to ₱{:.2}", rebate_amount)
         ],
     )
     .map_err(|e| e.to_string())?;

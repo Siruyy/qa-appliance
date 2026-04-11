@@ -31,12 +31,15 @@ export interface ProductVariant {
   attributes: ProductAttributes | null;
   cost_price: number;
   selling_price: number;
+  installment_price: number | null;
   stock_qty: number;
   low_stock_threshold: number;
   is_active: boolean;
   created_at: string;
   updated_at: string;
   product_name?: string;
+  last_stocked_at: string | null;
+  last_released_at: string | null;
 }
 
 export interface CreateProductPayload {
@@ -58,6 +61,7 @@ export interface CreateVariantPayload {
   attributes?: Record<string, string>;
   cost_price: number;
   selling_price: number;
+  installment_price?: number;
   stock_qty: number;
   low_stock_threshold?: number;
 }
@@ -68,6 +72,7 @@ export interface UpdateVariantPayload {
   attributes?: Record<string, string>;
   cost_price?: number;
   selling_price?: number;
+  installment_price?: number;
   stock_qty?: number;
   low_stock_threshold?: number;
 }

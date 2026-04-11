@@ -84,9 +84,9 @@ export function useAccounts() {
     await invoke<void>("waive_penalty", { paymentId, reason });
   }, []);
 
-  /** Update the rebate rate on an account. */
-  const updateAccountRebateRate = useCallback(async (accountId: number, rebateRate: number): Promise<void> => {
-    await invoke<void>("update_account_rebate_rate", { accountId, rebateRate });
+  /** Update the rebate amount on an account. */
+  const updateAccountRebateAmount = useCallback(async (accountId: number, rebateAmount: number): Promise<void> => {
+    await invoke<void>("update_account_rebate_amount", { accountId, rebateAmount });
   }, []);
 
   /** Restructure an account with new term and rate. */
@@ -109,7 +109,7 @@ export function useAccounts() {
     recalculateBalance,
     voidPayment,
     waivePenalty,
-    updateAccountRebateRate,
+    updateAccountRebateAmount,
     restructureAccount,
   };
 }

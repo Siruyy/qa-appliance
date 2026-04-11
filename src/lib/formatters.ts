@@ -64,3 +64,17 @@ export function formatAttributes(json: string | null | undefined): string {
     return json;
   }
 }
+
+/**
+ * Format a variant_label like "SKU - {json}" into "SKU - White, 5 cu ft".
+ * If the label has no JSON portion, returns it as-is.
+ */
+export function formatVariantLabel(label: string | null | undefined): string {
+  if (!label) return "";
+  const idx = label.indexOf(" - {");
+  if (idx === -1) return label;
+  const sku = label.slice(0, idx);
+  const json = label.slice(idx + 3);
+  const parsed = formatAttributes(json);
+  return parsed ? `${sku} - ${parsed}` : sku;
+}

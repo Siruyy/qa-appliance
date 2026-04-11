@@ -2,17 +2,27 @@ import { useState } from "react";
 import { Minus, Plus, Trash2, Tag } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useCurrency } from "@/hooks/useCurrency";
 import type { CartItem, DiscountType } from "@/types/sale";
+import type { SerialNumber } from "@/types/serial";
 
 interface SaleItemRowProps {
   item: CartItem;
+  availableSerials?: SerialNumber[];
   onUpdateQty: (variantId: number, qty: number) => void;
   onRemove: (variantId: number) => void;
   onSetItemDiscount: (variantId: number, value: number, type: DiscountType) => void;
+  onSetSerial?: (variantId: number, serialNo: string | undefined) => void;
 }
 
-export function SaleItemRow({ item, onUpdateQty, onRemove, onSetItemDiscount }: SaleItemRowProps) {
+export function SaleItemRow({ item, availableSerials, onUpdateQty, onRemove, onSetItemDiscount, onSetSerial }: SaleItemRowProps) {
   const { format: formatCurrency } = useCurrency();
   const [showDiscount, setShowDiscount] = useState(item.item_discount_value > 0);
 
@@ -141,6 +151,36 @@ export function SaleItemRow({ item, onUpdateQty, onRemove, onSetItemDiscount }: 
                   = {formatCurrency(item.item_discount)}
                 </span>
               )}
+            </div>
+          </td>
+        </tr>
+      )}
+      {availableSerials && availableSerials.length > 0 && onSetSerial && (
+        <tr className="border-b bg-muted/20">
+          <td colSpan={5} className="py-1.5 px-3">
+            <div className="flex items-center gap-2 text-sm">
+              <span className="text-muted-foreground whitespace-nowrap">
+                Serial #<span className="text-destructive ml-0.5">*</span>:
+              </span>
+              <Select
+                value={item.serial_no ?? ""}
+                onValueChange={(val) => onSetSerial(item.variant_id, val || undefined)}
+              >
+                <SelectTrigger
+                  className={`h-7 w-52 text-xs ${
+                    !item.serial_no ? "border-destructive ring-destructive/20" : ""
+                  }`}
+                >
+                  <SelectValue placeholder="Required — select serial…" />
+                </SelectTrigger>
+                <SelectContent>
+                  {availableSerials.map((s) => (
+                    <SelectItem key={s.id} value={s.serial_no}>
+                      {s.serial_no}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </td>
         </tr>

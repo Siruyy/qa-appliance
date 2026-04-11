@@ -48,7 +48,7 @@ export function AccountDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { getAccountById, markAccountDefaulted, updateAccountNotes, recalculateBalance, voidPayment, waivePenalty, updateAccountRebateRate, restructureAccount } = useAccounts();
+  const { getAccountById, markAccountDefaulted, updateAccountNotes, recalculateBalance, voidPayment, waivePenalty, updateAccountRebateAmount, restructureAccount } = useAccounts();
   const { format: formatCurrency } = useCurrency();
   const settings = useSettingsStore((s) => s.settings);
 
@@ -204,16 +204,16 @@ export function AccountDetailPage() {
     }
   };
 
-  const handleSaveRebateRate = async () => {
+  const handleSaveRebateAmount = async () => {
     if (!account) return;
-    const rate = parseFloat(rebateRate);
-    if (isNaN(rate) || rate < 0 || rate > 100) {
-      toast.error("Rebate rate must be between 0 and 100");
+    const amount = parseFloat(rebateRate);
+    if (isNaN(amount) || amount < 0) {
+      toast.error("Rebate amount must be 0 or greater");
       return;
     }
     try {
-      await updateAccountRebateRate(account.id, rate);
-      toast.success(`Rebate rate updated to ${rate}%`);
+      await updateAccountRebateAmount(account.id, amount);
+      toast.success(`Rebate amount updated to ₱${amount.toFixed(2)}`);
       setEditingRebate(false);
       await loadAccount();
     } catch (err) {
@@ -393,31 +393,30 @@ export function AccountDetailPage() {
         </div>
         {account.status === "open" ? (
           <div>
-            <p className="text-xs text-muted-foreground">Rebate Rate</p>
+            <p className="text-xs text-muted-foreground">Rebate Amount</p>
             {editingRebate ? (
               <div className="flex items-center gap-1 mt-1">
                 <Input
                   type="number"
                   min="0"
-                  max="100"
-                  step="0.5"
+                  step="1"
                   value={rebateRate}
                   onChange={(e) => setRebateRate(e.target.value)}
                   className="h-7 w-20 text-sm"
                 />
-                <span className="text-xs">%</span>
-                <Button size="sm" variant="ghost" className="h-7 px-2 text-xs" onClick={handleSaveRebateRate}>Save</Button>
+                <span className="text-xs">₱</span>
+                <Button size="sm" variant="ghost" className="h-7 px-2 text-xs" onClick={handleSaveRebateAmount}>Save</Button>
                 <Button size="sm" variant="ghost" className="h-7 px-2 text-xs" onClick={() => setEditingRebate(false)}>Cancel</Button>
               </div>
             ) : (
               <div className="flex items-center gap-1">
-                <p className="text-sm font-medium text-green-600">{account.rebate_rate ?? 0}% of interest</p>
+                <p className="text-sm font-medium text-green-600">₱{(account.rebate_amount ?? 0).toFixed(2)}</p>
                 <Button
                   size="sm"
                   variant="ghost"
                   className="h-5 w-5 p-0"
                   onClick={() => {
-                    setRebateRate(String(account.rebate_rate ?? 0));
+                    setRebateRate(String(account.rebate_amount ?? 0));
                     setEditingRebate(true);
                   }}
                 >
@@ -426,10 +425,10 @@ export function AccountDetailPage() {
               </div>
             )}
           </div>
-        ) : (account.rebate_rate ?? 0) > 0 ? (
+        ) : (account.rebate_amount ?? 0) > 0 ? (
           <div>
-            <p className="text-xs text-muted-foreground">Rebate Rate</p>
-            <p className="text-sm font-medium text-green-600">{account.rebate_rate}% of interest</p>
+            <p className="text-xs text-muted-foreground">Rebate Amount</p>
+            <p className="text-sm font-medium text-green-600">₱{account.rebate_amount.toFixed(2)}</p>
           </div>
         ) : null}
         <div>

@@ -152,11 +152,14 @@ fn row_to_variant(row: &rusqlite::Row) -> rusqlite::Result<ProductVariant> {
         attributes,
         cost_price: row.get("cost_price")?,
         selling_price: row.get("selling_price")?,
+        installment_price: row.get("installment_price").unwrap_or(None),
         stock_qty: row.get("stock_qty")?,
         low_stock_threshold: row.get("low_stock_threshold")?,
         is_active: row.get::<_, i64>("is_active")? != 0,
         created_at: row.get("created_at")?,
         updated_at: row.get("updated_at")?,
+        last_stocked_at: row.get("last_stocked_at").unwrap_or(None),
+        last_released_at: row.get("last_released_at").unwrap_or(None),
     })
 }
 
@@ -201,11 +204,13 @@ pub fn get_products(
             let placeholders: String = product_ids.iter().map(|_| "?").collect::<Vec<_>>().join(", ");
             let mut v_stmt = conn
                 .prepare(&format!(
-                    "SELECT id, product_id, sku, attributes, cost_price, selling_price,
-                            stock_qty, low_stock_threshold, is_active, created_at, updated_at
-                     FROM product_variants
-                     WHERE product_id IN ({})
-                     ORDER BY product_id, id",
+                    "SELECT pv.id, pv.product_id, pv.sku, pv.attributes, pv.cost_price, pv.selling_price,
+                            pv.installment_price, pv.stock_qty, pv.low_stock_threshold, pv.is_active, pv.created_at, pv.updated_at,
+                            (SELECT MAX(sm.created_at) FROM stock_movements sm WHERE sm.variant_id = pv.id AND sm.delta > 0) AS last_stocked_at,
+                            (SELECT MAX(sm.created_at) FROM stock_movements sm WHERE sm.variant_id = pv.id AND sm.delta < 0) AS last_released_at
+                     FROM product_variants pv
+                     WHERE pv.product_id IN ({})
+                     ORDER BY pv.product_id, pv.id",
                     placeholders
                 ))
                 .map_err(|e| e.to_string())?;
@@ -218,10 +223,12 @@ pub fn get_products(
         } else {
             let mut v_stmt = conn
                 .prepare(
-                    "SELECT id, product_id, sku, attributes, cost_price, selling_price,
-                            stock_qty, low_stock_threshold, is_active, created_at, updated_at
-                     FROM product_variants
-                     ORDER BY product_id, id",
+                    "SELECT pv.id, pv.product_id, pv.sku, pv.attributes, pv.cost_price, pv.selling_price,
+                            pv.installment_price, pv.stock_qty, pv.low_stock_threshold, pv.is_active, pv.created_at, pv.updated_at,
+                            (SELECT MAX(sm.created_at) FROM stock_movements sm WHERE sm.variant_id = pv.id AND sm.delta > 0) AS last_stocked_at,
+                            (SELECT MAX(sm.created_at) FROM stock_movements sm WHERE sm.variant_id = pv.id AND sm.delta < 0) AS last_released_at
+                     FROM product_variants pv
+                     ORDER BY pv.product_id, pv.id",
                 )
                 .map_err(|e| e.to_string())?;
             let result = v_stmt
@@ -266,7 +273,7 @@ pub fn get_product_by_id(db: State<'_, DbState>, id: i64) -> Result<Product, Str
     let mut v_stmt = conn
         .prepare(
             "SELECT id, product_id, sku, attributes, cost_price, selling_price,
-                    stock_qty, low_stock_threshold, is_active, created_at, updated_at
+                    installment_price, stock_qty, low_stock_threshold, is_active, created_at, updated_at
              FROM product_variants WHERE product_id = ?1
              ORDER BY id",
         )
@@ -403,10 +410,12 @@ pub fn get_variants_for_product(db: State<'_, DbState>, product_id: i64) -> Resu
     let conn = db.0.lock().map_err(|e| e.to_string())?;
     let mut stmt = conn
         .prepare(
-            "SELECT id, product_id, sku, attributes, cost_price, selling_price,
-                    stock_qty, low_stock_threshold, is_active, created_at, updated_at
-             FROM product_variants WHERE product_id = ?1
-             ORDER BY id",
+            "SELECT pv.id, pv.product_id, pv.sku, pv.attributes, pv.cost_price, pv.selling_price,
+                    pv.installment_price, pv.stock_qty, pv.low_stock_threshold, pv.is_active, pv.created_at, pv.updated_at,
+                    (SELECT MAX(sm.created_at) FROM stock_movements sm WHERE sm.variant_id = pv.id AND sm.delta > 0) AS last_stocked_at,
+                    (SELECT MAX(sm.created_at) FROM stock_movements sm WHERE sm.variant_id = pv.id AND sm.delta < 0) AS last_released_at
+             FROM product_variants pv WHERE pv.product_id = ?1
+             ORDER BY pv.id",
         )
         .map_err(|e| e.to_string())?;
 
@@ -432,6 +441,11 @@ pub fn create_variant(db: State<'_, DbState>, payload: CreateVariantPayload) -> 
     if payload.selling_price <= 0.0 {
         return Err("Selling price must be greater than 0".to_string());
     }
+    if let Some(ip) = payload.installment_price {
+        if ip <= 0.0 {
+            return Err("Installment price must be greater than 0".to_string());
+        }
+    }
     if payload.stock_qty < 0 {
         return Err("Stock quantity cannot be negative".to_string());
     }
@@ -454,14 +468,15 @@ pub fn create_variant(db: State<'_, DbState>, payload: CreateVariantPayload) -> 
     }
 
     conn.execute(
-        "INSERT INTO product_variants (product_id, sku, attributes, cost_price, selling_price, stock_qty, low_stock_threshold)
-         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)",
+        "INSERT INTO product_variants (product_id, sku, attributes, cost_price, selling_price, installment_price, stock_qty, low_stock_threshold)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)",
         params![
             payload.product_id,
             payload.sku,
             attr_json,
             payload.cost_price,
             payload.selling_price,
+            payload.installment_price,
             payload.stock_qty,
             threshold
         ],
@@ -477,7 +492,7 @@ pub fn create_variant(db: State<'_, DbState>, payload: CreateVariantPayload) -> 
 
     conn.query_row(
         "SELECT id, product_id, sku, attributes, cost_price, selling_price,
-                stock_qty, low_stock_threshold, is_active, created_at, updated_at
+                installment_price, stock_qty, low_stock_threshold, is_active, created_at, updated_at
          FROM product_variants WHERE id = ?1",
         params![id],
         |row| row_to_variant(row),
@@ -495,6 +510,9 @@ pub fn update_variant(db: State<'_, DbState>, payload: UpdateVariantPayload) -> 
     }
     if let Some(sell) = payload.selling_price {
         if sell <= 0.0 { return Err("Selling price must be greater than 0".to_string()); }
+    }
+    if let Some(ip) = payload.installment_price {
+        if ip <= 0.0 { return Err("Installment price must be greater than 0".to_string()); }
     }
     if let Some(qty) = payload.stock_qty {
         if qty < 0 { return Err("Stock quantity cannot be negative".to_string()); }
@@ -535,6 +553,10 @@ pub fn update_variant(db: State<'_, DbState>, payload: UpdateVariantPayload) -> 
         sets.push("selling_price = ?".into());
         values.push(Box::new(sell));
     }
+    if let Some(ip) = payload.installment_price {
+        sets.push("installment_price = ?".into());
+        values.push(Box::new(ip));
+    }
     if let Some(qty) = payload.stock_qty {
         sets.push("stock_qty = ?".into());
         values.push(Box::new(qty));
@@ -571,7 +593,7 @@ pub fn update_variant(db: State<'_, DbState>, payload: UpdateVariantPayload) -> 
 
     conn.query_row(
         "SELECT id, product_id, sku, attributes, cost_price, selling_price,
-                stock_qty, low_stock_threshold, is_active, created_at, updated_at
+                installment_price, stock_qty, low_stock_threshold, is_active, created_at, updated_at
          FROM product_variants WHERE id = ?1",
         params![payload.id],
         |row| row_to_variant(row),
@@ -597,7 +619,7 @@ pub fn archive_variant(db: State<'_, DbState>, id: i64) -> Result<(), String> {
 }
 
 #[tauri::command]
-pub fn adjust_stock(db: State<'_, DbState>, id: i64, delta: i64) -> Result<ProductVariant, String> {
+pub fn adjust_stock(db: State<'_, DbState>, id: i64, delta: i64, serials: Option<Vec<String>>) -> Result<ProductVariant, String> {
     let conn = db.0.lock().map_err(|e| e.to_string())?;
 
     // Ensure new quantity won't go negative
@@ -634,10 +656,29 @@ pub fn adjust_stock(db: State<'_, DbState>, id: i64, delta: i64) -> Result<Produ
     )
     .map_err(|e| format!("Failed to record stock movement: {}", e))?;
 
+    // If adding stock and serials provided, register them
+    if delta > 0 {
+        if let Some(serial_list) = serials {
+            for serial in serial_list {
+                let serial = serial.trim().to_string();
+                if serial.is_empty() {
+                    continue;
+                }
+                conn.execute(
+                    "INSERT OR IGNORE INTO serial_numbers (variant_id, serial_no, status) VALUES (?1, ?2, 'in_stock')",
+                    params![id, serial],
+                )
+                .map_err(|e| format!("Failed to insert serial '{}': {}", serial, e))?;
+            }
+        }
+    }
+
     conn.query_row(
-        "SELECT id, product_id, sku, attributes, cost_price, selling_price,
-                stock_qty, low_stock_threshold, is_active, created_at, updated_at
-         FROM product_variants WHERE id = ?1",
+        "SELECT pv.id, pv.product_id, pv.sku, pv.attributes, pv.cost_price, pv.selling_price,
+                pv.stock_qty, pv.low_stock_threshold, pv.is_active, pv.created_at, pv.updated_at,
+                (SELECT MAX(sm.created_at) FROM stock_movements sm WHERE sm.variant_id = pv.id AND sm.delta > 0) AS last_stocked_at,
+                (SELECT MAX(sm.created_at) FROM stock_movements sm WHERE sm.variant_id = pv.id AND sm.delta < 0) AS last_released_at
+         FROM product_variants pv WHERE pv.id = ?1",
         params![id],
         |row| row_to_variant(row),
     )
@@ -665,9 +706,11 @@ fn get_product_by_id_inner(db: &State<'_, DbState>, id: i64) -> Result<Product, 
 
     let mut v_stmt = conn
         .prepare(
-            "SELECT id, product_id, sku, attributes, cost_price, selling_price,
-                    stock_qty, low_stock_threshold, is_active, created_at, updated_at
-             FROM product_variants WHERE product_id = ?1 ORDER BY id",
+            "SELECT pv.id, pv.product_id, pv.sku, pv.attributes, pv.cost_price, pv.selling_price,
+                    pv.stock_qty, pv.low_stock_threshold, pv.is_active, pv.created_at, pv.updated_at,
+                    (SELECT MAX(sm.created_at) FROM stock_movements sm WHERE sm.variant_id = pv.id AND sm.delta > 0) AS last_stocked_at,
+                    (SELECT MAX(sm.created_at) FROM stock_movements sm WHERE sm.variant_id = pv.id AND sm.delta < 0) AS last_released_at
+             FROM product_variants pv WHERE pv.product_id = ?1 ORDER BY pv.id",
         )
         .map_err(|e| e.to_string())?;
 

@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { useNavigate, useSearchParams, useBlocker } from "react-router-dom";
 import { ShoppingCart, User, Banknote, CreditCard, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -33,6 +33,8 @@ import { useSettingsStore } from "@/stores/settingsStore";
 import { parseSettings } from "@/types/settings";
 import { calculateAddOnInterest, generatePaymentSchedule } from "@/lib/interest";
 import type { CartItem, CreateInstallmentPayload, PaymentType } from "@/types/sale";
+import type { SerialNumber } from "@/types/serial";
+import { invoke } from "@/lib/invoke";
 import type { Customer } from "@/types/customer";
 import { getErrorWithRecovery } from "@/lib/error";
 import { useCartStore } from "@/stores/cartStore";
@@ -63,9 +65,9 @@ export function NewSalePage() {
     penalty_rate: typed.default_penalty_rate,
     term_months: typed.default_installment_term,
     start_date: new Date().toISOString().split("T")[0],
-    rebate_rate: typed.rebate_enabled ? typed.default_rebate_rate : 0,
+    rebate_amount: typed.rebate_enabled ? typed.default_rebate_amount : 0,
     interest_type: "monthly",
-  }), [typed.default_interest_rate, typed.default_penalty_rate, typed.default_installment_term, typed.rebate_enabled, typed.default_rebate_rate]);
+  }), [typed.default_interest_rate, typed.default_penalty_rate, typed.default_installment_term, typed.rebate_enabled, typed.default_rebate_amount]);
 
   const {
     cart,
@@ -79,6 +81,7 @@ export function NewSalePage() {
     setCartNotes,
     setCartInstallment,
     setItemDiscount,
+    setItemSerial,
     cartSubtotal,
     cartTotal,
     resolvedDiscount,
@@ -87,6 +90,8 @@ export function NewSalePage() {
   const [submitting, setSubmitting] = useState(false);
   const [showSchedulePreview, setShowSchedulePreview] = useState(false);
   const [customerSearchOpen, setCustomerSearchOpen] = useState(false);
+  const [variantSerials, setVariantSerials] = useState<Record<number, SerialNumber[]>>({});
+  const serialLoadedRef = useRef<Set<number>>(new Set());
 
   // Warn before navigating away if the cart has items
   const blocker = useBlocker(() => cart.items.length > 0 && !submitting);
@@ -108,6 +113,24 @@ export function NewSalePage() {
     fetchProducts();
     fetchCustomers();
   }, [fetchProducts, fetchCustomers]);
+
+  // Load available in-stock serials for each variant in the cart
+  useEffect(() => {
+    const newIds = cart.items
+      .map((i) => i.variant_id)
+      .filter((id) => !serialLoadedRef.current.has(id));
+    if (newIds.length === 0) return;
+    newIds.forEach((id) => {
+      serialLoadedRef.current.add(id);
+      invoke<SerialNumber[]>("get_serial_numbers", { variantId: id, status: "in_stock" })
+        .then((serials) => {
+          if (serials.length > 0) {
+            setVariantSerials((prev) => ({ ...prev, [id]: serials }));
+          }
+        })
+        .catch(() => { /* non-critical */ });
+    });
+  }, [cart.items]);
 
   // Pre-select customer from URL params (e.g., from customer detail page)
   useEffect(() => {
@@ -136,25 +159,30 @@ export function NewSalePage() {
 
   // Product selected from dropdown
   const handleProductSelect = useCallback(
-    (option: { product: { name: string }; variant: { id: number; selling_price: number; stock_qty: number; attributes: Record<string, string> | null } }) => {
+    (option: { product: { name: string }; variant: { id: number; selling_price: number; installment_price: number | null; stock_qty: number; attributes: Record<string, string> | null } }) => {
       const attrs = option.variant.attributes
         ? Object.values(option.variant.attributes).join(" / ")
         : "";
+      const effectivePrice = cart.paymentType === "installment"
+        ? (option.variant.installment_price ?? option.variant.selling_price)
+        : option.variant.selling_price;
       const item: CartItem = {
         variant_id: option.variant.id,
         product_name: option.product.name,
         variant_label: attrs,
         quantity: 1,
-        unit_price: option.variant.selling_price,
-        subtotal: option.variant.selling_price,
+        unit_price: effectivePrice,
+        subtotal: effectivePrice,
         stock_qty: option.variant.stock_qty,
         item_discount_type: "peso",
         item_discount_value: 0,
         item_discount: 0,
+        selling_price: option.variant.selling_price,
+        installment_price: option.variant.installment_price,
       };
       addToCart(item);
     },
-    [addToCart]
+    [addToCart, cart.paymentType]
   );
 
   // Customer select
@@ -232,6 +260,16 @@ export function NewSalePage() {
         return;
       }
     }
+    const missingSerial = cart.items.find(
+      (i: CartItem) =>
+        (variantSerials[i.variant_id]?.length ?? 0) > 0 && !i.serial_no
+    );
+    if (missingSerial) {
+      toast.error(
+        `Select a serial number for ${missingSerial.product_name}${missingSerial.variant_label ? ` (${missingSerial.variant_label})` : ""}`
+      );
+      return;
+    }
 
     setSubmitting(true);
     try {
@@ -248,6 +286,7 @@ export function NewSalePage() {
           unit_price: i.unit_price,
           item_discount_type: i.item_discount_type,
           item_discount_value: i.item_discount_value,
+          serial_no: i.serial_no,
         })),
         installment: cart.paymentType === "installment" ? cart.installment ?? undefined : undefined,
       });
@@ -316,9 +355,11 @@ export function NewSalePage() {
                         <SaleItemRow
                           key={item.variant_id}
                           item={item}
+                          availableSerials={variantSerials[item.variant_id]}
                           onUpdateQty={updateCartQty}
                           onRemove={removeFromCart}
                           onSetItemDiscount={setItemDiscount}
+                          onSetSerial={setItemSerial}
                         />
                       ))}
                     </tbody>

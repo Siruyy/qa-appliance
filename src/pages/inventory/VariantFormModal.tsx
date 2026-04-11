@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
@@ -17,6 +18,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
 import { extractErrorMessage } from '@/lib/error';
 
 interface Props {
@@ -27,7 +29,8 @@ interface Props {
 
 export function VariantFormModal({ productId, variant, onClose }: Props) {
   const isEdit = !!variant;
-  const { createVariant, updateVariant } = useProducts();
+  const { createVariant, updateVariant, addSerialNumbers } = useProducts();
+  const [serialsText, setSerialsText] = useState("");
 
   // Convert Record<string,string> → array for form
   const existingAttrs = variant?.attributes
@@ -50,6 +53,7 @@ export function VariantFormModal({ productId, variant, onClose }: Props) {
       attributes: existingAttrs,
       cost_price: variant?.cost_price ?? 0,
       selling_price: variant?.selling_price ?? 0,
+      installment_price: variant?.installment_price ?? null,
       stock_qty: variant?.stock_qty ?? 0,
       low_stock_threshold: variant?.low_stock_threshold ?? 2,
     },
@@ -75,21 +79,39 @@ export function VariantFormModal({ productId, variant, onClose }: Props) {
           attributes: attrRecord,
           cost_price: data.cost_price,
           selling_price: data.selling_price,
+          installment_price: data.installment_price ?? undefined,
           stock_qty: data.stock_qty,
           low_stock_threshold: data.low_stock_threshold,
         });
         toast.success("Variant updated");
       } else {
-        await createVariant({
+        const created = await createVariant({
           product_id: data.product_id,
           sku: data.sku || undefined,
           attributes: attrRecord,
           cost_price: data.cost_price,
           selling_price: data.selling_price,
+          installment_price: data.installment_price ?? undefined,
           stock_qty: data.stock_qty,
           low_stock_threshold: data.low_stock_threshold,
         });
-        toast.success("Variant created");
+
+        // Register serial numbers if entered
+        const parsedSerials = serialsText
+          .split(/[,\n]/)
+          .map((s) => s.trim())
+          .filter(Boolean);
+        if (parsedSerials.length > 0) {
+          try {
+            await addSerialNumbers(created.id, parsedSerials);
+            toast.success(`Variant created with ${parsedSerials.length} serial(s)`);
+          } catch (e) {
+            toast.success("Variant created");
+            toast.error(`Failed to add serials: ${extractErrorMessage(e)}`);
+          }
+        } else {
+          toast.success("Variant created");
+        }
       }
       onClose();
     } catch (e) {
@@ -200,6 +222,27 @@ export function VariantFormModal({ productId, variant, onClose }: Props) {
             </div>
           </div>
 
+          {/* Installment Price */}
+          <div className="space-y-2">
+            <Label htmlFor="installment-price">Installment Price (₱) — optional</Label>
+            <Input
+              id="installment-price"
+              type="number"
+              step="0.01"
+              min="0"
+              placeholder="Leave blank to use selling price for installments"
+              {...register("installment_price", {
+                setValueAs: (v: string) => (v === "" || v === undefined ? null : parseFloat(v)),
+              })}
+            />
+            {errors.installment_price && (
+              <p className="text-sm text-destructive">{errors.installment_price.message}</p>
+            )}
+            <p className="text-xs text-muted-foreground">
+              If set, installment sales will use this price instead of the selling price.
+            </p>
+          </div>
+
           {/* Stock */}
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
@@ -225,6 +268,25 @@ export function VariantFormModal({ productId, variant, onClose }: Props) {
               )}
             </div>
           </div>
+
+          {/* Serial Numbers (create mode only) */}
+          {!isEdit && (
+            <div className="space-y-2">
+              <Label htmlFor="serials">Serial Numbers (optional)</Label>
+              <Textarea
+                id="serials"
+                placeholder="One per line or comma-separated"
+                rows={3}
+                value={serialsText}
+                onChange={(e) => setSerialsText(e.target.value)}
+              />
+              {serialsText.trim() && (
+                <p className="text-xs text-muted-foreground">
+                  {serialsText.split(/[,\n]/).map((s) => s.trim()).filter(Boolean).length} serial(s) will be registered
+                </p>
+              )}
+            </div>
+          )}
 
           <DialogFooter>
             <Button type="button" variant="outline" onClick={onClose}>

@@ -37,11 +37,14 @@ pub struct ProductVariant {
     pub attributes: Option<serde_json::Value>,
     pub cost_price: f64,
     pub selling_price: f64,
+    pub installment_price: Option<f64>,
     pub stock_qty: i64,
     pub low_stock_threshold: i64,
     pub is_active: bool,
     pub created_at: String,
     pub updated_at: String,
+    pub last_stocked_at: Option<String>,
+    pub last_released_at: Option<String>,
 }
 
 // ── Create / Update Payloads ──
@@ -68,6 +71,7 @@ pub struct CreateVariantPayload {
     pub attributes: Option<serde_json::Value>,
     pub cost_price: f64,
     pub selling_price: f64,
+    pub installment_price: Option<f64>,
     pub stock_qty: i64,
     pub low_stock_threshold: Option<i64>,
 }
@@ -79,6 +83,7 @@ pub struct UpdateVariantPayload {
     pub attributes: Option<serde_json::Value>,
     pub cost_price: Option<f64>,
     pub selling_price: Option<f64>,
+    pub installment_price: Option<f64>,
     pub stock_qty: Option<i64>,
     pub low_stock_threshold: Option<i64>,
 }

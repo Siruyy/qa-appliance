@@ -65,8 +65,8 @@ export async function toInstallmentPlan(account: AccountDetail, store: StoreInfo
     ["Loan Term:", account.term_months ? `${account.term_months} months` : "—"],
     ["Monthly Payment:", account.monthly_amount ? peso(account.monthly_amount) : "—"],
   ];
-  if (account.rebate_rate > 0) {
-    details.push(["Early Payment Rebate:", `${account.rebate_rate}% of total interest`]);
+  if (account.rebate_amount > 0) {
+    details.push(["Early Payment Rebate:", `₱${account.rebate_amount.toFixed(2)}`]);
   }
 
   for (const [label, val] of details) {
@@ -77,12 +77,12 @@ export async function toInstallmentPlan(account: AccountDetail, store: StoreInfo
     y += 6;
   }
 
-  if (account.rebate_rate > 0) {
+  if (account.rebate_amount > 0) {
     y += 2;
     doc.setFontSize(8);
     doc.setTextColor(16, 185, 129);
     doc.text(
-      `* Rebate of ${account.rebate_rate}% on total interest will be credited if all payments are made on or before their due date.`,
+      `* Early payment rebate of ₱${account.rebate_amount.toFixed(2)} will be credited if all payments are made on or before their due date.`,
       leftX, y, { maxWidth: pw - 28 }
     );
     doc.setTextColor(0, 0, 0);

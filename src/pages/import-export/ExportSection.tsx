@@ -80,12 +80,12 @@ export function ExportSection() {
           }
           case "accounts": {
             const data = await exportAccounts();
-            const headers = ["ID", "Customer", "Product", "Principal", "Balance", "Interest %", "Penalty %", "Rebate %", "Term", "Status", "Created"];
+            const headers = ["ID", "Customer", "Product", "Principal", "Balance", "Interest %", "Penalty %", "Rebate ₱", "Term", "Status", "Created"];
             const rows = data.map((a) => [
               String(a.id), a.customer_name, formatProductSummary(a.product_summary),
               formatCurrency(a.principal), formatCurrency(a.balance_remaining),
               `${a.interest_rate}%`, `${a.penalty_rate}%`,
-              a.rebate_rate > 0 ? `${a.rebate_rate}%` : "—",
+              a.rebate_amount > 0 ? `₱${a.rebate_amount.toFixed(2)}` : "—",
               a.term_months ? `${a.term_months} mo` : "N/A", a.status, a.created_at,
             ]);
             if (format === "excel") await toExcel({ filename: "accounts_export", sheetName: "Accounts", headers, rows });
@@ -148,12 +148,12 @@ export function ExportSection() {
                 },
                 {
                   sheetName: "Accounts",
-                  headers: ["ID", "Customer", "Product", "Principal", "Balance", "Interest %", "Penalty %", "Rebate %", "Term", "Status", "Created"],
+                  headers: ["ID", "Customer", "Product", "Principal", "Balance", "Interest %", "Penalty %", "Rebate ₱", "Term", "Status", "Created"],
                   rows: data.accounts.map((a) => [
                     String(a.id), a.customer_name, formatProductSummary(a.product_summary),
                     formatCurrency(a.principal), formatCurrency(a.balance_remaining),
                     `${a.interest_rate}%`, `${a.penalty_rate}%`,
-                    a.rebate_rate > 0 ? `${a.rebate_rate}%` : "—",
+                    a.rebate_amount > 0 ? `₱${a.rebate_amount.toFixed(2)}` : "—",
                     a.term_months ? `${a.term_months} mo` : "N/A", a.status, a.created_at,
                   ]),
                 },

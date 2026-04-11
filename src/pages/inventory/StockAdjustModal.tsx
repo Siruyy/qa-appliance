@@ -12,25 +12,33 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
 
 interface Props {
   variant: ProductVariant;
-  onAdjust: (id: number, delta: number) => Promise<void>;
+  onAdjust: (id: number, delta: number, serials?: string[]) => Promise<void>;
   onClose: () => void;
 }
 
 export function StockAdjustModal({ variant, onAdjust, onClose }: Props) {
   const [delta, setDelta] = useState(0);
+  const [serialsText, setSerialsText] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
   const newQty = variant.stock_qty + delta;
   const isValid = delta !== 0 && newQty >= 0;
 
+  const parsedSerials = serialsText
+    .split(/[\n,]+/)
+    .map((s) => s.trim())
+    .filter(Boolean);
+
   const handleSubmit = async () => {
     if (!isValid) return;
     setSubmitting(true);
     try {
-      await onAdjust(variant.id, delta);
+      const serials = delta > 0 && parsedSerials.length > 0 ? parsedSerials : undefined;
+      await onAdjust(variant.id, delta, serials);
       onClose();
     } finally {
       setSubmitting(false);
@@ -96,6 +104,24 @@ export function StockAdjustModal({ variant, onAdjust, onClose }: Props) {
                 <RotateCcw className="mr-1 h-3 w-3" />
                 Set to 0
               </Button>
+            </div>
+          )}
+
+          {delta > 0 && (
+            <div className="space-y-1.5">
+              <Label className="text-xs">Serial Numbers <span className="text-muted-foreground">(optional)</span></Label>
+              <Textarea
+                placeholder={"Enter serial numbers, one per line or comma-separated"}
+                value={serialsText}
+                onChange={(e) => setSerialsText(e.target.value)}
+                rows={3}
+                className="text-xs"
+              />
+              {parsedSerials.length > 0 && (
+                <p className="text-xs text-muted-foreground">
+                  {parsedSerials.length} serial{parsedSerials.length !== 1 ? "s" : ""} entered
+                </p>
+              )}
             </div>
           )}
 

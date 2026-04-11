@@ -97,7 +97,7 @@ export interface ExportAccount {
   balance_remaining: number;
   interest_rate: number;
   penalty_rate: number;
-  rebate_rate: number;
+  rebate_amount: number;
   term_months: number | null;
   has_schedule: boolean;
   status: AccountStatus;

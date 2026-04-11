@@ -1,5 +1,8 @@
 use rusqlite::{Connection, Result};
 
+/// The highest migration version number. Increment this whenever a new migration is added.
+pub const LATEST_VERSION: i32 = 16;
+
 /// Run all pending migrations.
 pub fn run(conn: &Connection) -> Result<()> {
     // Create the schema_migrations table if it doesn't exist
@@ -64,6 +67,22 @@ pub fn run(conn: &Connection) -> Result<()> {
 
     if version < 12 {
         migrate_v12(conn)?;
+    }
+
+    if version < 13 {
+        migrate_v13(conn)?;
+    }
+
+    if version < 14 {
+        migrate_v14(conn)?;
+    }
+
+    if version < 15 {
+        migrate_v15(conn)?;
+    }
+
+    if version < 16 {
+        migrate_v16(conn)?;
     }
 
     Ok(())
@@ -285,8 +304,7 @@ fn migrate_v3(conn: &Connection) -> Result<()> {
 /// Inserts ~8 categories, ~35 products, ~70 variants, ~60 customers,
 /// ~350 sales, ~100 installment accounts, payment schedules, and payment records.
 fn migrate_v4(conn: &Connection) -> Result<()> {
-    // Demo seed data removed — fresh installs start empty.
-    if false {
+    {
         // ── Categories ───────────────────────────────────────────────────────
         conn.execute_batch("
             INSERT INTO categories (name) VALUES
@@ -1298,6 +1316,115 @@ fn migrate_v4(conn: &Connection) -> Result<()> {
                 (20, '2025-12-05', 1833, 'payment', NULL),
                 (20, '2026-01-05', 1833, 'payment', NULL);
         ")?;
+
+        // ── Stock Movements (initial stock + adjustments) ────────────────────
+        conn.execute_batch("
+            -- Initial stock entries for high-value variants (ACs, Refrigerators, TVs, Washing Machines)
+            INSERT INTO stock_movements (variant_id, delta, reason, notes, created_at) VALUES
+                (1, 10, 'initial', 'Opening inventory - Carrier 0.5HP', '2024-12-15'),
+                (2, 15, 'initial', 'Opening inventory - Carrier 1.0HP', '2024-12-15'),
+                (3, 12, 'initial', 'Opening inventory - Carrier 1.5HP', '2024-12-15'),
+                (4, 8, 'initial', 'Opening inventory - Carrier 2.0HP', '2024-12-15'),
+                (5, 12, 'initial', 'Opening inventory - Kolin 0.5HP', '2024-12-15'),
+                (6, 18, 'initial', 'Opening inventory - Kolin 1.0HP', '2024-12-15'),
+                (7, 10, 'initial', 'Opening inventory - Kolin 1.5HP', '2024-12-15'),
+                (8, 9, 'initial', 'Opening inventory - Condura 1.0HP Split', '2024-12-15'),
+                (9, 7, 'initial', 'Opening inventory - Condura 1.5HP Split', '2024-12-15'),
+                (10, 8, 'initial', 'Opening inventory - Panasonic 1.0HP Inverter', '2024-12-15'),
+                (11, 7, 'initial', 'Opening inventory - Panasonic 1.5HP Inverter', '2024-12-15'),
+                (12, 12, 'initial', 'Opening inventory - Samsung 6cu', '2024-12-15'),
+                (13, 10, 'initial', 'Opening inventory - Samsung 8cu', '2024-12-15'),
+                (14, 8, 'initial', 'Opening inventory - Samsung 12cu', '2024-12-15'),
+                (15, 9, 'initial', 'Opening inventory - LG 8cu', '2024-12-15'),
+                (16, 7, 'initial', 'Opening inventory - LG 14cu', '2024-12-15'),
+                (17, 15, 'initial', 'Opening inventory - Condura 5cu', '2024-12-15'),
+                (18, 12, 'initial', 'Opening inventory - Condura 7cu', '2024-12-15'),
+                (19, 8, 'initial', 'Opening inventory - Panasonic 8cu', '2024-12-15'),
+                (20, 7, 'initial', 'Opening inventory - Panasonic 10cu', '2024-12-15');
+
+            -- Manual adjustments (restock, damage, audit)
+            INSERT INTO stock_movements (variant_id, delta, reason, notes, created_at) VALUES
+                (1, 5, 'restock', 'Supplier delivery - Carrier batch', '2025-02-10'),
+                (2, 8, 'restock', 'Supplier delivery - Carrier batch', '2025-02-10'),
+                (6, 10, 'restock', 'Supplier delivery - Kolin batch', '2025-03-15'),
+                (12, 5, 'restock', 'Supplier delivery - Samsung ref', '2025-04-20'),
+                (1, -2, 'damage', 'Damaged in transit - 2 units', '2025-01-25'),
+                (15, -1, 'damage', 'Display unit scratched', '2025-03-01'),
+                (3, 3, 'restock', 'Additional stock from supplier', '2025-05-12'),
+                (10, 4, 'restock', 'Panasonic restock', '2025-06-01'),
+                (17, 8, 'restock', 'Condura ref restock', '2025-06-15'),
+                (13, -1, 'audit', 'Inventory audit adjustment', '2025-07-01');
+
+            -- Stock movements for smaller items (fans, kitchen, small appliances)
+            INSERT INTO stock_movements (variant_id, delta, reason, notes, created_at) VALUES
+                (33, 25, 'initial', 'Opening inventory - Stand fan 16in', '2024-12-15'),
+                (34, 20, 'initial', 'Opening inventory - Stand fan 18in', '2024-12-15'),
+                (35, 15, 'initial', 'Opening inventory - Tower fan', '2024-12-15'),
+                (36, 10, 'initial', 'Opening inventory - Ceiling fan 52in', '2024-12-15'),
+                (37, 8, 'initial', 'Opening inventory - Ceiling fan 56in', '2024-12-15'),
+                (38, 30, 'initial', 'Opening inventory - Rice cooker 1.8L basic', '2024-12-15'),
+                (39, 20, 'initial', 'Opening inventory - Rice cooker 1.8L fuzzy', '2024-12-15'),
+                (44, 30, 'initial', 'Opening inventory - Iron 1000W', '2024-12-15'),
+                (45, 25, 'initial', 'Opening inventory - Iron 2200W steam', '2024-12-15'),
+                (50, 25, 'initial', 'Opening inventory - Electric kettle', '2024-12-15');
+        ")?;
+
+        // ── Serial Numbers (high-value items only) ───────────────────────────
+        conn.execute_batch("
+            -- Carrier 0.5HP (variant 1)
+            INSERT INTO serial_numbers (variant_id, serial_no, status, added_at) VALUES
+                (1, 'CAR-05HP-2024-0001', 'in_stock', '2024-12-15'),
+                (1, 'CAR-05HP-2024-0002', 'in_stock', '2024-12-15'),
+                (1, 'CAR-05HP-2024-0003', 'sold', '2024-12-15'),
+                (1, 'CAR-05HP-2024-0004', 'in_stock', '2024-12-15'),
+                (1, 'CAR-05HP-2025-0005', 'in_stock', '2025-02-10');
+
+            -- Carrier 1.0HP (variant 2)
+            INSERT INTO serial_numbers (variant_id, serial_no, status, added_at) VALUES
+                (2, 'CAR-10HP-2024-0001', 'sold', '2024-12-15'),
+                (2, 'CAR-10HP-2024-0002', 'in_stock', '2024-12-15'),
+                (2, 'CAR-10HP-2024-0003', 'in_stock', '2024-12-15'),
+                (2, 'CAR-10HP-2025-0004', 'in_stock', '2025-02-10'),
+                (2, 'CAR-10HP-2025-0005', 'in_stock', '2025-02-10');
+
+            -- Carrier 1.5HP (variant 3)
+            INSERT INTO serial_numbers (variant_id, serial_no, status, added_at) VALUES
+                (3, 'CAR-15HP-2024-0001', 'in_stock', '2024-12-15'),
+                (3, 'CAR-15HP-2024-0002', 'sold', '2024-12-15'),
+                (3, 'CAR-15HP-2024-0003', 'in_stock', '2024-12-15'),
+                (3, 'CAR-15HP-2025-0004', 'in_stock', '2025-05-12');
+
+            -- Panasonic 1.0HP Inverter (variant 10)
+            INSERT INTO serial_numbers (variant_id, serial_no, status, added_at) VALUES
+                (10, 'PAN-10INV-2024-0001', 'in_stock', '2024-12-15'),
+                (10, 'PAN-10INV-2024-0002', 'sold', '2024-12-15'),
+                (10, 'PAN-10INV-2024-0003', 'in_stock', '2024-12-15'),
+                (10, 'PAN-10INV-2025-0004', 'in_stock', '2025-06-01');
+
+            -- Samsung 12cu Ref (variant 14)
+            INSERT INTO serial_numbers (variant_id, serial_no, status, added_at) VALUES
+                (14, 'SAM-12CU-2024-0001', 'in_stock', '2024-12-15'),
+                (14, 'SAM-12CU-2024-0002', 'sold', '2024-12-15'),
+                (14, 'SAM-12CU-2024-0003', 'in_stock', '2024-12-15');
+
+            -- LG 14cu Ref (variant 16)
+            INSERT INTO serial_numbers (variant_id, serial_no, status, added_at) VALUES
+                (16, 'LG-14CU-2024-0001', 'in_stock', '2024-12-15'),
+                (16, 'LG-14CU-2024-0002', 'in_stock', '2024-12-15'),
+                (16, 'LG-14CU-2024-0003', 'sold', '2024-12-15');
+
+            -- Samsung 55in TV (variant 24 — variant_id for TV-SAM-55)
+            INSERT INTO serial_numbers (variant_id, serial_no, status, added_at) VALUES
+                (24, 'SAM-55TV-2024-0001', 'in_stock', '2024-12-15'),
+                (24, 'SAM-55TV-2024-0002', 'sold', '2024-12-15'),
+                (24, 'SAM-55TV-2024-0003', 'in_stock', '2024-12-15');
+
+            -- Samsung Front-Load Washer (variant 21 — WM-SAM-8FL)
+            INSERT INTO serial_numbers (variant_id, serial_no, status, added_at) VALUES
+                (21, 'SAM-8FL-2024-0001', 'sold', '2024-12-15'),
+                (21, 'SAM-8FL-2024-0002', 'in_stock', '2024-12-15'),
+                (21, 'SAM-8FL-2024-0003', 'in_stock', '2024-12-15');
+        ")?;
     }
 
     conn.execute_batch("INSERT INTO schema_migrations (version) VALUES (4);")?;
@@ -1620,5 +1747,392 @@ fn migrate_v12(conn: &Connection) -> Result<()> {
     )?;
 
     println!("[db] Applied migration v12 — installment_accounts.interest_type");
+    Ok(())
+}
+
+/// V13 — Change rebates from percentage-based to fixed peso amount.
+fn migrate_v13(conn: &Connection) -> Result<()> {
+    conn.execute_batch(
+        "
+        ALTER TABLE installment_accounts ADD COLUMN rebate_amount REAL NOT NULL DEFAULT 0;
+        UPDATE settings SET value = '0' WHERE key = 'default_rebate_rate';
+        UPDATE settings SET key = 'default_rebate_amount' WHERE key = 'default_rebate_rate';
+        INSERT INTO schema_migrations (version) VALUES (13);
+        "
+    )?;
+
+    println!("[db] Applied migration v13 — rebate_amount (fixed peso)");
+    Ok(())
+}
+
+/// V14 — Serial numbers for product variants.
+fn migrate_v14(conn: &Connection) -> Result<()> {
+    conn.execute_batch(
+        "
+        CREATE TABLE serial_numbers (
+            id           INTEGER PRIMARY KEY AUTOINCREMENT,
+            variant_id   INTEGER NOT NULL REFERENCES product_variants(id),
+            serial_no    TEXT NOT NULL,
+            status       TEXT NOT NULL DEFAULT 'in_stock'
+                             CHECK(status IN ('in_stock', 'sold')),
+            sale_item_id INTEGER REFERENCES sale_items(id),
+            added_at     TEXT NOT NULL DEFAULT (datetime('now')),
+            sold_at      TEXT,
+            notes        TEXT
+        );
+        CREATE UNIQUE INDEX idx_serial_variant_serial
+            ON serial_numbers(variant_id, serial_no);
+        CREATE INDEX idx_serial_status
+            ON serial_numbers(status);
+        INSERT INTO schema_migrations (version) VALUES (14);
+        "
+    )?;
+
+    println!("[db] Applied migration v14 — serial_numbers table");
+    Ok(())
+}
+
+/// V15 — Add installment_price column to product_variants.
+fn migrate_v15(conn: &Connection) -> Result<()> {
+    conn.execute_batch(
+        "
+        ALTER TABLE product_variants ADD COLUMN installment_price REAL;
+
+        -- Seed installment prices for higher-ticket items (appliances commonly sold on installment)
+        -- Air Conditioners: 1.0 HP and above
+        UPDATE product_variants SET installment_price = 21500 WHERE sku = 'AC-CAR-10HP';
+        UPDATE product_variants SET installment_price = 28900 WHERE sku = 'AC-CAR-15HP';
+        UPDATE product_variants SET installment_price = 37500 WHERE sku = 'AC-CAR-20HP';
+        UPDATE product_variants SET installment_price = 17000 WHERE sku = 'AC-KOL-10HP';
+        UPDATE product_variants SET installment_price = 22900 WHERE sku = 'AC-KOL-15HP';
+        UPDATE product_variants SET installment_price = 25000 WHERE sku = 'AC-CON-10SP';
+        UPDATE product_variants SET installment_price = 32900 WHERE sku = 'AC-CON-15SP';
+        UPDATE product_variants SET installment_price = 29900 WHERE sku = 'AC-PAN-10INV';
+        UPDATE product_variants SET installment_price = 38500 WHERE sku = 'AC-PAN-15INV';
+
+        -- Refrigerators: 8 cu ft and above
+        UPDATE product_variants SET installment_price = 17500 WHERE sku = 'REF-SAM-8CU';
+        UPDATE product_variants SET installment_price = 24900 WHERE sku = 'REF-SAM-12CU';
+        UPDATE product_variants SET installment_price = 18800 WHERE sku = 'REF-LG-8CU';
+        UPDATE product_variants SET installment_price = 29900 WHERE sku = 'REF-LG-14CU';
+        UPDATE product_variants SET installment_price = 18000 WHERE sku = 'REF-PAN-8CU';
+        UPDATE product_variants SET installment_price = 22000 WHERE sku = 'REF-PAN-10CU';
+
+        -- Washing Machines: all
+        UPDATE product_variants SET installment_price = 18500 WHERE sku = 'WM-SAM-7TL';
+        UPDATE product_variants SET installment_price = 29900 WHERE sku = 'WM-SAM-8FL';
+        UPDATE product_variants SET installment_price = 21500 WHERE sku = 'WM-LG-8TL';
+        UPDATE product_variants SET installment_price = 33900 WHERE sku = 'WM-LG-9FL';
+        UPDATE product_variants SET installment_price = 17500 WHERE sku = 'WM-WP-75TL';
+
+        -- TVs: 43 inch and above
+        UPDATE product_variants SET installment_price = 21500 WHERE sku = 'TV-SAM-43';
+        UPDATE product_variants SET installment_price = 35500 WHERE sku = 'TV-SAM-55';
+        UPDATE product_variants SET installment_price = 23000 WHERE sku = 'TV-LG-43';
+        UPDATE product_variants SET installment_price = 38000 WHERE sku = 'TV-LG-55';
+        UPDATE product_variants SET installment_price = 25500 WHERE sku = 'TV-SON-43';
+        UPDATE product_variants SET installment_price = 41500 WHERE sku = 'TV-SON-55';
+
+        INSERT INTO schema_migrations (version) VALUES (15);
+        "
+    )?;
+
+    println!("[db] Applied migration v15 — installment_price column + seed prices");
+    Ok(())
+}
+
+/// V16 — More installment prices + serial numbers for major appliances
+fn migrate_v16(conn: &Connection) -> Result<()> {
+    conn.execute_batch(r#"
+        -- Remaining installment prices: all ACs (including 0.5HP entry units)
+        UPDATE product_variants SET installment_price = 15000 WHERE sku = 'AC-CAR-05HP';
+        UPDATE product_variants SET installment_price = 12000 WHERE sku = 'AC-KOL-05HP';
+
+        -- Refrigerators: budget single-door options
+        UPDATE product_variants SET installment_price = 8800  WHERE sku = 'REF-CON-5CU';
+        UPDATE product_variants SET installment_price = 11800 WHERE sku = 'REF-CON-7CU';
+        UPDATE product_variants SET installment_price = 13500 WHERE sku = 'REF-SAM-6CU';
+
+        -- Washing Machines: twin-tub semi-automatic
+        UPDATE product_variants SET installment_price = 8700  WHERE sku = 'WM-CON-6TT';
+        UPDATE product_variants SET installment_price = 10200 WHERE sku = 'WM-CON-7TT';
+
+        -- TVs: 32-inch entry level
+        UPDATE product_variants SET installment_price = 13500 WHERE sku = 'TV-SAM-32';
+        UPDATE product_variants SET installment_price = 14200 WHERE sku = 'TV-LG-32';
+        UPDATE product_variants SET installment_price = 12800 WHERE sku = 'TV-PAN-32';
+        UPDATE product_variants SET installment_price = 21000 WHERE sku = 'TV-PAN-43';
+
+        -- Water Heaters: storage type
+        UPDATE product_variants SET installment_price = 10200 WHERE sku = 'WH-ARI-15L';
+        UPDATE product_variants SET installment_price = 8000  WHERE sku = 'WH-RHE-10L';
+        UPDATE product_variants SET installment_price = 12500 WHERE sku = 'WH-RHE-20L';
+
+        -- Ceiling Fans
+        UPDATE product_variants SET installment_price = 5000  WHERE sku = 'FAN-CEI-52';
+        UPDATE product_variants SET installment_price = 6900  WHERE sku = 'FAN-CEI-56L';
+
+        -- ── Serial Numbers ───────────────────────────────────────────────────
+        -- Air Conditioners (all variants tracked by serial)
+        INSERT INTO serial_numbers (variant_id, serial_no, status, added_at)
+        SELECT pv.id, 'CAR-05HP-' || printf('%03d', seq.n), 'in_stock', '2025-01-02'
+        FROM product_variants pv,
+             (WITH RECURSIVE r(n) AS (SELECT 1 UNION ALL SELECT n+1 FROM r WHERE n<8) SELECT n FROM r) seq
+        WHERE pv.sku = 'AC-CAR-05HP';
+
+        INSERT INTO serial_numbers (variant_id, serial_no, status, added_at)
+        SELECT pv.id, 'CAR-10HP-' || printf('%03d', seq.n), 'in_stock', '2025-01-02'
+        FROM product_variants pv,
+             (WITH RECURSIVE r(n) AS (SELECT 1 UNION ALL SELECT n+1 FROM r WHERE n<12) SELECT n FROM r) seq
+        WHERE pv.sku = 'AC-CAR-10HP';
+
+        INSERT INTO serial_numbers (variant_id, serial_no, status, added_at)
+        SELECT pv.id, 'CAR-15HP-' || printf('%03d', seq.n), 'in_stock', '2025-01-02'
+        FROM product_variants pv,
+             (WITH RECURSIVE r(n) AS (SELECT 1 UNION ALL SELECT n+1 FROM r WHERE n<10) SELECT n FROM r) seq
+        WHERE pv.sku = 'AC-CAR-15HP';
+
+        INSERT INTO serial_numbers (variant_id, serial_no, status, added_at)
+        SELECT pv.id, 'CAR-20HP-' || printf('%03d', seq.n), 'in_stock', '2025-01-02'
+        FROM product_variants pv,
+             (WITH RECURSIVE r(n) AS (SELECT 1 UNION ALL SELECT n+1 FROM r WHERE n<6) SELECT n FROM r) seq
+        WHERE pv.sku = 'AC-CAR-20HP';
+
+        INSERT INTO serial_numbers (variant_id, serial_no, status, added_at)
+        SELECT pv.id, 'KOL-05HP-' || printf('%03d', seq.n), 'in_stock', '2025-01-03'
+        FROM product_variants pv,
+             (WITH RECURSIVE r(n) AS (SELECT 1 UNION ALL SELECT n+1 FROM r WHERE n<10) SELECT n FROM r) seq
+        WHERE pv.sku = 'AC-KOL-05HP';
+
+        INSERT INTO serial_numbers (variant_id, serial_no, status, added_at)
+        SELECT pv.id, 'KOL-10HP-' || printf('%03d', seq.n), 'in_stock', '2025-01-03'
+        FROM product_variants pv,
+             (WITH RECURSIVE r(n) AS (SELECT 1 UNION ALL SELECT n+1 FROM r WHERE n<15) SELECT n FROM r) seq
+        WHERE pv.sku = 'AC-KOL-10HP';
+
+        INSERT INTO serial_numbers (variant_id, serial_no, status, added_at)
+        SELECT pv.id, 'KOL-15HP-' || printf('%03d', seq.n), 'in_stock', '2025-01-03'
+        FROM product_variants pv,
+             (WITH RECURSIVE r(n) AS (SELECT 1 UNION ALL SELECT n+1 FROM r WHERE n<8) SELECT n FROM r) seq
+        WHERE pv.sku = 'AC-KOL-15HP';
+
+        INSERT INTO serial_numbers (variant_id, serial_no, status, added_at)
+        SELECT pv.id, 'CON-10SP-' || printf('%03d', seq.n), 'in_stock', '2025-01-04'
+        FROM product_variants pv,
+             (WITH RECURSIVE r(n) AS (SELECT 1 UNION ALL SELECT n+1 FROM r WHERE n<7) SELECT n FROM r) seq
+        WHERE pv.sku = 'AC-CON-10SP';
+
+        INSERT INTO serial_numbers (variant_id, serial_no, status, added_at)
+        SELECT pv.id, 'CON-15SP-' || printf('%03d', seq.n), 'in_stock', '2025-01-04'
+        FROM product_variants pv,
+             (WITH RECURSIVE r(n) AS (SELECT 1 UNION ALL SELECT n+1 FROM r WHERE n<5) SELECT n FROM r) seq
+        WHERE pv.sku = 'AC-CON-15SP';
+
+        INSERT INTO serial_numbers (variant_id, serial_no, status, added_at)
+        SELECT pv.id, 'PAN-10INV-' || printf('%03d', seq.n), 'in_stock', '2025-01-05'
+        FROM product_variants pv,
+             (WITH RECURSIVE r(n) AS (SELECT 1 UNION ALL SELECT n+1 FROM r WHERE n<6) SELECT n FROM r) seq
+        WHERE pv.sku = 'AC-PAN-10INV';
+
+        INSERT INTO serial_numbers (variant_id, serial_no, status, added_at)
+        SELECT pv.id, 'PAN-15INV-' || printf('%03d', seq.n), 'in_stock', '2025-01-05'
+        FROM product_variants pv,
+             (WITH RECURSIVE r(n) AS (SELECT 1 UNION ALL SELECT n+1 FROM r WHERE n<5) SELECT n FROM r) seq
+        WHERE pv.sku = 'AC-PAN-15INV';
+
+        -- Refrigerators
+        INSERT INTO serial_numbers (variant_id, serial_no, status, added_at)
+        SELECT pv.id, 'SAM-REF-6CU-' || printf('%03d', seq.n), 'in_stock', '2025-01-06'
+        FROM product_variants pv,
+             (WITH RECURSIVE r(n) AS (SELECT 1 UNION ALL SELECT n+1 FROM r WHERE n<10) SELECT n FROM r) seq
+        WHERE pv.sku = 'REF-SAM-6CU';
+
+        INSERT INTO serial_numbers (variant_id, serial_no, status, added_at)
+        SELECT pv.id, 'SAM-REF-8CU-' || printf('%03d', seq.n), 'in_stock', '2025-01-06'
+        FROM product_variants pv,
+             (WITH RECURSIVE r(n) AS (SELECT 1 UNION ALL SELECT n+1 FROM r WHERE n<8) SELECT n FROM r) seq
+        WHERE pv.sku = 'REF-SAM-8CU';
+
+        INSERT INTO serial_numbers (variant_id, serial_no, status, added_at)
+        SELECT pv.id, 'SAM-REF-12CU-' || printf('%03d', seq.n), 'in_stock', '2025-01-06'
+        FROM product_variants pv,
+             (WITH RECURSIVE r(n) AS (SELECT 1 UNION ALL SELECT n+1 FROM r WHERE n<6) SELECT n FROM r) seq
+        WHERE pv.sku = 'REF-SAM-12CU';
+
+        INSERT INTO serial_numbers (variant_id, serial_no, status, added_at)
+        SELECT pv.id, 'LG-REF-8CU-' || printf('%03d', seq.n), 'in_stock', '2025-01-07'
+        FROM product_variants pv,
+             (WITH RECURSIVE r(n) AS (SELECT 1 UNION ALL SELECT n+1 FROM r WHERE n<7) SELECT n FROM r) seq
+        WHERE pv.sku = 'REF-LG-8CU';
+
+        INSERT INTO serial_numbers (variant_id, serial_no, status, added_at)
+        SELECT pv.id, 'LG-REF-14CU-' || printf('%03d', seq.n), 'in_stock', '2025-01-07'
+        FROM product_variants pv,
+             (WITH RECURSIVE r(n) AS (SELECT 1 UNION ALL SELECT n+1 FROM r WHERE n<5) SELECT n FROM r) seq
+        WHERE pv.sku = 'REF-LG-14CU';
+
+        INSERT INTO serial_numbers (variant_id, serial_no, status, added_at)
+        SELECT pv.id, 'CON-REF-5CU-' || printf('%03d', seq.n), 'in_stock', '2025-01-08'
+        FROM product_variants pv,
+             (WITH RECURSIVE r(n) AS (SELECT 1 UNION ALL SELECT n+1 FROM r WHERE n<12) SELECT n FROM r) seq
+        WHERE pv.sku = 'REF-CON-5CU';
+
+        INSERT INTO serial_numbers (variant_id, serial_no, status, added_at)
+        SELECT pv.id, 'CON-REF-7CU-' || printf('%03d', seq.n), 'in_stock', '2025-01-08'
+        FROM product_variants pv,
+             (WITH RECURSIVE r(n) AS (SELECT 1 UNION ALL SELECT n+1 FROM r WHERE n<10) SELECT n FROM r) seq
+        WHERE pv.sku = 'REF-CON-7CU';
+
+        INSERT INTO serial_numbers (variant_id, serial_no, status, added_at)
+        SELECT pv.id, 'PAN-REF-8CU-' || printf('%03d', seq.n), 'in_stock', '2025-01-09'
+        FROM product_variants pv,
+             (WITH RECURSIVE r(n) AS (SELECT 1 UNION ALL SELECT n+1 FROM r WHERE n<6) SELECT n FROM r) seq
+        WHERE pv.sku = 'REF-PAN-8CU';
+
+        INSERT INTO serial_numbers (variant_id, serial_no, status, added_at)
+        SELECT pv.id, 'PAN-REF-10CU-' || printf('%03d', seq.n), 'in_stock', '2025-01-09'
+        FROM product_variants pv,
+             (WITH RECURSIVE r(n) AS (SELECT 1 UNION ALL SELECT n+1 FROM r WHERE n<5) SELECT n FROM r) seq
+        WHERE pv.sku = 'REF-PAN-10CU';
+
+        -- Washing Machines
+        INSERT INTO serial_numbers (variant_id, serial_no, status, added_at)
+        SELECT pv.id, 'SAM-WM-7TL-' || printf('%03d', seq.n), 'in_stock', '2025-01-10'
+        FROM product_variants pv,
+             (WITH RECURSIVE r(n) AS (SELECT 1 UNION ALL SELECT n+1 FROM r WHERE n<8) SELECT n FROM r) seq
+        WHERE pv.sku = 'WM-SAM-7TL';
+
+        INSERT INTO serial_numbers (variant_id, serial_no, status, added_at)
+        SELECT pv.id, 'SAM-WM-8FL-' || printf('%03d', seq.n), 'in_stock', '2025-01-10'
+        FROM product_variants pv,
+             (WITH RECURSIVE r(n) AS (SELECT 1 UNION ALL SELECT n+1 FROM r WHERE n<5) SELECT n FROM r) seq
+        WHERE pv.sku = 'WM-SAM-8FL';
+
+        INSERT INTO serial_numbers (variant_id, serial_no, status, added_at)
+        SELECT pv.id, 'LG-WM-8TL-' || printf('%03d', seq.n), 'in_stock', '2025-01-11'
+        FROM product_variants pv,
+             (WITH RECURSIVE r(n) AS (SELECT 1 UNION ALL SELECT n+1 FROM r WHERE n<6) SELECT n FROM r) seq
+        WHERE pv.sku = 'WM-LG-8TL';
+
+        INSERT INTO serial_numbers (variant_id, serial_no, status, added_at)
+        SELECT pv.id, 'LG-WM-9FL-' || printf('%03d', seq.n), 'in_stock', '2025-01-11'
+        FROM product_variants pv,
+             (WITH RECURSIVE r(n) AS (SELECT 1 UNION ALL SELECT n+1 FROM r WHERE n<4) SELECT n FROM r) seq
+        WHERE pv.sku = 'WM-LG-9FL';
+
+        INSERT INTO serial_numbers (variant_id, serial_no, status, added_at)
+        SELECT pv.id, 'CON-WM-6TT-' || printf('%03d', seq.n), 'in_stock', '2025-01-12'
+        FROM product_variants pv,
+             (WITH RECURSIVE r(n) AS (SELECT 1 UNION ALL SELECT n+1 FROM r WHERE n<12) SELECT n FROM r) seq
+        WHERE pv.sku = 'WM-CON-6TT';
+
+        INSERT INTO serial_numbers (variant_id, serial_no, status, added_at)
+        SELECT pv.id, 'CON-WM-7TT-' || printf('%03d', seq.n), 'in_stock', '2025-01-12'
+        FROM product_variants pv,
+             (WITH RECURSIVE r(n) AS (SELECT 1 UNION ALL SELECT n+1 FROM r WHERE n<10) SELECT n FROM r) seq
+        WHERE pv.sku = 'WM-CON-7TT';
+
+        INSERT INTO serial_numbers (variant_id, serial_no, status, added_at)
+        SELECT pv.id, 'WP-WM-75TL-' || printf('%03d', seq.n), 'in_stock', '2025-01-13'
+        FROM product_variants pv,
+             (WITH RECURSIVE r(n) AS (SELECT 1 UNION ALL SELECT n+1 FROM r WHERE n<7) SELECT n FROM r) seq
+        WHERE pv.sku = 'WM-WP-75TL';
+
+        -- Televisions
+        INSERT INTO serial_numbers (variant_id, serial_no, status, added_at)
+        SELECT pv.id, 'SAM-TV-32-' || printf('%03d', seq.n), 'in_stock', '2025-01-14'
+        FROM product_variants pv,
+             (WITH RECURSIVE r(n) AS (SELECT 1 UNION ALL SELECT n+1 FROM r WHERE n<10) SELECT n FROM r) seq
+        WHERE pv.sku = 'TV-SAM-32';
+
+        INSERT INTO serial_numbers (variant_id, serial_no, status, added_at)
+        SELECT pv.id, 'SAM-TV-43-' || printf('%03d', seq.n), 'in_stock', '2025-01-14'
+        FROM product_variants pv,
+             (WITH RECURSIVE r(n) AS (SELECT 1 UNION ALL SELECT n+1 FROM r WHERE n<8) SELECT n FROM r) seq
+        WHERE pv.sku = 'TV-SAM-43';
+
+        INSERT INTO serial_numbers (variant_id, serial_no, status, added_at)
+        SELECT pv.id, 'SAM-TV-55-' || printf('%03d', seq.n), 'in_stock', '2025-01-14'
+        FROM product_variants pv,
+             (WITH RECURSIVE r(n) AS (SELECT 1 UNION ALL SELECT n+1 FROM r WHERE n<5) SELECT n FROM r) seq
+        WHERE pv.sku = 'TV-SAM-55';
+
+        INSERT INTO serial_numbers (variant_id, serial_no, status, added_at)
+        SELECT pv.id, 'LG-TV-32-' || printf('%03d', seq.n), 'in_stock', '2025-01-15'
+        FROM product_variants pv,
+             (WITH RECURSIVE r(n) AS (SELECT 1 UNION ALL SELECT n+1 FROM r WHERE n<8) SELECT n FROM r) seq
+        WHERE pv.sku = 'TV-LG-32';
+
+        INSERT INTO serial_numbers (variant_id, serial_no, status, added_at)
+        SELECT pv.id, 'LG-TV-43-' || printf('%03d', seq.n), 'in_stock', '2025-01-15'
+        FROM product_variants pv,
+             (WITH RECURSIVE r(n) AS (SELECT 1 UNION ALL SELECT n+1 FROM r WHERE n<6) SELECT n FROM r) seq
+        WHERE pv.sku = 'TV-LG-43';
+
+        INSERT INTO serial_numbers (variant_id, serial_no, status, added_at)
+        SELECT pv.id, 'LG-TV-55-' || printf('%03d', seq.n), 'in_stock', '2025-01-15'
+        FROM product_variants pv,
+             (WITH RECURSIVE r(n) AS (SELECT 1 UNION ALL SELECT n+1 FROM r WHERE n<4) SELECT n FROM r) seq
+        WHERE pv.sku = 'TV-LG-55';
+
+        INSERT INTO serial_numbers (variant_id, serial_no, status, added_at)
+        SELECT pv.id, 'SON-TV-43-' || printf('%03d', seq.n), 'in_stock', '2025-01-16'
+        FROM product_variants pv,
+             (WITH RECURSIVE r(n) AS (SELECT 1 UNION ALL SELECT n+1 FROM r WHERE n<5) SELECT n FROM r) seq
+        WHERE pv.sku = 'TV-SON-43';
+
+        INSERT INTO serial_numbers (variant_id, serial_no, status, added_at)
+        SELECT pv.id, 'SON-TV-55-' || printf('%03d', seq.n), 'in_stock', '2025-01-16'
+        FROM product_variants pv,
+             (WITH RECURSIVE r(n) AS (SELECT 1 UNION ALL SELECT n+1 FROM r WHERE n<3) SELECT n FROM r) seq
+        WHERE pv.sku = 'TV-SON-55';
+
+        INSERT INTO serial_numbers (variant_id, serial_no, status, added_at)
+        SELECT pv.id, 'PAN-TV-32-' || printf('%03d', seq.n), 'in_stock', '2025-01-17'
+        FROM product_variants pv,
+             (WITH RECURSIVE r(n) AS (SELECT 1 UNION ALL SELECT n+1 FROM r WHERE n<8) SELECT n FROM r) seq
+        WHERE pv.sku = 'TV-PAN-32';
+
+        INSERT INTO serial_numbers (variant_id, serial_no, status, added_at)
+        SELECT pv.id, 'PAN-TV-43-' || printf('%03d', seq.n), 'in_stock', '2025-01-17'
+        FROM product_variants pv,
+             (WITH RECURSIVE r(n) AS (SELECT 1 UNION ALL SELECT n+1 FROM r WHERE n<6) SELECT n FROM r) seq
+        WHERE pv.sku = 'TV-PAN-43';
+
+        -- Water Heaters
+        INSERT INTO serial_numbers (variant_id, serial_no, status, added_at)
+        SELECT pv.id, 'ARI-WH-4L-' || printf('%03d', seq.n), 'in_stock', '2025-01-18'
+        FROM product_variants pv,
+             (WITH RECURSIVE r(n) AS (SELECT 1 UNION ALL SELECT n+1 FROM r WHERE n<10) SELECT n FROM r) seq
+        WHERE pv.sku = 'WH-ARI-4L';
+
+        INSERT INTO serial_numbers (variant_id, serial_no, status, added_at)
+        SELECT pv.id, 'ARI-WH-15L-' || printf('%03d', seq.n), 'in_stock', '2025-01-18'
+        FROM product_variants pv,
+             (WITH RECURSIVE r(n) AS (SELECT 1 UNION ALL SELECT n+1 FROM r WHERE n<7) SELECT n FROM r) seq
+        WHERE pv.sku = 'WH-ARI-15L';
+
+        INSERT INTO serial_numbers (variant_id, serial_no, status, added_at)
+        SELECT pv.id, 'RHE-WH-10L-' || printf('%03d', seq.n), 'in_stock', '2025-01-19'
+        FROM product_variants pv,
+             (WITH RECURSIVE r(n) AS (SELECT 1 UNION ALL SELECT n+1 FROM r WHERE n<8) SELECT n FROM r) seq
+        WHERE pv.sku = 'WH-RHE-10L';
+
+        INSERT INTO serial_numbers (variant_id, serial_no, status, added_at)
+        SELECT pv.id, 'RHE-WH-20L-' || printf('%03d', seq.n), 'in_stock', '2025-01-19'
+        FROM product_variants pv,
+             (WITH RECURSIVE r(n) AS (SELECT 1 UNION ALL SELECT n+1 FROM r WHERE n<5) SELECT n FROM r) seq
+        WHERE pv.sku = 'WH-RHE-20L';
+
+        INSERT INTO serial_numbers (variant_id, serial_no, status, added_at)
+        SELECT pv.id, 'HAN-WH-35W-' || printf('%03d', seq.n), 'in_stock', '2025-01-20'
+        FROM product_variants pv,
+             (WITH RECURSIVE r(n) AS (SELECT 1 UNION ALL SELECT n+1 FROM r WHERE n<12) SELECT n FROM r) seq
+        WHERE pv.sku = 'WH-HAN-35W';
+
+        INSERT INTO schema_migrations (version) VALUES (16);
+    "#)?;
+
+    println!("[db] Applied migration v16 — more installment prices + serial number seeds");
     Ok(())
 }

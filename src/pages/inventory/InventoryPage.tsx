@@ -187,9 +187,9 @@ export function InventoryPage() {
     }
   };
 
-  const handleAdjustStock = async (id: number, delta: number) => {
+  const handleAdjustStock = async (id: number, delta: number, serials?: string[]) => {
     try {
-      await adjustStock(id, delta);
+      await adjustStock(id, delta, serials);
       toast.success("Stock updated");
     } catch (e) {
       toast.error(extractErrorMessage(e));

@@ -246,23 +246,22 @@ export function SettingsPage() {
           </div>
           {form.rebate_enabled === "1" && (
             <div className="space-y-2">
-              <Label htmlFor="default_rebate_rate">
-                Default Rebate Rate (% of interest)
+              <Label htmlFor="default_rebate_amount">
+                Default Rebate Amount (₱)
               </Label>
               <Input
-                id="default_rebate_rate"
+                id="default_rebate_amount"
                 type="number"
                 min="0"
-                max="100"
-                step="0.5"
-                value={form.default_rebate_rate}
+                step="1"
+                value={form.default_rebate_amount}
                 onChange={(e) =>
-                  handleChange("default_rebate_rate", e.target.value)
+                  handleChange("default_rebate_amount", e.target.value)
                 }
                 className="w-32"
               />
               <p className="text-xs text-muted-foreground">
-                Percentage of total interest credited back when all payments are made on or before due dates. Can be overridden per account.
+                Fixed peso amount credited back when all payments are made on or before due dates. Can be overridden per account.
               </p>
             </div>
           )}

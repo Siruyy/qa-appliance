@@ -79,9 +79,9 @@ export const helpArticles: HelpArticle[] = [
     id: "inventory",
     title: "Inventory",
     category: "inventory",
-    summary: "Manage your products, variants, stock levels, and categories.",
+    summary: "Manage your products, variants, stock levels, serial numbers, and categories.",
     routes: ["/inventory"],
-    keywords: ["inventory", "products", "variants", "stock", "categories", "add product", "adjust stock"],
+    keywords: ["inventory", "products", "variants", "stock", "categories", "add product", "adjust stock", "serial numbers", "stock log", "product detail", "view details"],
     tips: [
       {
         title: "Products vs Variants",
@@ -92,8 +92,20 @@ export const helpArticles: HelpArticle[] = [
         body: "Click '+ Add Product' to create a new product. Fill in the name, category, and base price. After saving, you can add variants with specific attributes.",
       },
       {
+        title: "Product Detail Page",
+        body: "Click a product name or choose 'View Details' from the ⋯ menu to see full info: variants table, serial numbers, and stock movement history — all on one page.",
+      },
+      {
+        title: "Serial Numbers",
+        body: "Track individual units by serial number. On the Product Detail Page, expand a variant's serial section and click 'Add Serials' to register one or more serial numbers (one per line or comma-separated). Serials are marked in-stock or sold automatically.",
+      },
+      {
         title: "Stock Adjustments",
         body: "Use the stock adjustment button (on each variant row) to add or remove stock. Every adjustment is logged with a reason for audit purposes.",
+      },
+      {
+        title: "Stock Movement History",
+        body: "The Product Detail Page shows a full log of stock changes — sales, voids, manual adjustments, and initial stock. Filter by variant or search by reason/notes.",
       },
       {
         title: "Active vs Inactive",
@@ -112,6 +124,14 @@ export const helpArticles: HelpArticle[] = [
       {
         question: "How does low stock work?",
         answer: "When a variant's stock falls below the low stock threshold (set in Settings), it appears in the dashboard low-stock alert.",
+      },
+      {
+        question: "How do I view all stock movements?",
+        answer: "Open the Stock Log from the inventory page header or go to a product's detail page to see movements for that product. Both views let you search and filter.",
+      },
+      {
+        question: "Can I delete a serial number?",
+        answer: "Yes — click the trash icon next to any in-stock serial number on the Product Detail Page. Sold serials cannot be removed.",
       },
     ],
   },

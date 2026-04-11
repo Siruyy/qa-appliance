@@ -54,6 +54,7 @@ export interface CreateSaleItemPayload {
   unit_price: number;
   item_discount_type?: DiscountType;
   item_discount_value?: number;
+  serial_no?: string;
 }
 
 export interface CreateInstallmentPayload {
@@ -62,8 +63,10 @@ export interface CreateInstallmentPayload {
   penalty_rate: number;
   term_months: number | null;
   start_date: string | null;
-  rebate_rate?: number;
+  rebate_amount?: number;
   interest_type?: import('./account').InterestType;
+  /** If set, overrides the computed monthly payment amount */
+  monthly_payment_override?: number | null;
 }
 
 /** Cart item used in the New Sale page (display + data) */
@@ -78,6 +81,10 @@ export interface CartItem {
   item_discount_type: DiscountType;
   item_discount_value: number;
   item_discount: number;
+  serial_no?: string;
+  /** Stored for repricing when toggling payment type */
+  selling_price: number;
+  installment_price: number | null;
 }
 
 export interface SaleDetail {

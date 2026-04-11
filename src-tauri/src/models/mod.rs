@@ -5,6 +5,7 @@ pub mod payment;
 pub mod report;
 pub mod sale;
 pub mod product;
+pub mod serial_number;
 pub mod stock_movement;
 
 #[derive(Debug, serde::Serialize)]

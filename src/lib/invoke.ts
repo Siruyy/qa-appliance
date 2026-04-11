@@ -20,11 +20,13 @@ const ALLOWED_COMMANDS = [
   "get_payments_for_account",
   "record_payment", "update_account_notes", "recalculate_balance",
   "run_penalty_check", "mark_account_paid", "mark_account_defaulted",
-  "update_account_rebate_rate", "restructure_account",
+  "update_account_rebate_amount", "restructure_account",
   // Payments
   "get_payments", "void_payment", "waive_penalty",
   // Stock Movements
   "get_stock_movements",
+  // Serial Numbers
+  "get_serial_numbers", "add_serial_numbers", "delete_serial_number",
   // Settings
   "get_all_settings", "update_setting", "update_settings_batch",
   // Dashboard

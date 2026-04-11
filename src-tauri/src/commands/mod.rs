@@ -8,5 +8,6 @@ pub mod payments;
 pub mod products;
 pub mod reports;
 pub mod sales;
+pub mod serial_numbers;
 pub mod settings;
 pub mod stock_movements;

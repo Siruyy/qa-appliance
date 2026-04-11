@@ -81,6 +81,8 @@ pub struct CreateSaleItemPayload {
     pub item_discount_type: String,
     #[serde(default)]
     pub item_discount_value: f64,
+    #[serde(default)]
+    pub serial_no: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -91,9 +93,11 @@ pub struct CreateInstallmentPayload {
     pub term_months: Option<i64>,
     pub start_date: Option<String>,
     #[serde(default)]
-    pub rebate_rate: f64,
+    pub rebate_amount: f64,
     #[serde(default = "default_interest_type")]
     pub interest_type: String,
+    /// If set, overrides the computed monthly payment amount
+    pub monthly_payment_override: Option<f64>,
 }
 
 fn default_interest_type() -> String {

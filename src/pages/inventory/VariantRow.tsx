@@ -7,6 +7,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { TableCell, TableRow } from "@/components/ui/table";
 import { useCurrency } from "@/hooks/useCurrency";
+import { formatDate } from "@/lib/formatters";
 import type { ProductVariant } from "@/types/product";
 import { MoreHorizontal, Pencil, Package, Archive } from "lucide-react";
 
@@ -43,11 +44,23 @@ export function VariantRow({ variant, onEdit, onAdjustStock, onArchive }: Varian
       <TableCell className="pl-4 text-sm text-muted-foreground">
         <span className="font-mono text-xs">{variant.sku || "No SKU"}</span>
         <span className="ml-2">{attrs}</span>
+        <div className="text-xs text-muted-foreground/70 mt-0.5 space-x-3">
+          {variant.last_stocked_at && (
+            <span title="Last stocked">↑ {formatDate(variant.last_stocked_at)}</span>
+          )}
+          {variant.last_released_at && (
+            <span title="Last released/sold">↓ {formatDate(variant.last_released_at)}</span>
+          )}
+        </div>
       </TableCell>
-      <TableCell className="text-right text-sm">
+      <TableCell className="text-right text-sm tabular-nums">
         {formatCurrency(variant.selling_price)}
       </TableCell>
-      <TableCell />
+      <TableCell className="text-right text-sm tabular-nums">
+        {variant.installment_price != null
+          ? formatCurrency(variant.installment_price)
+          : <span className="text-muted-foreground">—</span>}
+      </TableCell>
       <TableCell className="text-right tabular-nums text-sm">
         {variant.stock_qty}
       </TableCell>

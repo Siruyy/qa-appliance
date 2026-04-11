@@ -7,6 +7,7 @@ import { AppShell } from "@/app/layout/AppShell";
 
 const DashboardPage = lazy(() => import("@/pages/dashboard/DashboardPage").then(m => ({ default: m.DashboardPage })));
 const InventoryPage = lazy(() => import("@/pages/inventory/InventoryPage").then(m => ({ default: m.InventoryPage })));
+const ProductDetailPage = lazy(() => import("@/pages/inventory/ProductDetailPage").then(m => ({ default: m.ProductDetailPage })));
 const CustomersPage = lazy(() => import("@/pages/customers/CustomersPage").then(m => ({ default: m.CustomersPage })));
 const CustomerDetailPage = lazy(() => import("@/pages/customers/CustomerDetailPage").then(m => ({ default: m.CustomerDetailPage })));
 const NewSalePage = lazy(() => import("@/pages/sales/NewSalePage").then(m => ({ default: m.NewSalePage })));
@@ -49,6 +50,7 @@ const router = createHashRouter([
       { path: "/", element: <Navigate to="/dashboard" replace /> },
       { path: "/dashboard", element: <Wrap><DashboardPage /></Wrap> },
       { path: "/inventory", element: <Wrap><InventoryPage /></Wrap> },
+      { path: "/inventory/:id", element: <Wrap><ProductDetailPage /></Wrap> },
       { path: "/customers", element: <Wrap><CustomersPage /></Wrap> },
       { path: "/customers/:id", element: <Wrap><CustomerDetailPage /></Wrap> },
       { path: "/sales/new", element: <Wrap><NewSalePage /></Wrap> },
