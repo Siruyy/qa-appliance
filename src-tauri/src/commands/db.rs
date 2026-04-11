@@ -99,3 +99,12 @@ pub fn restore_database(db: State<'_, DbState>, src_path: String) -> Result<Stri
 pub fn get_database_path() -> String {
     db_path().to_string_lossy().to_string()
 }
+
+/// Insert demo seed data for development/testing.
+/// Safe to call multiple times — skips if data already exists.
+#[tauri::command]
+pub fn seed_demo_data(db: State<'_, DbState>) -> Result<String, String> {
+    let conn = db.0.lock().map_err(|e| e.to_string())?;
+    crate::db::seed::run(&conn).map_err(|e| e.to_string())?;
+    Ok("Demo data seeded successfully".to_string())
+}
