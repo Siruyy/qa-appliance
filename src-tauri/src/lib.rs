@@ -21,6 +21,7 @@ pub fn run() {
             commands::db::backup_database,
             commands::db::restore_database,
             commands::db::get_database_path,
+            commands::db::reset_database,
             commands::db::seed_demo_data,
             commands::products::get_categories,
             commands::products::create_category,

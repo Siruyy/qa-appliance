@@ -3,7 +3,7 @@ import { invoke as tauriInvoke } from "@tauri-apps/api/core";
 /** Known Tauri command names — keeps invoke calls type-safe at runtime */
 const ALLOWED_COMMANDS = [
   // DB
-  "ping", "backup_database", "restore_database", "get_database_path", "seed_demo_data",
+  "ping", "backup_database", "restore_database", "get_database_path", "reset_database", "seed_demo_data",
   // Products & Inventory
   "get_categories", "create_category", "update_category", "delete_category",
   "get_products", "get_product_by_id",

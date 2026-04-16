@@ -100,6 +100,43 @@ pub fn get_database_path() -> String {
     db_path().to_string_lossy().to_string()
 }
 
+/// Reset the database by deleting all user data while preserving the schema.
+/// Settings are also wiped and will be repopulated with defaults on next load.
+/// The app should be restarted after this operation.
+#[tauri::command]
+pub fn reset_database(db: State<'_, DbState>) -> Result<String, String> {
+    let conn = db.0.lock().map_err(|e| e.to_string())?;
+
+    conn.execute_batch(
+        "
+        PRAGMA foreign_keys = OFF;
+
+        DELETE FROM audit_log;
+        DELETE FROM import_logs;
+        DELETE FROM stock_movements;
+        DELETE FROM serial_numbers;
+        DELETE FROM payment_schedules;
+        DELETE FROM payments;
+        DELETE FROM installment_accounts;
+        DELETE FROM sale_items;
+        DELETE FROM sales;
+        DELETE FROM product_variants;
+        DELETE FROM products;
+        DELETE FROM customers;
+        DELETE FROM categories;
+        DELETE FROM settings;
+
+        DELETE FROM sqlite_sequence WHERE name != 'schema_migrations';
+
+        PRAGMA foreign_keys = ON;
+        PRAGMA wal_checkpoint(TRUNCATE);
+        ",
+    )
+    .map_err(|e| format!("Reset failed: {}", e))?;
+
+    Ok("Database reset. Please restart the application.".into())
+}
+
 /// Insert demo seed data for development/testing.
 /// Safe to call multiple times — skips if data already exists.
 #[tauri::command]
