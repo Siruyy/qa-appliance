@@ -161,16 +161,12 @@ export function DatabaseBackupRestore() {
               <TriangleAlert className="h-5 w-5 shrink-0" />
               Reset the entire database?
             </AlertDialogTitle>
-            <AlertDialogDescription asChild>
-              <div className="space-y-2 text-sm">
-                <p>
-                  This will permanently delete <strong>all</strong> products, customers,
-                  sales, installment accounts, payments, and settings.
-                </p>
-                <p className="font-medium text-foreground">
-                  Have you made a backup? There is no way to recover this data.
-                </p>
-              </div>
+            <AlertDialogDescription className="space-y-2">
+              This will permanently delete <strong>all</strong> products, customers,
+              sales, installment accounts, payments, and settings.
+              <span className="block font-medium text-foreground mt-2">
+                Have you made a backup? There is no way to recover this data.
+              </span>
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className="flex-col gap-2 sm:flex-col">
